@@ -8,7 +8,7 @@ class ParametreLogiciel(db.Model):
     version = db.Column(db.String(20), nullable=False)
     
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
-    software_id = db.Column(db.Integer, db.ForeignKey('softwares.id'))
+    software_id = db.Column(db.Integer, db.ForeignKey('software.id'))
     
     client = db.relationship('Client', back_populates='parametres')
     software = db.relationship('Software', back_populates='parametres')
