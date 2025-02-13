@@ -1,0 +1,16 @@
+# Ignore node_modules directory
+migrations/
+pgdata_config_analyzer/
+__pycache__/
+
+# Ignore log files
+*.log
+
+# Ignore compiled files
+*.class
+
+# Ignore MacOS-specific files
+.DS_Store
+
+# Ignore environment variables
+.env

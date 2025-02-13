@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <!-- En-tête standard -->
+    <title>Compatibilité Robots/Logiciels</title>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Gestion des compatibilités</h1>
+
+        <div class="row">
+            <!-- Sélection Robot -->
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Robot</h5>
+                        <select class="form-select" id="robotSelect">
+                            {% for robot in robots %}
+                            <option value="{{ robot.id }}">{{ robot.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sélection Logiciel -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Logiciels compatibles</h5>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Logiciel</th>
+                                    <th>Version compatible</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="softwareList">
+                                <!-- JS populate -->
+                            </tbody>
+                        </table>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSoftwareModal">
+                            <i class="fas fa-plus"></i> Ajouter compatibilité
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Compatibilité -->
+    <div class="modal fade" id="addSoftwareModal">
+        <!-- Contenu modal -->
+    </div>
+</body>
+</html>

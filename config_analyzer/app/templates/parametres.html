@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paramètres Logiciels</title>
+    <!-- Inclusion des styles -->
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Configuration des Paramètres</h1>
+        
+        <!-- Carte Client -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Sélection du Client</h5>
+                <select class="form-select" id="clientSelect">
+                    {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Tableau des Paramètres -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <table class="table" id="parametresTable">
+                    <thead>
+                        <tr>
+                            <th>Logiciel</th>
+                            <th>Version</th>
+                            <th>Configuration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rempli par JavaScript -->
+                    </tbody>
+                </table>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addParamModal">
+                    <i class="fas fa-plus"></i> Nouveau Paramètre
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Paramètre -->
+    <div class="modal fade" id="addParamModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="paramForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Logiciel</label>
+                            <select class="form-select" name="software_id" required>
+                                {% for software in softwares %}
+                                <option value="{{ software.id }}">{{ software.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Version</label>
+                            <input type="text" name="version" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Configuration (JSON)</label>
+                            <textarea name="config" class="form-control" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/parametres.js') }}"></script>
+</body>
+</html>

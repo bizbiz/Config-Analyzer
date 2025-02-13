@@ -1,0 +1,84 @@
+Remember :
+
+Pour modif db
+
+1 fois
+docker-compose exec config_analyzer flask db init 
+
+a chaques modifs
+docker-compose exec config_analyzer flask db migrate -m "Description des changements"
+docker-compose exec config_analyzer flask db upgrade
+
+
+
+convention de nommage avec Flask :
+
+Structure de dossiers
+.
+├── app/
+│   ├── models/          # Tous les modèles de données
+│   ├── routes/          # Tous les blueprints/controllers
+│   ├── templates/        # Templates HTML
+│   ├── static/          # Assets statiques
+│   ├── utils/           # Helpers et utilitaires
+│   └── __init__.py      # Factory d'application
+├── migrations/          # Migrations de base de données
+└── config.py            # Configuration
+
+2. Règles pour les modèles
+
+Fichiers : Nom au singulier, snake_case
+Ex: client.py, machine_client.py
+
+Classes : PascalCase au singulier
+Ex: class Client, class MachineClient
+
+Tables : __tablename__ en snake_case pluriel
+Ex: __tablename__ = 'clients'
+
+3. Règles pour les relations Many-to-Many
+
+Table d'association :
+Nom = [model1]_[model2] (ordre alphabétique) pluriel
+Ex: robot_software.py pour Robot <> Software
+
+4. Règles pour les Blueprints
+
+Fichiers : Nom au pluriel
+Ex: clients.py, machine_clients.py
+
+Nom du blueprint : [ressource]_bp (pluriel)
+Ex: clients_bp = Blueprint('clients', __name__)
+
+URL prefix : /api/v1/[ressource]
+Ex: app.register_blueprint(clients_bp, url_prefix='/api/v1/clients')
+
+5. Convention pour les noms de variables
+
+Instance unique : Singulier
+Ex: client = Client.query.get(1)
+
+Collections : Pluriel
+Ex: clients = Client.query.all()
+
+Relations :
+One-to-Many: client.machines (pluriel)
+Many-to-One: machine.client (singulier)
+
+
+
+
+
+
+
+
+TOdo : Dans ajouter une machine, il faut que logiciel soit : un premier selecteur pour le nom du logiciel, un deuxieme pour la version et lorsqu'on a ajouté un logiciel alors ca remet un autre menu déroulant
+
+
+sg22v3g8
+
+
+Conseil Jé
+
+API FIRST
+Graph ql ou open API

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Config File</title>
+</head>
+<body>
+  <h1>Uploader un fichier de configuration</h1>
+
+  <form method="POST" enctype="multipart/form-data">
+      <label for="client">Client :</label>
+      <select name="client" id="client">
+          {% for client in clients %}
+          <option value="{{ client.id }}">{{ client.name }}</option>
+          {% endfor %}
+      </select><br>
+
+      <label for="software">Logiciel :</label>
+      <select name="software" id="software">
+          {% for software in softwares %}
+          <option value="{{ software.id }}">{{ software.name }}</option>
+          {% endfor %}
+      </select><br>
+
+      <label for="version">Version :</label>
+      <input type="text" name="version" id="version"><br>
+
+      <label for="file">Fichier :</label>
+      <input type="file" name="file" id="file"><br>
+
+      <button type="submit">Uploader</button>
+  </form>
+
+  <a href="/analyze">Analyser les fichiers</a>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <ul>
+      {% for category, message in messages %}
+      <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+  </ul>
+  {% endif %}
+  {% endwith %}
+</body>
+</html>
