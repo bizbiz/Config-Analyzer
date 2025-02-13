@@ -6,6 +6,6 @@ class ConfigurationFile(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    software_id = db.Column(db.Integer, db.ForeignKey('softwares.id'))  # ForeignKey corrigée
+    software_id = db.Column(db.Integer, db.ForeignKey('software.id'))  # ForeignKey corrigée
     
     software = db.relationship('Software', back_populates='configuration_files')
