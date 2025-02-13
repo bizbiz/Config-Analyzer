@@ -12,6 +12,3 @@ class ParametreLogiciel(db.Model):
     
     client = db.relationship('Client', back_populates='parametres')
     software = db.relationship('Software', back_populates='parametres')
-
-
-

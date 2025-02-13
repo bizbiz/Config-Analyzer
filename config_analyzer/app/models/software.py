@@ -1,9 +1,10 @@
 from . import db
 
 class Software(db.Model):
+    __tablename__ = 'softwares'  # Ensure table name matches the foreign key reference
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    robots = db.relationship('Robot', back_populates='software')
+    parametres = db.relationship('ParametreLogiciel', back_populates='software')  # Add back-reference
 
     def __init__(self, name):
         self.name = name
