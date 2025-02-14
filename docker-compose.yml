@@ -7,8 +7,6 @@ services:
     volumes:
       - ./config_analyzer:/app
       - ./migrations:/app/migrations  # Volume persistant pour les migrations
-      - ./config_files:/app/config_files
-      - ./reports:/app/reports
     environment:
       - DATABASE_URL=postgresql://postgres_u_config_analyzer:password_ca@config_analyzer_db:5432/config_analyzer_db
     depends_on:
