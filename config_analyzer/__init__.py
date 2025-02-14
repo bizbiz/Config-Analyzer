@@ -1,5 +1,5 @@
 from flask import Flask
-from config_analyzer.models import db
+from .models import db
 
 def create_app():
     app = Flask(__name__)
@@ -7,7 +7,7 @@ def create_app():
     
     db.init_app(app)
     
-    from config_analyzer.app.routes.clients import clients_bp
+    from .app.routes.clients import clients_bp
     app.register_blueprint(clients_bp)
 
     return app
