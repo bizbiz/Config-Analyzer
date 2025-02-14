@@ -1,4 +1,13 @@
-from config_analyzer.app import app
+from app import create_app, db
+
+app = create_app()
+
+@app.cli.command("init-db")
+def init_db():
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        print("🗃️ Base de données initialisée")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host="0.0.0.0", port=5000)
