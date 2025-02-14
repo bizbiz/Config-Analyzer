@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Définir le PYTHONPATH pour inclure le répertoire de votre projet
-ENV PYTHONPATH "${PYTHONPATH}:/app"
+ENV PYTHONPATH "/app/config_analyzer"
 
 # Exposer le port de l'application
 EXPOSE 5000
