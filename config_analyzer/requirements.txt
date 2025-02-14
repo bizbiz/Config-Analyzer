@@ -1,5 +1,5 @@
 # Bibliothèques de base
-python-dateutil==2.8.2
+python-dateutil==2.9.0
 PyYAML==6.0
 
 # Bibliothèques pour l'analyse de fichiers
