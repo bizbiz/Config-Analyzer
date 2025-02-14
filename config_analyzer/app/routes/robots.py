@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Robot, db
+from config_analyzer.models import Robot, db
 
 robots_bp = Blueprint('robots', __name__)
 

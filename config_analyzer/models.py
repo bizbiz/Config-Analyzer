@@ -1,3 +1,4 @@
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, DateTime, UniqueConstraint, Index, CHAR
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func

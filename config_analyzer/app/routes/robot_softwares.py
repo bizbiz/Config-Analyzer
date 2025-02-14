@@ -1,6 +1,6 @@
 # routes/robot_softwares.py
 from flask import Blueprint, request, jsonify
-from app.models import db, Robot, Software, robot_software
+from config_analyzer.models import db, Robot, Software, robot_software
 
 robot_softwares_bp = Blueprint('robot_softwares', __name__)
 

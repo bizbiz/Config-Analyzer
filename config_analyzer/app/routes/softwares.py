@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Software, db
+from config_analyzer.models import Software, db
 
 softwares_bp = Blueprint('softwares', __name__)
 

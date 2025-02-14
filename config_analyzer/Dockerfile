@@ -1,26 +1,21 @@
-# Use the official Python image as the base image
+# Utilisez une image de base appropriée
 FROM python:3.10-slim
 
-# Set the working directory in the container
+# Définir le répertoire de travail
 WORKDIR /app
 
-# Install git
-RUN apt-get update && apt-get install -y git
-
-# Copy the requirements file into the container
+# Copier les fichiers de requirements et installer les dépendances
 COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Install the dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application code into the container
+# Copier le contenu du projet
 COPY . .
-
-# Expose the port the app runs on
-EXPOSE 5000
 
 # Définir le PYTHONPATH pour inclure le répertoire de votre projet
 ENV PYTHONPATH "${PYTHONPATH}:/app/config_analyzer"
 
-# Define the command to run the application
-CMD ["sh", "-c", "flask db upgrade && python main.py"]
+# Exposer le port de l'application
+EXPOSE 5000
+
+# Commande pour démarrer l'application Flask
+CMD ["sh", "-c", "flask db upgrade && flask run --host=0.0.0.0 --port=5000 --app config_analyzer.app:app"]

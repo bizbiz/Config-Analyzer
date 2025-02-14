@@ -11,7 +11,7 @@ class Config:
     # Désactive le tracking des modifications SQLAlchemy
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    FLASK_APP = 'main.py'  # Spécifie le point d'entrée pour Flask-Migrate
+    FLASK_APP = 'config_analyzer.app:app'  # Spécifie le point d'entrée pour Flask-Migrate
     
     # Mode debug (désactiver en production)
     DEBUG = True

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, ParametreLogiciel, Software, Client
+from config_analyzer.models import db, ParametreLogiciel, Software, Client
 
 parametres_bp = Blueprint('parametres', __name__)
 

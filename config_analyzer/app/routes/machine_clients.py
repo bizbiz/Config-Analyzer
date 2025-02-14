@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, db, MachineClient, Robot, Software
+from config_analyzer.models import Client, db, MachineClient, Robot, Software
 
 machine_clients_bp = Blueprint('machine_clients', __name__)
 
