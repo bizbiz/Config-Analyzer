@@ -1,5 +1,5 @@
 # Utilisez une image de base appropriée
-FROM python:3.10-slim
+FROM python:3.10
 
 # Définir le répertoire de travail
 WORKDIR /app
@@ -17,5 +17,8 @@ ENV PYTHONPATH "/app/config_analyzer"
 # Exposer le port de l'application
 EXPOSE 5000
 
+# Définir les variables d'environnement
+ENV FLASK_APP=config_analyzer.app:app
+
 # Commande pour démarrer l'application Flask
-CMD ["sh", "-c", "flask db upgrade && flask run --host=0.0.0.0 --port=5000 --app config_analyzer.app:app"]
+CMD ["sh", "-c", "flask db upgrade && flask run --host=0.0.0.0 --port=5000"]
