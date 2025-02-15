@@ -19,13 +19,13 @@ def create_app():
         db.create_all()  # Optionnel pour développement
 
     # Enregistrement des blueprints
-    from app.routes.client import clients_bp
+    from app.routes.clients import clients_bp
     app.register_blueprint(clients_bp)
 
     from app.routes.robot_models import robot_models_bp
     app.register_blueprint(robot_models_bp)
 
-    from app.routes.software import software_bp
+    from app.routes.softwares import software_bp
     app.register_blueprint(software_bp)
 
     from app.routes.home import home_bp
@@ -36,5 +36,8 @@ def create_app():
 
     from app.routes.software_base_configurations import software_base_configurations_bp
     app.register_blueprint(software_base_configurations_bp)
+
+    from app.routes.robot_clients import robot_clients_bp
+    app.register_blueprint(robot_clients_bp)
 
     return app

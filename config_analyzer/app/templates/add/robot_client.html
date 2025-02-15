@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Ajouter un Client Robot{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Ajouter un Client Robot</h1>
+    <form method="post">
+        <div class="mb-3">
+            <label for="client_id" class="form-label">Client</label>
+            <input type="text" class="form-control" id="client_id" name="client_id" required>
+        </div>
+        <div class="mb-3">
+            <label for="robot_modele_id" class="form-label">Modèle de Robot</label>
+            <input type="text" class="form-control" id="robot_modele_id" name="robot_modele_id" required>
+        </div>
+        <div class="mb-3">
+            <label for="serial_number" class="form-label">Numéro de Série</label>
+            <input type="text" class="form-control" id="serial_number" name="serial_number" required>
+        </div>
+        <div class="mb-3">
+            <label for="length" class="form-label">Longueur</label>
+            <input type="text" class="form-control" id="length" name="length">
+        </div>
+        <div class="mb-3">
+            <label for="height" class="form-label">Hauteur</label>
+            <input type="text" class="form-control" id="height" name="height">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+        <a href="{{ url_for('robot_clients.list_robot_clients') }}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+{% endblock %}
