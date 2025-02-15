@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, PostalCode  # Import PostalCode
+from app.models import Client, PostalCode
 
 clients_bp = Blueprint('clients', __name__)
 
@@ -8,7 +8,7 @@ def list_clients():
     clients = Client.query.all()
     return render_template('clients.html', clients=clients)
 
-@clients_bp.route('/add_client', methods=['POST'])
+@clients_bp.route('/clients/add', methods=['POST'])
 def add_client():
     name = request.form.get('name')
     postal_code = request.form.get('postal_code')
@@ -31,7 +31,7 @@ def add_client():
     flash("Client ajouté avec succès !", "success")
     return redirect(url_for('clients.list_clients'))
 
-@clients_bp.route('/edit_client/<int:client_id>', methods=['GET', 'POST'])
+@clients_bp.route('/clients/edit/<int:client_id>', methods=['GET', 'POST'])
 def edit_client(client_id):
     client = Client.query.get_or_404(client_id)
     if request.method == 'POST':
@@ -42,7 +42,7 @@ def edit_client(client_id):
         return redirect(url_for('clients.list_clients'))
     return render_template('edit_client.html', client=client)
 
-@clients_bp.route('/delete_client/<int:client_id>', methods=['GET'])
+@clients_bp.route('/clients/delete/<int:client_id>', methods=['GET'])
 def delete_client(client_id):
     client = Client.query.get_or_404(client_id)
     db.session.delete(client)
