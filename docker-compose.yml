@@ -10,7 +10,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres_u_config_analyzer:password_ca@config_analyzer_db:5432/config_analyzer_db
       - FLASK_APP=app:create_app  # Point d'entrée corrigé
-      - FLASK_DEBUG=0
+      - FLASK_DEBUG=1
     depends_on:
       config_analyzer_db:
         condition: service_healthy  # Attend que la base soit prête

@@ -13,7 +13,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # Import des modèles APRÈS initialisation de db
-    from app.models import Client  # <-- Import principal ici
+    from app.models import Client, PostalCode  # <-- Import principal ici
     
     # Création du contexte d'application
     with app.app_context():
@@ -21,6 +21,9 @@ def create_app():
 
     # Enregistrement des blueprints
     from app.routes.clients import clients_bp
-    app.register_blueprint(clients_bp)
+    app.register_blueprint(clients_bp, url_prefix='/clients')
+
+    from app.routes.home import home_bp  # <-- Ajout de l'import pour home
+    app.register_blueprint(home_bp)      # <-- Enregistrement du blueprint pour home
 
     return app
