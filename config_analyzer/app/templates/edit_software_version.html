@@ -14,23 +14,17 @@
         <div class="card p-4 shadow-sm">
             <h2 class="mb-3">Modifier les informations de la Version de Logiciel</h2>
             <form action="{{ url_for('software_versions.edit_software_version', software_version_id=software_version.id) }}" method="POST">
+                <input type="hidden" name="software_id" value="{{ software_version.software_id }}">
                 <div class="mb-3">
-                    <label for="software_id" class="form-label">Logiciel :</label>
-                    <select class="form-select" id="software_id" name="software_id" required>
-                        <option value="">Sélectionner un logiciel</option>
-                        {% for software in softwares %}
-                        <option value="{{ software.id }}" {% if software.id == software_version.software_id %}selected{% endif %}>
-                            {{ software.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <label class="form-label">Logiciel :</label>
+                    <p class="form-control-static">{{ software_version.software.name }}</p>
                 </div>
                 <div class="mb-3">
                     <label for="version" class="form-label">Version :</label>
                     <input type="text" id="version" name="version" class="form-control" value="{{ software_version.version }}" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
-                <a href="{{ url_for('software_versions.list_software_versions') }}" class="btn btn-secondary">Retour à la liste</a>
+                <a href="{{ url_for('software_versions.list_software_versions', software_id=software_version.software_id) }}" class="btn btn-secondary">Retour à la liste</a>
             </form>
         </div>
     </div>
