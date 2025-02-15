@@ -1,3 +1,9 @@
+TODO :
+Pas sur que edit version soit nécessaire à supprimer peut être
+Est-ce que si on créé un software base config file avec le même nom qu'un qui existe déjà mais qui est rattaché à un logiciel ou une version différente, ca ne pose pas de probleme ?
+
+
+
 Remember :
 
 Pour modif db
@@ -68,19 +74,3 @@ One-to-Many: client.machines (pluriel)
 Many-to-One: machine.client (singulier)
 
 
-
-
-
-
-
-
-TOdo : Dans ajouter une machine, il faut que logiciel soit : un premier selecteur pour le nom du logiciel, un deuxieme pour la version et lorsqu'on a ajouté un logiciel alors ca remet un autre menu déroulant
-
-
-sg22v3g8
-
-
-Conseil Jé
-
-API FIRST
-Graph ql ou open API

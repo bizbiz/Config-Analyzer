@@ -34,4 +34,7 @@ def create_app():
     from app.routes.software_versions import software_versions_bp
     app.register_blueprint(software_versions_bp)
 
+    from app.routes.software_base_configurations import software_base_configurations_bp
+    app.register_blueprint(software_base_configurations_bp)
+
     return app

@@ -78,11 +78,12 @@ class SoftwareBaseConfigurationFile(db.Model):
     __tablename__ = 'software_base_configuration_files'
     id = db.Column(db.Integer, primary_key=True)
     software_version_id = db.Column(db.Integer, db.ForeignKey('software_versions.id'), nullable=False)
+    file_name = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
-    __table_args__ = (db.UniqueConstraint('software_version_id', name='unique_base_config_per_version'),)
-    
+
+    __table_args__ = (db.UniqueConstraint('software_version_id', 'file_name', name='unique_base_config_per_version'),)
+
     software_version = db.relationship("SoftwareVersion", back_populates="base_configurations")
     client_configurations = db.relationship("ClientConfigurationFile", back_populates="software_base_configuration")
 
