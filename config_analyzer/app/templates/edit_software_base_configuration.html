@@ -27,6 +27,10 @@
                     <input type="text" id="file_name" name="file_name" class="form-control" value="{{ base_configuration.file_name }}" required>
                 </div>
                 <div class="mb-3">
+                    <label for="path" class="form-label">Chemin :</label>
+                    <input type="text" id="path" name="path" class="form-control" value="{{ base_configuration.path }}" required>
+                </div>
+                <div class="mb-3">
                     <label for="content" class="form-label">Contenu :</label>
                     <textarea id="content" name="content" class="form-control" rows="5" required>{{ base_configuration.content }}</textarea>
                 </div>
