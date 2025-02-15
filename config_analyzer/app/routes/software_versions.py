@@ -16,6 +16,11 @@ def list_software_versions(software_id):
     software_versions = SoftwareVersion.query.filter_by(software_id=software_id).all()
     return render_template('list/software_versions.html', software=software, software_versions=software_versions, all_versions=False)
 
+@software_versions_bp.route('/software_versions/<int:software_version_id>/view')
+def view_software_version(software_version_id):
+    software_version = SoftwareVersion.query.get_or_404(software_version_id)
+    return render_template('view/software_version.html', software_version=software_version)
+
 @software_versions_bp.route('/software_versions/add', methods=['GET', 'POST'])
 def add_software_version():
     if request.method == 'POST':
