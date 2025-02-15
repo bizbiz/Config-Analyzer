@@ -30,11 +30,13 @@
                 <tbody>
                     {% for software_version in software_versions %}
                     <tr>
-                        <td>{{ software_version.software.name }}</td>
+                        <td><a href="{{ url_for('software_base_configurations.list_software_base_configurations', software_version_id=software_version.id) }}">{{ software_version.software.name }}</a></td>
                         <td>{{ software_version.version }}</td>
                         <td>
                             {% for base_configuration in software_version.base_configurations %}
-                                <p>{{ base_configuration.file_name }}</p>
+                                <a href="{{ url_for('software_base_configurations.view_software_base_configuration', base_configuration_id=base_configuration.id) }}" class="btn btn-sm btn-primary me-2 mb-2">
+                                    {{ base_configuration.file_name }}
+                                </a>
                             {% endfor %}
                         </td>
                         <td class="text-center">

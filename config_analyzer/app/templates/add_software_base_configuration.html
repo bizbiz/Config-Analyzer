@@ -11,6 +11,17 @@
     <div class="container py-5">
         <h1 class="text-center mb-4">Ajouter une Configuration de Base</h1>
 
+        <!-- Messages Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert alert-danger" role="alert">
+                    {% for category, message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <div class="card p-4 shadow-sm">
             <h2 class="mb-3">Ajouter une Configuration de Base pour la Version du Logiciel</h2>
             <form action="{{ url_for('software_base_configurations.add_software_base_configuration', software_version_id=software_version_id) }}" method="POST">

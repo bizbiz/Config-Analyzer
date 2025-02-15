@@ -58,3 +58,8 @@ def delete_software_base_configuration(base_configuration_id):
     db.session.commit()
     flash("Configuration de base supprimée avec succès !", "success")
     return redirect(url_for('software_base_configurations.list_software_base_configurations', software_version_id=software_version_id))
+
+@software_base_configurations_bp.route('/software_base_configuration/<int:base_configuration_id>')
+def view_software_base_configuration(base_configuration_id):
+    base_configuration = SoftwareBaseConfigurationFile.query.get_or_404(base_configuration_id)
+    return render_template('view_software_base_configuration.html', base_configuration=base_configuration)
