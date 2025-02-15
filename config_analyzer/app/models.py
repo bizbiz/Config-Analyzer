@@ -84,7 +84,7 @@ class SoftwareBaseConfigurationFile(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (db.UniqueConstraint('software_version_id', 'file_name', name='unique_base_config_per_version'),)
-
+    
     software_version = db.relationship("SoftwareVersion", back_populates="base_configurations")
     client_configurations = db.relationship("ClientConfigurationFile", back_populates="software_base_configuration")
 
@@ -94,12 +94,10 @@ class RobotClient(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     robot_modele_id = db.Column(db.Integer, db.ForeignKey('robots_modeles.id'), nullable=False)
     serial_number = db.Column(db.String(50), nullable=False, unique=True)
-    length = db.Column(db.Integer)
-    height = db.Column(db.Integer)
+    length = db.Column(db.Float)
+    height = db.Column(db.Float)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
-    __table_args__ = (db.Index('ix_client_robot', 'client_id', 'robot_modele_id'),)
-    
+ 
     client = db.relationship("Client", back_populates="robots")
     robot_modele = db.relationship("RobotModel", back_populates="clients")
     software_versions = db.relationship("RobotClientSoftwareVersion", back_populates="robot_client")

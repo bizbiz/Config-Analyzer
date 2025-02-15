@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models import RobotModel
 from app.extensions import db
 
-robot_models_bp = Blueprint('robot_model', __name__)
+robot_models_bp = Blueprint('robot_models', __name__)
 
 @robot_models_bp.route('/robot_models')
 def list_robot_models():

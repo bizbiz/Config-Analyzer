@@ -42,10 +42,10 @@
                             {% endfor %}
                         </td>
                         <td class="text-center">
-                            <a href="{{ url_for('software.edit_software', software_id=software.id) }}" class="btn btn-sm btn-warning me-2">
+                            <a href="{{ url_for('softwares.edit_software', software_id=software.id) }}" class="btn btn-sm btn-warning me-2">
                                 <i class="fas fa-edit"></i> Modifier
                             </a>
-                            <a href="{{ url_for('software.delete_software', software_id=software.id) }}" class="btn btn-sm btn-danger" 
+                            <a href="{{ url_for('softwares.delete_software', software_id=software.id) }}" class="btn btn-sm btn-danger" 
                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce logiciel ?')">
                                 <i class="fas fa-trash"></i> Supprimer
                             </a>

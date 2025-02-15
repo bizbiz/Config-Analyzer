@@ -25,8 +25,8 @@ def create_app():
     from app.routes.robot_models import robot_models_bp
     app.register_blueprint(robot_models_bp)
 
-    from app.routes.softwares import software_bp
-    app.register_blueprint(software_bp)
+    from app.routes.softwares import softwares_bp
+    app.register_blueprint(softwares_bp)
 
     from app.routes.home import home_bp
     app.register_blueprint(home_bp)

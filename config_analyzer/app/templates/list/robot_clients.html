@@ -3,16 +3,16 @@
 {% block content %}
 <div class="container my-5">
     <h1 class="mb-4">Liste des Clients Robots</h1>
-    <a href="{{ url_for('robot_clients.add_robot_client') }}" class="btn btn-primary mb-3">Ajouter un Client Robot</a>
-    <table class="table table-bordered">
+    <a href="{{ url_for('robot_clients.add_robot_client') }}" class="btn btn-primary mb-4">Ajouter un Client Robot</a>
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Client</th>
                 <th>Modèle de Robot</th>
                 <th>Numéro de Série</th>
-                <th>Longueur</th>
-                <th>Hauteur</th>
+                <th>Longueur (m)</th>
+                <th>Hauteur (m)</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -27,7 +27,7 @@
                 <td>{{ robot_client.height }}</td>
                 <td>
                     <a href="{{ url_for('robot_clients.view_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-info btn-sm">Voir</a>
-                    <a href="{{ url_for('robot_clients.edit_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-warning btn-sm">Éditer</a>
+                    <a href="{{ url_for('robot_clients.edit_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-warning btn-sm">Modifier</a>
                     <a href="{{ url_for('robot_clients.delete_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-danger btn-sm">Supprimer</a>
                 </td>
             </tr>
