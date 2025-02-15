@@ -4,33 +4,35 @@ from app import db  # Import depuis l'instance Flask-SQLAlchemy
 
 class PostalCode(db.Model):
     __tablename__ = 'postal_codes'
-    code = db.Column(db.String(20), primary_key=True)
-    city = db.Column(db.String(100), primary_key=True)
-    country_code = db.Column(db.String(5), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.String(20), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    country_code = db.Column(db.String(5), nullable=False)
 
-    clients = db.relationship('Client', backref='postal_code_relation', lazy=True)
+    clients = db.relationship('Client', back_populates='postal_code_relation', lazy=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('code', 'city', 'country_code', name='_postal_code_uc'),
+    )
 
     def __repr__(self):
         return f'<PostalCode {self.code}, {self.city}, {self.country_code}>'
 
 class Client(db.Model):
     __tablename__ = 'clients'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-    postal_code = db.Column(db.String(20), nullable=False)
-    postal_code_city = db.Column(db.String(100), nullable=False)
-    postal_code_country_code = db.Column(db.String(5), nullable=False)
+    postal_code_id = db.Column(db.Integer, db.ForeignKey('postal_codes.id'), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ['postal_code', 'postal_code_city', 'postal_code_country_code'],
-            ['postal_codes.code', 'postal_codes.city', 'postal_codes.country_code']
-        ),
-    )
+    postal_code_relation = db.relationship('PostalCode', back_populates='clients')
+    robots = db.relationship('RobotClient', back_populates='client')
+    configurations = db.relationship('ClientConfigurationFile', back_populates='client')
 
     def __repr__(self):
         return f'<Client {self.name}>'
-        
+
 class RobotModel(db.Model):
     __tablename__ = 'robots_modeles'
     id = db.Column(db.Integer, primary_key=True)

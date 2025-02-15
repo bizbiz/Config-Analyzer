@@ -2,13 +2,15 @@ Remember :
 
 Pour modif db
 
-1 fois
+plus nécessaire
 docker-compose exec config_analyzer flask db init 
 
 a chaques modifs
 docker-compose exec config_analyzer flask db migrate -m "Description des changements"
 docker-compose exec config_analyzer flask db upgrade
 
+en cas de modif des relations 
+docker exec -it config_analyzer_app flask db stamp head
 
 
 convention de nommage avec Flask :

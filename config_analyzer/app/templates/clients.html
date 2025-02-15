@@ -32,9 +32,9 @@
                     {% for client in clients %}
                     <tr>
                         <td>{{ client.name }}</td>
-                        <td>{{ client.postal_code }}</td>
-                        <td>{{ client.postal_code_city }}</td>
-                        <td>{{ client.postal_code_country_code }}</td>
+                        <td>{{ client.postal_code_relation.code }}</td>
+                        <td>{{ client.postal_code_relation.city }}</td>
+                        <td>{{ client.postal_code_relation.country_code }}</td>
                         <td class="text-center">
                             <a href="{{ url_for('clients.edit_client', client_id=client.id) }}" class="btn btn-sm btn-warning me-2">
                                 <i class="fas fa-edit"></i> Modifier
@@ -76,7 +76,7 @@
 
         <!-- Lien de retour -->
         <div class="text-center mt-4">
-            <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a> <!-- Ajout de 'home.home' -->
+            <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
         </div>
     </div>
 
@@ -92,7 +92,9 @@
             rows.forEach(row => {
                 const name = row.cells[0].textContent.toLowerCase();
                 const postalCode = row.cells[1].textContent.toLowerCase();
-                row.style.display = (name.includes(filter) || postalCode.includes(filter)) ? '' : 'none';
+                const city = row.cells[2].textContent.toLowerCase();
+                const countryCode = row.cells[3].textContent.toLowerCase();
+                row.style.display = (name.includes(filter) || postalCode.includes(filter) || city.includes(filter) || countryCode.includes(filter)) ? '' : 'none';
             });
         }
     </script>

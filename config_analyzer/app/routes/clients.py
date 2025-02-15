@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models import Client, PostalCode
-from app.extensions import db  # Import db ici
+from app.extensions import db
 
 clients_bp = Blueprint('clients', __name__)
 
@@ -25,8 +25,11 @@ def add_client():
         new_postal_code = PostalCode(code=postal_code, city=city, country_code=country_code)
         db.session.add(new_postal_code)
         db.session.commit()
+        postal_code_id = new_postal_code.id
+    else:
+        postal_code_id = existing_postal_code.id
 
-    new_client = Client(name=name, postal_code=postal_code, postal_code_city=city, postal_code_country_code=country_code)
+    new_client = Client(name=name, postal_code_id=postal_code_id)
     db.session.add(new_client)
     db.session.commit()
     flash("Client ajouté avec succès !", "success")
@@ -37,9 +40,19 @@ def edit_client(client_id):
     client = Client.query.get_or_404(client_id)
     if request.method == 'POST':
         client.name = request.form['name']
-        client.postal_code = request.form['postal_code']
-        client.postal_code_city = request.form['city']
-        client.postal_code_country_code = request.form['country_code']
+        postal_code = request.form['postal_code']
+        city = request.form['city']
+        country_code = request.form['country_code']
+
+        existing_postal_code = PostalCode.query.filter_by(code=postal_code, city=city, country_code=country_code).first()
+        if not existing_postal_code:
+            new_postal_code = PostalCode(code=postal_code, city=city, country_code=country_code)
+            db.session.add(new_postal_code)
+            db.session.commit()
+            client.postal_code_id = new_postal_code.id
+        else:
+            client.postal_code_id = existing_postal_code.id
+
         db.session.commit()
         flash("Client modifié avec succès !", "success")
         return redirect(url_for('clients.list_clients'))
