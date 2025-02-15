@@ -27,7 +27,7 @@ def add_software():
             if robot_model_id:
                 robot_model_software = RobotModelSoftware(software_id=new_software.id, robot_modele_id=int(robot_model_id))
                 db.session.add(robot_model_software)
-        
+
         db.session.commit()
         flash("Software ajouté avec succès !", "success")
         return redirect(url_for('software.list_software'))
@@ -51,9 +51,9 @@ def edit_software(software_id):
         db.session.commit()
         flash("Software modifié avec succès !", "success")
         return redirect(url_for('software.list_software'))
-    
+
     robot_models = RobotModel.query.all()
-    selected_robot_models = [rms.robot_modele_id for rms in software.robot_modeles]
+    selected_robot_models = [rms.robot_modele_id for rms in RobotModelSoftware.query.filter_by(software_id=software_id).all()]
     return render_template('edit_software.html', software=software, robot_models=robot_models, selected_robot_models=selected_robot_models)
 
 @software_bp.route('/software/delete/<int:software_id>', methods=['GET'])

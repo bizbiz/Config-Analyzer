@@ -16,24 +16,22 @@
             <form action="{{ url_for('robot_models.edit_robot_model', robot_model_id=robot_model.id) }}" method="POST">
                 <div class="mb-3">
                     <label for="name" class="form-label">Nom :</label>
-                    <input type="text" id="name" name="name" class="form-control" 
-                           value="{{ robot_model.name }}" required>
+                    <input type="text" id="name" name="name" class="form-control" value="{{ robot_model.name }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="company" class="form-label">Société :</label>
-                    <input type="text" id="company" name="company" class="form-control" 
-                           value="{{ robot_model.company }}" required>
+                    <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="software_ids" class="form-label">Software :</label>
                     <div id="software-container">
-                        {% for software in robot_model.software %}
+                        {% for software_id in selected_softwares %}
                         <div class="input-group mb-2">
                             <select class="form-select" name="software_ids">
                                 <option value="">Sélectionner un logiciel</option>
-                                {% for sw in softwares %}
-                                <option value="{{ sw.id }}" {% if sw.id == software.id %}selected{% endif %}>
-                                    {{ sw.name }}
+                                {% for software in softwares %}
+                                <option value="{{ software.id }}" {% if software.id == software_id %}selected{% endif %}>
+                                    {{ software.name }}
                                 </option>
                                 {% endfor %}
                             </select>

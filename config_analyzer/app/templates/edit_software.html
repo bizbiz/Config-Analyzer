@@ -16,19 +16,18 @@
             <form action="{{ url_for('software.edit_software', software_id=software.id) }}" method="POST">
                 <div class="mb-3">
                     <label for="name" class="form-label">Nom :</label>
-                    <input type="text" id="name" name="name" class="form-control" 
-                           value="{{ software.name }}" required>
+                    <input type="text" id="name" name="name" class="form-control" value="{{ software.name }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="robot_model_ids" class="form-label">Modèles de Robot :</label>
                     <div id="robot-model-container">
-                        {% for robot_model in software.robot_modeles %}
+                        {% for robot_model_id in selected_robot_models %}
                         <div class="input-group mb-2">
                             <select class="form-select" name="robot_model_ids">
                                 <option value="">Sélectionner un modèle de robot</option>
-                                {% for rm in robot_models %}
-                                <option value="{{ rm.id }}" {% if rm.id == robot_model.id %}selected{% endif %}>
-                                    {{ rm.name }}
+                                {% for robot_model in robot_models %}
+                                <option value="{{ robot_model.id }}" {% if robot_model.id == robot_model_id %}selected{% endif %}>
+                                    {{ robot_model.name }}
                                 </option>
                                 {% endfor %}
                             </select>

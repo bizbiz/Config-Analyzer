@@ -31,8 +31,8 @@
                     <tr>
                         <td>{{ software.name }}</td>
                         <td>
-                            {% for robot_model in software.robot_modeles %}
-                                {{ robot_model.name }}{% if not loop.last %}, {% endif %}
+                            {% for relation in software.robot_modeles %}
+                                {{ relation.robot_modele.name }}{% if not loop.last %}, {% endif %}
                             {% endfor %}
                         </td>
                         <td class="text-center">
@@ -111,7 +111,8 @@
 
             rows.forEach(row => {
                 const name = row.cells[0].textContent.toLowerCase();
-                row.style.display = name.includes(filter) ? '' : 'none';
+                const associatedModels = row.cells[1].textContent.toLowerCase();
+                row.style.display = (name.includes(filter) || associatedModels.includes(filter)) ? '' : 'none';
             });
         }
     </script>
