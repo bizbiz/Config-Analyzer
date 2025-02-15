@@ -8,7 +8,7 @@ software_bp = Blueprint('software', __name__)
 def list_software():
     software = Software.query.all()
     robot_models = RobotModel.query.all()
-    return render_template('list/software.html', software=software, robot_models=robot_models)
+    return render_template('list/software.html', softwares=software, robot_models=robot_models)
 
 @software_bp.route('/software/add', methods=['GET', 'POST'])
 def add_software():
