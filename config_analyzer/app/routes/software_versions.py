@@ -7,7 +7,8 @@ software_versions_bp = Blueprint('software_versions', __name__)
 @software_versions_bp.route('/software_versions')
 def list_all_software_versions():
     software_versions = SoftwareVersion.query.all()
-    return render_template('list/software_versions.html', software_versions=software_versions, all_versions=True)
+    softwares = Software.query.all()
+    return render_template('list/software_versions.html', software_versions=software_versions, softwares=softwares, all_versions=True)
 
 @software_versions_bp.route('/software_versions/<int:software_id>')
 def list_software_versions(software_id):
@@ -35,6 +36,25 @@ def add_software_version():
     # Récupérer tous les logiciels existants
     softwares = Software.query.all()
     return render_template('add/software_version.html', softwares=softwares)
+
+@software_versions_bp.route('/software_versions/<int:software_id>/add', methods=['GET', 'POST'])
+def add_software_version_for_software(software_id):
+    software = Software.query.get_or_404(software_id)
+    if request.method == 'POST':
+        version = request.form.get('version')
+
+        if not version:
+            flash("La version est obligatoire.", "error")
+            return redirect(url_for('software_versions.add_software_version_for_software', software_id=software_id))
+
+        new_software_version = SoftwareVersion(software_id=software_id, version=version)
+        db.session.add(new_software_version)
+        db.session.commit()
+
+        flash("Version de logiciel ajoutée avec succès !", "success")
+        return redirect(url_for('software_versions.list_software_versions', software_id=software_id))
+
+    return render_template('add/software_version.html', software=software)
 
 @software_versions_bp.route('/software_versions/edit/<int:software_version_id>', methods=['GET', 'POST'])
 def edit_software_version(software_version_id):

@@ -46,7 +46,30 @@
         </div>
 
         <!-- Formulaire d'ajout -->
-        {% include 'add/software_version.html' %}
+        <div class="card p-4 shadow-sm mt-4">
+            <h2 class="mb-3">Ajouter une Version de Logiciel</h2>
+            <form action="{% if all_versions %}{{ url_for('software_versions.add_software_version') }}{% else %}{{ url_for('software_versions.add_software_version_for_software', software_id=software.id) }}{% endif %}" method="POST">
+                <div class="mb-3">
+                    <label for="software_id" class="form-label">Logiciel :</label>
+                    {% if all_versions %}
+                        <select class="form-select" id="software_id" name="software_id" required>
+                            <option value="">Sélectionner un logiciel</option>
+                            {% for software in softwares %}
+                            <option value="{{ software.id }}">{{ software.name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <input type="text" id="software_name" name="software_name" class="form-control" value="{{ software.name }}" disabled>
+                        <input type="hidden" id="software_id" name="software_id" value="{{ software.id }}">
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="version" class="form-label">Version :</label>
+                    <input type="text" id="version" name="version" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">Ajouter</button>
+            </form>
+        </div>
 
         <!-- Lien de retour -->
         <div class="text-center mt-4">
