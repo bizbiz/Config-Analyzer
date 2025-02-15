@@ -1,132 +1,118 @@
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, DateTime, UniqueConstraint, Index, CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, UniqueConstraint, Index, Text
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
+from app import db  # Import depuis l'instance Flask-SQLAlchemy
 
-db = SQLAlchemy()
-
-Base = declarative_base()
-
-class PostalCode(Base):
+class PostalCode(db.Model):
     __tablename__ = 'postal_codes'
-    code = Column(String(10), primary_key=True)
-    city = Column(String(255), nullable=False)
-    country_code = Column(CHAR(2), nullable=False)
+    code = db.Column(db.String(10), primary_key=True)
+    city = db.Column(db.String(255), nullable=False)
+    country_code = db.Column(db.CHAR(2), nullable=False)
+    
+    clients = db.relationship("Client", back_populates="postal_code_relation")
 
-
-class Client(Base):
+class Client(db.Model):
     __tablename__ = 'clients'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    postal_code = Column(String(10), ForeignKey('postal_codes.code'))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    postal_code = db.Column(db.String(10), db.ForeignKey('postal_codes.code'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    postal_code_relation = db.relationship("PostalCode", back_populates="clients")
+    robots = db.relationship("RobotClient", back_populates="client")
+    configurations = db.relationship("ClientConfigurationFile", back_populates="client")
 
-    postal_code_relation = relationship("PostalCode", back_populates="clients")
-
-
-class RobotModel(Base):
+class RobotModel(db.Model):
     __tablename__ = 'robots_modeles'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False, unique=True)
-    company = Column(String(255))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False, unique=True)
+    company = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    software = db.relationship("RobotModelSoftware", back_populates="robot_modele")
+    clients = db.relationship("RobotClient", back_populates="robot_modele")
 
-
-class Software(Base):
+class Software(db.Model):
     __tablename__ = 'software'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False, unique=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    versions = db.relationship("SoftwareVersion", back_populates="software")
+    robot_modeles = db.relationship("RobotModelSoftware", back_populates="software")
 
-
-class RobotModelSoftware(Base):
+class RobotModelSoftware(db.Model):
     __tablename__ = 'robots_modeles_software'
-    robot_modele_id = Column(Integer, ForeignKey('robots_modeles.id'), primary_key=True)
-    software_id = Column(Integer, ForeignKey('software.id'), primary_key=True)
+    robot_modele_id = db.Column(db.Integer, db.ForeignKey('robots_modeles.id'), primary_key=True)
+    software_id = db.Column(db.Integer, db.ForeignKey('software.id'), primary_key=True)
+    
+    robot_modele = db.relationship("RobotModel", back_populates="software")
+    software = db.relationship("Software", back_populates="robot_modeles")
 
-    robot_modele = relationship("RobotModel", back_populates="software")
-    software = relationship("Software", back_populates="robot_modeles")
-
-
-class SoftwareVersion(Base):
+class SoftwareVersion(db.Model):
     __tablename__ = 'software_versions'
-    id = Column(Integer, primary_key=True)
-    software_id = Column(Integer, ForeignKey('software.id'), nullable=False)
-    version = Column(String(20), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    software_id = db.Column(db.Integer, db.ForeignKey('software.id'), nullable=False)
+    version = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (db.UniqueConstraint('software_id', 'version', name='unique_version_per_software'),)
+    
+    software = db.relationship("Software", back_populates="versions")
+    base_configurations = db.relationship("SoftwareBaseConfigurationFile", back_populates="software_version")
+    robots = db.relationship("RobotClientSoftwareVersion", back_populates="software_version")
 
-    __table_args__ = (UniqueConstraint('software_id', 'version', name='unique_version_per_software'),)
-
-    software = relationship("Software", back_populates="versions")
-
-
-class SoftwareBaseConfigurationFile(Base):
+class SoftwareBaseConfigurationFile(db.Model):
     __tablename__ = 'software_base_configuration_files'
-    id = Column(Integer, primary_key=True)
-    software_version_id = Column(Integer, ForeignKey('software_versions.id'), nullable=False)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    software_version_id = db.Column(db.Integer, db.ForeignKey('software_versions.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (db.UniqueConstraint('software_version_id', name='unique_base_config_per_version'),)
+    
+    software_version = db.relationship("SoftwareVersion", back_populates="base_configurations")
+    client_configurations = db.relationship("ClientConfigurationFile", back_populates="software_base_configuration")
 
-    __table_args__ = (UniqueConstraint('software_version_id', name='unique_base_config_per_version'),)
-
-    software_version = relationship("SoftwareVersion", back_populates="base_configurations")
-
-
-class RobotClient(Base):
+class RobotClient(db.Model):
     __tablename__ = 'robots_clients'
-    id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    robot_modele_id = Column(Integer, ForeignKey('robots_modeles.id'), nullable=False)
-    serial_number = Column(String(50), nullable=False, unique=True)
-    length = Column(Integer)
-    height = Column(Integer)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    robot_modele_id = db.Column(db.Integer, db.ForeignKey('robots_modeles.id'), nullable=False)
+    serial_number = db.Column(db.String(50), nullable=False, unique=True)
+    length = db.Column(db.Integer)
+    height = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (db.Index('ix_client_robot', 'client_id', 'robot_modele_id'),)
+    
+    client = db.relationship("Client", back_populates="robots")
+    robot_modele = db.relationship("RobotModel", back_populates="clients")
+    software_versions = db.relationship("RobotClientSoftwareVersion", back_populates="robot_client")
 
-    __table_args__ = (Index('ix_client_robot', 'client_id', 'robot_modele_id'),)
-
-    client = relationship("Client", back_populates="robots")
-    robot_modele = relationship("RobotModel", back_populates="clients")
-
-
-class RobotClientSoftwareVersion(Base):
+class RobotClientSoftwareVersion(db.Model):
     __tablename__ = 'robots_clients_software_versions'
-    robot_client_id = Column(Integer, ForeignKey('robots_clients.id'), primary_key=True)
-    software_version_id = Column(Integer, ForeignKey('software_versions.id'), primary_key=True)
-    active_configuration_id = Column(Integer, ForeignKey('client_configuration_files.id'))
+    robot_client_id = db.Column(db.Integer, db.ForeignKey('robots_clients.id'), primary_key=True)
+    software_version_id = db.Column(db.Integer, db.ForeignKey('software_versions.id'), primary_key=True)
+    active_configuration_id = db.Column(db.Integer, db.ForeignKey('client_configuration_files.id'))
+    
+    robot_client = db.relationship("RobotClient", back_populates="software_versions")
+    software_version = db.relationship("SoftwareVersion", back_populates="robots")
 
-    robot_client = relationship("RobotClient", back_populates="software_versions")
-    software_version = relationship("SoftwareVersion", back_populates="robots")
-
-
-class ClientConfigurationFile(Base):
+class ClientConfigurationFile(db.Model):
     __tablename__ = 'client_configuration_files'
-    id = Column(Integer, primary_key=True)
-    software_base_configuration_id = Column(Integer, ForeignKey('software_base_configuration_files.id'), nullable=False)
-    client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    content = Column(Text, nullable=False)
-    snapshot_date = Column(DateTime(timezone=True), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    id = db.Column(db.Integer, primary_key=True)
+    software_base_configuration_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    snapshot_date = db.Column(db.DateTime(timezone=True), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
     __table_args__ = (
-        Index('ix_client_software_base_config', 'client_id', 'software_base_configuration_id'),
-        Index('ix_snapshot_date', 'snapshot_date'),
+        db.Index('ix_client_software_base_config', 'client_id', 'software_base_configuration_id'),
+        db.Index('ix_snapshot_date', 'snapshot_date'),
     )
-
-    software_base_configuration = relationship("SoftwareBaseConfigurationFile", back_populates="client_configurations")
-    client = relationship("Client", back_populates="configurations")
-
-# Establish relationships
-PostalCode.clients = relationship("Client", order_by=Client.id, back_populates="postal_code_relation")
-Client.robots = relationship("RobotClient", order_by=RobotClient.id, back_populates="client")
-Client.configurations = relationship("ClientConfigurationFile", order_by=ClientConfigurationFile.id, back_populates="client")
-RobotModel.software = relationship("RobotModelSoftware", order_by=RobotModelSoftware.robot_modele_id, back_populates="robot_modele")
-RobotModel.clients = relationship("RobotClient", order_by=RobotClient.id, back_populates="robot_modele")
-Software.versions = relationship("SoftwareVersion", order_by=SoftwareVersion.id, back_populates="software")
-Software.robot_modeles = relationship("RobotModelSoftware", order_by=RobotModelSoftware.software_id, back_populates="software")
-SoftwareVersion.base_configurations = relationship("SoftwareBaseConfigurationFile", order_by=SoftwareBaseConfigurationFile.id, back_populates="software_version")
-SoftwareVersion.robots = relationship("RobotClientSoftwareVersion", order_by=RobotClientSoftwareVersion.software_version_id, back_populates="software_version")
-SoftwareBaseConfigurationFile.client_configurations = relationship("ClientConfigurationFile", order_by=ClientConfigurationFile.id, back_populates="software_base_configuration")
-RobotClient.software_versions = relationship("RobotClientSoftwareVersion", order_by=RobotClientSoftwareVersion.robot_client_id, back_populates="robot_client")
+    
+    software_base_configuration = db.relationship("SoftwareBaseConfigurationFile", back_populates="client_configurations")
+    client = db.relationship("Client", back_populates="configurations")

@@ -7,14 +7,18 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('config.Config')
+    app.config.from_object('app.config.Config')
     
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Import des modèles APRÈS création de l'app
-    from app.models import Client  # Remplacer par vos modèles réels
+    # Import des modèles APRÈS initialisation de db
+    from app.models import Client  # <-- Import principal ici
     
+    # Création du contexte d'application
+    with app.app_context():
+        db.create_all()  # Optionnel pour développement
+
     # Enregistrement des blueprints
     from app.routes.clients import clients_bp
     app.register_blueprint(clients_bp)
