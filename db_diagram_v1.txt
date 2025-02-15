@@ -1,0 +1,93 @@
+Table postal_codes {
+  code varchar(10) [pk]
+  city varchar(255) [not null]
+  country_code char(2) [not null]
+}
+
+Table clients {
+  id integer [pk]
+  name varchar(255) [not null]
+  postal_code varchar(10) [ref: > postal_codes.code]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table robots_modeles {
+  id integer [pk]
+  name varchar(255) [not null, unique]
+  company varchar(255)
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table software {
+  id integer [pk]
+  name varchar(255) [not null, unique]
+  created_at timestamptz [default: `now()`]
+}
+
+Table robots_modeles_software {
+  robot_modele_id integer [ref: > robots_modeles.id]
+  software_id integer [ref: > software.id]
+  primary key (robot_modele_id, software_id)
+}
+
+Table software_versions {
+  id integer [pk]
+  software_id integer [not null, ref: > software.id]
+  version varchar(20) [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (software_id, version) [unique, name: 'unique_version_per_software']
+  }
+}
+
+Table software_base_configuration_files {
+  id integer [pk]
+  software_version_id integer [not null, ref: > software_versions.id]
+  content text [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (software_version_id) [unique, name: 'unique_base_config_per_version']
+  }
+}
+
+Table robots_clients {
+  id integer [pk]
+  client_id integer [not null, ref: > clients.id]
+  robot_modele_id integer [not null, ref: > robots_modeles.id]
+  serial_number varchar(50) [not null, unique]
+  length integer 
+  height integer
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (client_id, robot_modele_id)
+  }
+}
+
+Table robots_clients_software_versions {
+  robot_client_id integer [not null, ref: > robots_clients.id]
+  software_version_id integer [not null, ref: > software_versions.id]
+  active_configuration_id integer [ref: > client_configuration_files.id]
+  primary key (robot_client_id, software_version_id)
+}
+
+Table client_configuration_files {
+  id integer [pk]
+  software_base_configuration_id integer [not null, ref: > software_base_configuration_files.id]
+  client_id integer [not null, ref: > clients.id]
+  content text [not null]
+  snapshot_date timestamptz [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (client_id, software_base_configuration_id)
+    (snapshot_date)
+  }
+}
+
+
+Ref: "client_configuration_files"."id" < "client_configuration_files"."software_base_configuration_id"

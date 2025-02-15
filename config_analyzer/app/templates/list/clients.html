@@ -51,28 +51,7 @@
         </div>
 
         <!-- Formulaire d'ajout -->
-        <div class="card p-4 shadow-sm mt-4">
-            <h2 class="mb-3">Ajouter un Client</h2>
-            <form action="{{ url_for('clients.add_client') }}" method="POST">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Nom :</label>
-                    <input type="text" id="name" name="name" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="postal_code" class="form-label">Code Postal :</label>
-                    <input type="text" id="postal_code" name="postal_code" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="city" class="form-label">Ville :</label>
-                    <input type="text" id="city" name="city" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="country_code" class="form-label">Code Pays :</label>
-                    <input type="text" id="country_code" name="country_code" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-success">Ajouter</button>
-            </form>
-        </div>
+        {% include 'add/client.html' %}
 
         <!-- Lien de retour -->
         <div class="text-center mt-4">

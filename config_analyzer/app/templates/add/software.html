@@ -1,0 +1,46 @@
+<div class="card p-4 shadow-sm mt-4">
+    <h2 class="mb-3">Ajouter un Software</h2>
+    <form action="{{ url_for('software.add_software') }}" method="POST">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nom :</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="robot_model_ids" class="form-label">Modèles de Robot :</label>
+            <div id="robot-model-container">
+                <div class="input-group mb-2">
+                    <select class="form-select" name="robot_model_ids">
+                        <option value="">Sélectionner un modèle de robot</option>
+                        {% for robot_model in robot_models %}
+                        <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="addRobotModelSelect()">Ajouter un autre modèle de robot</button>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Ajouter</button>
+    </form>
+</div>
+
+<script>
+    function addRobotModelSelect() {
+        const container = document.getElementById('robot-model-container');
+        const newSelectDiv = document.createElement('div');
+        newSelectDiv.className = 'input-group mb-2';
+        newSelectDiv.innerHTML = `
+            <select class="form-select" name="robot_model_ids">
+                <option value="">Sélectionner un modèle de robot</option>
+                {% for robot_model in robot_models %}
+                <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
+        `;
+        container.appendChild(newSelectDiv);
+    }
+
+    function removeRobotModelSelect(button) {
+        button.parentElement.remove();
+    }
+</script>

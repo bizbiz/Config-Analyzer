@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import RobotModel
+from app.models import RobotModel, Software
 from app.extensions import db
 
 robot_models_bp = Blueprint('robot_models', __name__)
@@ -7,7 +7,8 @@ robot_models_bp = Blueprint('robot_models', __name__)
 @robot_models_bp.route('/robot_models')
 def list_robot_models():
     robot_models = RobotModel.query.all()
-    return render_template('list/robot_models.html', robot_models=robot_models)
+    softwares = Software.query.all()
+    return render_template('list/robot_models.html', robot_models=robot_models, softwares=softwares)
 
 @robot_models_bp.route('/robot_models/add', methods=['GET', 'POST'])
 def add_robot_model():
@@ -26,7 +27,8 @@ def add_robot_model():
         flash("Modèle de robot ajouté avec succès !", "success")
         return redirect(url_for('robot_models.list_robot_models'))
 
-    return render_template('add/robot_model.html')
+    softwares = Software.query.all()
+    return render_template('add/robot_model.html', softwares=softwares)
 
 @robot_models_bp.route('/robot_models/edit/<int:robot_model_id>', methods=['GET', 'POST'])
 def edit_robot_model(robot_model_id):
@@ -39,7 +41,9 @@ def edit_robot_model(robot_model_id):
         flash("Modèle de robot modifié avec succès !", "success")
         return redirect(url_for('robot_models.list_robot_models'))
 
-    return render_template('edit/robot_model.html', robot_model=robot_model)
+    softwares = Software.query.all()
+    selected_softwares = [software.id for software in robot_model.software]
+    return render_template('edit/robot_model.html', robot_model=robot_model, softwares=softwares, selected_softwares=selected_softwares)
 
 @robot_models_bp.route('/robot_models/delete/<int:robot_model_id>', methods=['GET'])
 def delete_robot_model(robot_model_id):

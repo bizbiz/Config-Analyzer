@@ -1,0 +1,19 @@
+<div class="card p-4 shadow-sm mt-4">
+    <h2 class="mb-3">Ajouter une Version de Logiciel</h2>
+    <form action="{{ url_for('software_versions.add_software_version') }}" method="POST">
+        <div class="mb-3">
+            <label for="software_id" class="form-label">Logiciel :</label>
+            <select class="form-select" id="software_id" name="software_id" required>
+                <option value="">Sélectionner un logiciel</option>
+                {% for software in softwares %}
+                <option value="{{ software.id }}">{{ software.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="version" class="form-label">Version :</label>
+            <input type="text" id="version" name="version" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Ajouter</button>
+    </form>
+</div>
