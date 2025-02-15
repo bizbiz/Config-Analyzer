@@ -4,11 +4,16 @@ from app.extensions import db
 
 software_versions_bp = Blueprint('software_versions', __name__)
 
+@software_versions_bp.route('/software_versions')
+def list_all_software_versions():
+    software_versions = SoftwareVersion.query.all()
+    return render_template('list/software_versions.html', software_versions=software_versions, all_versions=True)
+
 @software_versions_bp.route('/software_versions/<int:software_id>')
 def list_software_versions(software_id):
     software = Software.query.get_or_404(software_id)
     software_versions = SoftwareVersion.query.filter_by(software_id=software_id).all()
-    return render_template('list/software_versions.html', software=software, software_versions=software_versions)
+    return render_template('list/software_versions.html', software=software, software_versions=software_versions, all_versions=False)
 
 @software_versions_bp.route('/software_versions/add', methods=['GET', 'POST'])
 def add_software_version():
@@ -27,6 +32,7 @@ def add_software_version():
         flash("Version de logiciel ajoutée avec succès !", "success")
         return redirect(url_for('software_versions.list_software_versions', software_id=software_id))
 
+    # Récupérer tous les logiciels existants
     softwares = Software.query.all()
     return render_template('add/software_version.html', softwares=softwares)
 
