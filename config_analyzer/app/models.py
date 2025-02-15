@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, UniqueConstraint, Index, Text
 from sqlalchemy.sql import func
-from app import db  # Import depuis l'instance Flask-SQLAlchemy
+from app.extensions import db
 
 class PostalCode(db.Model):
     __tablename__ = 'postal_codes'

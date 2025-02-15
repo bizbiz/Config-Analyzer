@@ -22,7 +22,17 @@
                 <div class="mb-3">
                     <label for="postal_code" class="form-label">Code Postal :</label>
                     <input type="text" id="postal_code" name="postal_code" class="form-control" 
-                           value="{{ client.postal_code }}" required>
+                           value="{{ client.postal_code_relation.code }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="city" class="form-label">Ville :</label>
+                    <input type="text" id="city" name="city" class="form-control" 
+                           value="{{ client.postal_code_relation.city }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="country_code" class="form-label">Code Pays :</label>
+                    <input type="text" id="country_code" name="country_code" class="form-control" 
+                           value="{{ client.postal_code_relation.country_code }}" required>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">

@@ -28,14 +28,21 @@
                 Solution de gestion centralisée pour vos configurations logicielles
             </p>
 
-            <!-- Bouton d'action principal -->
+            <!-- Boutons d'action principaux -->
             <div class="d-grid gap-3 d-md-block">
                 <a href="{{ url_for('clients.list_clients') }}" 
                    class="btn btn-primary btn-lg px-5 py-3">
-                    <i class="fas fa-users me-2"></i>Gérer les clients
+                    <i class="fas fa-users me-2"></i>Clients
+                </a>
+                <a href="{{ url_for('robot_models.list_robot_models') }}" 
+                   class="btn btn-secondary btn-lg px-5 py-3">
+                    <i class="fas fa-robot me-2"></i>Modèles de robot
+                </a>
+                <a href="{{ url_for('software.list_software') }}" 
+                   class="btn btn-success btn-lg px-5 py-3">
+                    <i class="fas fa-laptop-code me-2"></i>Software
                 </a>
             </div>
-
 
             <!-- Section fonctionnalités -->
             <div class="row mt-5 g-4">
