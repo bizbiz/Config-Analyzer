@@ -19,12 +19,31 @@
                     <input type="text" id="name" name="name" class="form-control" 
                            value="{{ software.name }}" required>
                 </div>
+                <div class="mb-3">
+                    <label for="robot_model_ids" class="form-label">Modèles de Robot :</label>
+                    <div id="robot-model-container">
+                        {% for robot_model in software.robot_modeles %}
+                        <div class="input-group mb-2">
+                            <select class="form-select" name="robot_model_ids">
+                                <option value="">Sélectionner un modèle de robot</option>
+                                {% for rm in robot_models %}
+                                <option value="{{ rm.id }}" {% if rm.id == robot_model.id %}selected{% endif %}>
+                                    {{ rm.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addRobotModelSelect()">Ajouter un autre modèle de robot</button>
+                </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Enregistrer
+                        <i class="fas fa-save me-2"></i> Enregistrer
                     </button>
                     <a href="{{ url_for('software.list_software') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                        <i class="fas fa-arrow-left me-2"></i> Retour à la liste
                     </a>
                 </div>
             </form>
@@ -32,5 +51,26 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function addRobotModelSelect() {
+            const container = document.getElementById('robot-model-container');
+            const newSelectDiv = document.createElement('div');
+            newSelectDiv.className = 'input-group mb-2';
+            newSelectDiv.innerHTML = `
+                <select class="form-select" name="robot_model_ids">
+                    <option value="">Sélectionner un modèle de robot</option>
+                    {% for robot_model in robot_models %}
+                    <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
+            `;
+            container.appendChild(newSelectDiv);
+        }
+
+        function removeRobotModelSelect(button) {
+            button.parentElement.remove();
+        }
+    </script>
 </body>
 </html>
