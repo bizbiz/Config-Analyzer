@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, PostalCode
+from app.models import Client
 from app.extensions import db
 
 clients_bp = Blueprint('clients', __name__)
@@ -7,56 +7,39 @@ clients_bp = Blueprint('clients', __name__)
 @clients_bp.route('/clients')
 def list_clients():
     clients = Client.query.all()
-    return render_template('clients.html', clients=clients)
+    return render_template('list/clients.html', clients=clients)
 
-@clients_bp.route('/clients/add', methods=['POST'])
+@clients_bp.route('/clients/add', methods=['GET', 'POST'])
 def add_client():
-    name = request.form.get('name')
-    postal_code = request.form.get('postal_code')
-    city = request.form.get('city')
-    country_code = request.form.get('country_code')
+    if request.method == 'POST':
+        name = request.form.get('name')
+        address = request.form.get('address')
 
-    if not name or not postal_code or not city or not country_code:
-        flash("Le nom, le code postal, la ville et le code pays sont obligatoires.", "error")
+        if not name or not address:
+            flash("Le nom et l'adresse sont obligatoires.", "error")
+            return redirect(url_for('clients.add_client'))
+
+        new_client = Client(name=name, address=address)
+        db.session.add(new_client)
+        db.session.commit()
+
+        flash("Client ajouté avec succès !", "success")
         return redirect(url_for('clients.list_clients'))
 
-    existing_postal_code = PostalCode.query.filter_by(code=postal_code, city=city, country_code=country_code).first()
-    if not existing_postal_code:
-        new_postal_code = PostalCode(code=postal_code, city=city, country_code=country_code)
-        db.session.add(new_postal_code)
-        db.session.commit()
-        postal_code_id = new_postal_code.id
-    else:
-        postal_code_id = existing_postal_code.id
-
-    new_client = Client(name=name, postal_code_id=postal_code_id)
-    db.session.add(new_client)
-    db.session.commit()
-    flash("Client ajouté avec succès !", "success")
-    return redirect(url_for('clients.list_clients'))
+    return render_template('add/client.html')
 
 @clients_bp.route('/clients/edit/<int:client_id>', methods=['GET', 'POST'])
 def edit_client(client_id):
     client = Client.query.get_or_404(client_id)
     if request.method == 'POST':
         client.name = request.form['name']
-        postal_code = request.form['postal_code']
-        city = request.form['city']
-        country_code = request.form['country_code']
-
-        existing_postal_code = PostalCode.query.filter_by(code=postal_code, city=city, country_code=country_code).first()
-        if not existing_postal_code:
-            new_postal_code = PostalCode(code=postal_code, city=city, country_code=country_code)
-            db.session.add(new_postal_code)
-            db.session.commit()
-            client.postal_code_id = new_postal_code.id
-        else:
-            client.postal_code_id = existing_postal_code.id
+        client.address = request.form['address']
 
         db.session.commit()
         flash("Client modifié avec succès !", "success")
         return redirect(url_for('clients.list_clients'))
-    return render_template('edit_client.html', client=client)
+
+    return render_template('edit/client.html', client=client)
 
 @clients_bp.route('/clients/delete/<int:client_id>', methods=['GET'])
 def delete_client(client_id):

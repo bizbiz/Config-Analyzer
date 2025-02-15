@@ -8,7 +8,7 @@ software_base_configurations_bp = Blueprint('software_base_configurations', __na
 def list_software_base_configurations(software_version_id):
     software_version = SoftwareVersion.query.get_or_404(software_version_id)
     base_configurations = SoftwareBaseConfigurationFile.query.filter_by(software_version_id=software_version_id).all()
-    return render_template('software_base_configurations.html', software_version=software_version, base_configurations=base_configurations)
+    return render_template('list/software_base_configurations.html', software_version=software_version, base_configurations=base_configurations)
 
 @software_base_configurations_bp.route('/software_base_configurations/add/<int:software_version_id>', methods=['GET', 'POST'])
 def add_software_base_configuration(software_version_id):
@@ -33,7 +33,7 @@ def add_software_base_configuration(software_version_id):
         flash("Configuration de base ajoutée avec succès !", "success")
         return redirect(url_for('software_base_configurations.list_software_base_configurations', software_version_id=software_version_id))
 
-    return render_template('add_software_base_configuration.html', software_version_id=software_version_id)
+    return render_template('add/software_base_configuration.html', software_version_id=software_version_id)
 
 @software_base_configurations_bp.route('/software_base_configurations/edit/<int:base_configuration_id>', methods=['GET', 'POST'])
 def edit_software_base_configuration(base_configuration_id):
@@ -48,7 +48,7 @@ def edit_software_base_configuration(base_configuration_id):
         flash("Configuration de base modifiée avec succès !", "success")
         return redirect(url_for('software_base_configurations.list_software_base_configurations', software_version_id=software_version_id))
 
-    return render_template('edit_software_base_configuration.html', base_configuration=base_configuration)
+    return render_template('edit/software_base_configuration.html', base_configuration=base_configuration)
 
 @software_base_configurations_bp.route('/software_base_configurations/delete/<int:base_configuration_id>', methods=['GET'])
 def delete_software_base_configuration(base_configuration_id):
@@ -62,4 +62,4 @@ def delete_software_base_configuration(base_configuration_id):
 @software_base_configurations_bp.route('/software_base_configuration/<int:base_configuration_id>')
 def view_software_base_configuration(base_configuration_id):
     base_configuration = SoftwareBaseConfigurationFile.query.get_or_404(base_configuration_id)
-    return render_template('view_software_base_configuration.html', base_configuration=base_configuration)
+    return render_template('view/software_base_configuration.html', base_configuration=base_configuration)
