@@ -67,7 +67,7 @@ class SoftwareVersion(db.Model):
     software_id = db.Column(db.Integer, db.ForeignKey('software.id'), nullable=False)
     version = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
+
     __table_args__ = (db.UniqueConstraint('software_id', 'version', name='unique_version_per_software'),)
     
     software = db.relationship("Software", back_populates="versions")
@@ -121,7 +121,7 @@ class ClientConfigurationFile(db.Model):
     content = db.Column(db.Text, nullable=False)
     snapshot_date = db.Column(db.DateTime(timezone=True), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
+
     __table_args__ = (
         db.Index('ix_client_software_base_config', 'client_id', 'software_base_configuration_id'),
         db.Index('ix_snapshot_date', 'snapshot_date'),

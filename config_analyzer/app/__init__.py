@@ -19,7 +19,7 @@ def create_app():
         db.create_all()  # Optionnel pour développement
 
     # Enregistrement des blueprints
-    from app.routes.clients import clients_bp
+    from app.routes.client import clients_bp
     app.register_blueprint(clients_bp)
 
     from app.routes.robot_models import robot_models_bp
