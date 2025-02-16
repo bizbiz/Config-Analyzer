@@ -1,24 +1,21 @@
-{% extends "base.html" %}
-{% block title %}Ajouter une Version de Logiciel{% endblock %}
-{% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">Ajouter une Version de Logiciel</h1>
-    <form method="post">
+{% block add_software_version_form %}
+<div class="card p-4 shadow-sm">
+    <h2 class="mb-3">Ajouter une Version de Logiciel</h2>
+    <form action="{{ url_for('software_versions.add_software_version') }}" method="POST">
         <div class="mb-3">
-            <label for="software_id" class="form-label">Logiciel</label>
+            <label for="software_id" class="form-label">Logiciel :</label>
             <select class="form-select" id="software_id" name="software_id" required>
-                <option value="" selected disabled>Choisissez un logiciel</option>
+                <option value="">Sélectionner un logiciel</option>
                 {% for software in softwares %}
                 <option value="{{ software.id }}">{{ software.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="mb-3">
-            <label for="version" class="form-label">Version</label>
-            <input type="text" class="form-control" id="version" name="version" required>
+            <label for="version" class="form-label">Version :</label>
+            <input type="text" id="version" name="version" class="form-control" required>
         </div>
-        <button type="submit" class="btn btn-primary">Ajouter</button>
-        <a href="{{ url_for('software_versions.list_all_software_versions') }}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-success">Ajouter</button>
     </form>
 </div>
 {% endblock %}

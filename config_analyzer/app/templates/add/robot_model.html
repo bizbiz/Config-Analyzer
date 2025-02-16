@@ -1,28 +1,20 @@
-<div class="card p-4 shadow-sm mt-4">
-    <h2 class="mb-3">Ajouter un Modèle de Robot</h2>
-    <form action="{{ url_for('robot_models.add_robot_model') }}" method="POST">
-        <div class="mb-3">
-            <label for="name" class="form-label">Nom :</label>
-            <input type="text" id="name" name="name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="company" class="form-label">Société :</label>
-            <input type="text" id="company" name="company" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="software_ids" class="form-label">Software :</label>
-            <div id="software-container">
-                <div class="input-group mb-2">
-                    <select class="form-select" name="software_ids">
-                        <option value="">Sélectionner un logiciel</option>
-                        {% for software in softwares %}
-                        <option value="{{ software.id }}">{{ software.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" class="btn btn-secondary" onclick="addSoftwareSelect()">Ajouter un autre logiciel</button>
-                </div>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-success">Ajouter</button>
-    </form>
-</div>
+<form action="{{ url_for('robot_models.add_robot_model') }}" method="post">
+    <div class="mb-3">
+        <label for="name" class="form-label">Nom du Modèle de Robot</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="company" class="form-label">Entreprise</label>
+        <input type="text" class="form-control" id="company" name="company" required>
+    </div>
+    <div class="mb-3">
+        <label for="software" class="form-label">Logiciel Associé</label>
+        <select class="form-select" id="software" name="software_id" required>
+            <option value="">Sélectionnez un logiciel</option>
+            {% for software in softwares %}
+            <option value="{{ software.id }}">{{ software.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>

@@ -1,54 +1,75 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des Modèles de Robots</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container py-5">
-        <h1 class="text-center mb-4">Liste des Modèles de Robots</h1>
+{% extends "base.html" %}
 
-        <!-- Tableau des modèles de robots -->
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Nom</th>
-                        <th scope="col">Entreprise</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for robot_model in robot_models %}
-                    <tr>
-                        <td>{{ robot_model.name }}</td>
-                        <td>{{ robot_model.company }}</td>
-                        <td class="text-center">
-                            <a href="{{ url_for('robot_model.view_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-info me-2">
-                                <i class="fas fa-eye"></i> Voir
-                            </a>
-                            <a href="{{ url_for('robot_model.edit_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-warning me-2">
-                                <i class="fas fa-edit"></i> Modifier
-                            </a>
-                            <a href="{{ url_for('robot_model.delete_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-danger" 
-                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce modèle de robot ?')">
-                                <i class="fas fa-trash"></i> Supprimer
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+{% block title %}Liste des Modèles de Robots{% endblock %}
 
-        <!-- Lien pour ajouter un nouveau modèle de robot -->
-        <div class="text-center mt-4">
-            <a href="{{ url_for('robot_model.add_robot_model') }}" class="btn btn-primary">Ajouter un Modèle de Robot</a>
-        </div>
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-4">Liste des Modèles de Robots</h1>
+
+    <!-- Barre de recherche -->
+    <div class="mb-4">
+        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un modèle de robot..." onkeyup="filterRobotModels()">
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <!-- Tableau des modèles de robots -->
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle" id="robotModelsTable">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Nom</th>
+                    <th scope="col">Entreprise</th>
+                    <th scope="col">Logiciels Associés</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for robot_model in robot_models %}
+                <tr>
+                    <td>{{ robot_model.name }}</td>
+                    <td>{{ robot_model.company }}</td>
+                    <td>{{ robot_model.software.name if robot_model.software else 'N/A' }}</td>
+                    <td class="text-center">
+                        <a href="{{ url_for('robot_models.view_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-info me-2">
+                            <i class="fas fa-eye"></i> Voir
+                        </a>
+                        <a href="{{ url_for('robot_models.edit_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-warning me-2">
+                            <i class="fas fa-edit"></i> Modifier
+                        </a>
+                        <a href="{{ url_for('robot_models.delete_robot_model', robot_model_id=robot_model.id) }}" class="btn btn-sm btn-danger" 
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce modèle de robot ?')">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Titre pour le formulaire d'ajout -->
+    <h2 class="text-center mt-5">Ajouter un modèle de Robot</h2>
+
+    <!-- Formulaire d'ajout -->
+    {% include 'add/robot_model.html' %}
+
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+    </div>
+</div>
+
+<script>
+    function filterRobotModels() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const rows = document.querySelectorAll('#robotModelsTable tbody tr');
+
+        rows.forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            const company = row.cells[1].textContent.toLowerCase();
+            const software = row.cells[2].textContent.toLowerCase();
+            row.style.display = (name.includes(filter) || company.includes(filter) || software.includes(filter)) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

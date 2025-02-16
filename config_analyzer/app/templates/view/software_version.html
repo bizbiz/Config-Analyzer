@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Détails de la Version du Logiciel{% endblock %}
+{% block title %}Détails de la Version {{ software_version.version }} de {{ software_version.software.name }}{% endblock %}
 {% block content %}
 <div class="container py-5">
     <div class="card p-4 shadow-sm mt-4">
-        <h2 class="mb-3">Détails de la Version du Logiciel</h2>
+        <h2 class="mb-3">Détails de la Version {{ software_version.version }} de {{ software_version.software.name }}</h2>
         
         <div class="mb-3">
             <label for="software" class="form-label">Logiciel :</label>
@@ -36,7 +36,7 @@
             <ul class="list-group">
                 {% for robot in software_version.robots %}
                 <li class="list-group-item">
-                    <a href="{{ url_for('view_robot', robot_id=robot.robot_client.id) }}">{{ robot.robot_client.serial_number }}</a>
+                    {{ robot.robot_client.client.name }} - [{{ robot.robot_client.robot_modele.name }}] - <a href="{{ url_for('robot_clients.view_robot_client', robot_client_id=robot.robot_client.id) }}">{{ robot.robot_client.serial_number }}</a>
                 </li>
                 {% endfor %}
             </ul>

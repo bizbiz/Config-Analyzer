@@ -3,7 +3,6 @@
 {% block content %}
 <div class="container my-5">
     <h1 class="mb-4">Liste des Clients Robots</h1>
-    <a href="{{ url_for('robot_clients.add_robot_client') }}" class="btn btn-primary mb-4">Ajouter un Client Robot</a>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -34,5 +33,10 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('robot_clients.add_robot_client') }}" class="btn btn-light btn-lg rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: #f0f0f0; color: black; font-size: 48px;">
+            +
+        </a>
+    </div>
 </div>
 {% endblock %}
