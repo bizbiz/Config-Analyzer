@@ -30,26 +30,36 @@
 
             <!-- Boutons d'action principaux -->
             <div class="d-grid gap-3 d-md-block">
-                <a href="{{ url_for('clients.list_clients') }}" 
-                   class="btn btn-primary btn-lg px-5 py-3">
-                    <i class="fas fa-users me-2"></i>Clients
-                </a>
-                <a href="{{ url_for('robot_models.list_robot_models') }}" 
-                   class="btn btn-secondary btn-lg px-5 py-3">
-                    <i class="fas fa-robot me-2"></i>Modèles de robot
-                </a>
-                <a href="{{ url_for('softwares.list_softwares') }}" 
-                   class="btn btn-success btn-lg px-5 py-3">
-                    <i class="fas fa-laptop-code me-2"></i>Logiciels
-                </a>
-                <a href="{{ url_for('software_versions.list_all_software_versions') }}" 
-                    class="btn btn-info btn-lg px-5 py-3">
-                        <i class="fas fa-code-branch me-2"></i> Versions de Logiciels
-                </a>
-                <a href="{{ url_for('robot_clients.list_robot_clients') }}" 
-                    class="btn btn-warning btn-lg px-5 py-3">
-                        <i class="fas fa-robot me-2"></i> Clients Robots
-                </a>
+                
+                <div class="mt-4">
+                    <span class="lead text-muted">Fichiers de configurations :</span>
+                    <a href="{{ url_for('software_base_configurations.list_all_software_base_configurations') }}" 
+                       class="btn btn-dark btn-lg px-5 py-3">
+                        <i class="fas fa-cogs me-2"></i> Règles et Valeurs par défaut
+                    </a>
+                    <a href="{{ url_for('clients.list_clients') }}" 
+                       class="btn btn-primary btn-lg px-5 py-3 ms-3">
+                        <i class="fas fa-users me-2"></i> Fichiers config Clients
+                    </a>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ url_for('robot_models.list_robot_models') }}" 
+                       class="btn btn-secondary btn-lg px-5 py-3">
+                        <i class="fas fa-robot me-2"></i> Modèles de robot
+                    </a>
+                    <a href="{{ url_for('softwares.list_softwares') }}" 
+                       class="btn btn-success btn-lg px-5 py-3">
+                        <i class="fas fa-laptop-code me-2"></i> Logiciels
+                    </a>
+                    <a href="{{ url_for('software_versions.list_all_software_versions') }}" 
+                        class="btn btn-info btn-lg px-5 py-3">
+                            <i class="fas fa-code-branch me-2"></i> Versions de Logiciels
+                    </a>
+                    <a href="{{ url_for('robot_clients.list_robot_clients') }}" 
+                        class="btn btn-warning btn-lg px-5 py-3">
+                            <i class="fas fa-robot me-2"></i> Clients Robots
+                    </a>
+                </div>
             </div>
 
             <!-- Section fonctionnalités -->

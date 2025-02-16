@@ -64,3 +64,8 @@ def delete_software(software_id):
     db.session.commit()
     flash("Logiciel supprimé avec succès !", "success")
     return redirect(url_for('softwares.list_softwares'))
+
+@softwares_bp.route('/softwares/<int:software_id>/view', methods=['GET'])
+def view_software(software_id):
+    software = Software.query.get_or_404(software_id)
+    return render_template('view/software.html', software=software)

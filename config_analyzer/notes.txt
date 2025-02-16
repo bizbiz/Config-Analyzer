@@ -1,6 +1,8 @@
 TODO :
 Pas sur que edit version soit nécessaire à supprimer peut être
 Est-ce que si on créé un software base config file avec le même nom qu'un qui existe déjà mais qui est rattaché à un logiciel ou une version différente, ca ne pose pas de probleme ?
+Ajouter un login
+Ajouter une traduction
 
 
 

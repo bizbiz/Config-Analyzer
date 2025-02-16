@@ -127,3 +127,5 @@ class ClientConfigurationFile(db.Model):
     
     software_base_configuration = db.relationship("SoftwareBaseConfigurationFile", back_populates="client_configurations")
     client = db.relationship("Client", back_populates="configurations")
+
+    

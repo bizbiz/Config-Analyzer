@@ -1,24 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Détails de la Version {{ software_version.version }} de {{ software_version.software.name }}{% endblock %}
+{% block title %}Détails de la Version {{ software_version.version }} de <a href="{{ url_for('softwares.view_software', software_id=software_version.software.id) }}">{{ software_version.software.name }}</a>{% endblock %}
 {% block content %}
 <div class="container py-5">
     <div class="card p-4 shadow-sm mt-4">
-        <h2 class="mb-3">Détails de la Version {{ software_version.version }} de {{ software_version.software.name }}</h2>
-        
-        <div class="mb-3">
-            <label for="software" class="form-label">Logiciel :</label>
-            <input type="text" id="software" name="software" class="form-control" value="{{ software_version.software.name }}" disabled>
-        </div>
-        
-        <div class="mb-3">
-            <label for="version" class="form-label">Version :</label>
-            <input type="text" id="version" name="version" class="form-control" value="{{ software_version.version }}" disabled>
-        </div>
-        
-        <div class="mb-3">
-            <label for="created_at" class="form-label">Date de Création :</label>
-            <input type="text" id="created_at" name="created_at" class="form-control" value="{{ software_version.created_at }}" disabled>
-        </div>
+        <h2 class="mb-3">Détails de la Version {{ software_version.version }} de <a href="{{ url_for('softwares.view_software', software_id=software_version.software.id) }}">{{ software_version.software.name }}</a></h2>
 
         <div class="mb-3">
             <label for="base_configurations" class="form-label">Configurations de Base :</label>
