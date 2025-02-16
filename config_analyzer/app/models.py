@@ -87,6 +87,7 @@ class SoftwareBaseConfigurationFile(db.Model):
     
     software_version = db.relationship("SoftwareVersion", back_populates="base_configurations")
     client_configurations = db.relationship("ClientConfigurationFile", back_populates="software_base_configuration")
+    parameters = db.relationship("BaseConfigFileParameter", back_populates="base_config_file")
 
 class RobotClient(db.Model):
     __tablename__ = 'robots_clients'
@@ -128,4 +129,51 @@ class ClientConfigurationFile(db.Model):
     software_base_configuration = db.relationship("SoftwareBaseConfigurationFile", back_populates="client_configurations")
     client = db.relationship("Client", back_populates="configurations")
 
-    
+class BaseConfigFileParameter(db.Model):
+    __tablename__ = 'base_config_file_parameters'
+    id = db.Column(db.Integer, primary_key=True)
+    in_use = db.Column(db.Boolean, nullable=False)
+    base_config_file_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
+    name = db.Column(db.String(100))
+    value = db.Column(db.String(100))
+    is_numeric_values = db.Column(db.Boolean)
+    numeric_rule = db.Column(db.String(10))  # =, between, <, >, <=, >=, empty
+    min_value = db.Column(db.Float)
+    max_value = db.Column(db.Float)
+    is_text_value = db.Column(db.Boolean)
+    regex_rule = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    base_config_file = db.relationship("SoftwareBaseConfigurationFile", back_populates="parameters")
+    dependencies = db.relationship("BaseConfigDependence", back_populates="base_config_file_parameter")
+
+class BaseConfigDependence(db.Model):
+    __tablename__ = 'base_config_dependances'
+    id = db.Column(db.Integer, primary_key=True)
+    base_config_file_parameters_id = db.Column(db.Integer, db.ForeignKey('base_config_file_parameters.id'))
+    additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
+    depend_rules_type = db.Column(db.String(100))  # numeric or regex
+    depend_rules = db.Column(db.Text)
+
+    base_config_file_parameter = db.relationship("BaseConfigFileParameter", back_populates="dependencies")
+    additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="dependencies")
+
+class AdditionalParametersConfig(db.Model):
+    __tablename__ = 'additional_parameters_config'
+    id = db.Column(db.Integer, primary_key=True)
+    table_name = db.Column(db.String(30))  # clients, robot_clients, software_versions, robot_modeles
+    table_id = db.Column(db.Integer)
+    type = db.Column(db.String(20))  # numeric, text
+
+    dependencies = db.relationship("BaseConfigDependence", back_populates="additional_parameters_config")
+    additional_parameters = db.relationship("AdditionalParameter", back_populates="additional_parameters_config")
+
+class AdditionalParameter(db.Model):
+    __tablename__ = 'additional_parameters'
+    id = db.Column(db.Integer, primary_key=True)
+    additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
+    name = db.Column(db.String(100))
+    value = db.Column(db.String(255))
+
+    additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
