@@ -22,7 +22,8 @@
                         <td>{{ base_configuration.software_version.software.name }}</td>
                         <td>{{ base_configuration.software_version.version }}</td>
                         <td>
-                            <a href="{{ url_for('software_base_configurations.edit_software_base_configuration', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}" class="btn btn-warning btn-sm">Modifier</a>
+                            <a href="{{ url_for('parsed_files.edit_base_parsed_content',
+        software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}" class="btn btn-warning btn-sm">Modifier</a>
                             <a href="{{ url_for('software_base_configurations.delete_software_base_configuration', base_configuration_id=base_configuration.id) }}" class="btn btn-danger btn-sm">Supprimer</a>
                         </td>
                     </tr>

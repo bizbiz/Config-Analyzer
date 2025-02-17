@@ -40,4 +40,7 @@ def create_app():
     from app.routes.robot_clients import robot_clients_bp
     app.register_blueprint(robot_clients_bp)
 
+    from app.routes.parsed_files import parsed_files_bp
+    app.register_blueprint(parsed_files_bp)
+
     return app

@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from app.models import SoftwareBaseConfigurationFile, SoftwareVersion, Software
 from app.extensions import db
 
+
+
 software_base_configurations_bp = Blueprint('software_base_configurations', __name__)
 
 @software_base_configurations_bp.route('/software_base_configurations')
@@ -75,6 +77,7 @@ def get_software_versions(software_id):
     software_versions = SoftwareVersion.query.filter_by(software_id=software_id).all()
     return jsonify({'software_versions': [{'id': version.id, 'version': version.version} for version in software_versions]})
 
+
 @software_base_configurations_bp.route('/software_base_configurations/edit/<software_name>/<software_version>/<file_name>', methods=['GET', 'POST'])
 def edit_software_base_configuration(software_name, software_version, file_name):
     software = Software.query.filter_by(name=software_name).first_or_404()
@@ -107,3 +110,4 @@ def view_software_base_configuration(software_name, software_version, file_name)
     version = SoftwareVersion.query.filter_by(software_id=software.id, version=software_version).first_or_404()
     base_configuration = SoftwareBaseConfigurationFile.query.filter_by(software_version_id=version.id, file_name=file_name).first_or_404()
     return render_template('view/software_base_configuration.html', base_configuration=base_configuration)
+

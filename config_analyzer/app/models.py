@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey, UniqueConstraint, Index, Text
-from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import select, func
 from app.extensions import db
 
 class PostalCode(db.Model):
@@ -82,12 +83,28 @@ class SoftwareBaseConfigurationFile(db.Model):
     path = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True))
 
     __table_args__ = (db.UniqueConstraint('software_version_id', 'file_name', name='unique_base_config_per_version'),)
     
     software_version = db.relationship("SoftwareVersion", back_populates="base_configurations")
     client_configurations = db.relationship("ClientConfigurationFile", back_populates="software_base_configuration")
     parameters = db.relationship("BaseConfigFileParameter", back_populates="base_config_file")
+
+    @hybrid_property
+    def safe_client_configurations(self):
+        return self.client_configurations or []
+    
+    @hybrid_property
+    def safe_parameters(self):
+        return self.parameters.all() if self.parameters else []
+
+    @property
+    def last_modified(self):
+        param_dates = [p.updated_at for p in self.parameters if p.updated_at]
+        base_date = self.updated_at or self.created_at
+        all_dates = param_dates + [base_date]
+        return max(all_dates) if all_dates else None
 
 class RobotClient(db.Model):
     __tablename__ = 'robots_clients'
