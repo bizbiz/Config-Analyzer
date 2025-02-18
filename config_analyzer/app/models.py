@@ -153,11 +153,11 @@ class BaseConfigFileParameter(db.Model):
     base_config_file_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
     name = db.Column(db.String(100))
     value = db.Column(db.String(100))
-    is_numeric_values = db.Column(db.Boolean)
+    type = db.Column(db.String(100))
     numeric_rule = db.Column(db.String(10))  # =, between, <, >, <=, >=, empty
     min_value = db.Column(db.Float)
+    defaut_value = db.Column(db.Float)
     max_value = db.Column(db.Float)
-    is_text_value = db.Column(db.Boolean)
     regex_rule = db.Column(db.String)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())

@@ -2,97 +2,17 @@
 {% block title %}Contenu Analysé de la Configuration de Base{% endblock %}
 {% block content %}
 <div class="container py-5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parsed_config.css') }}">
     <h1 class="text-center mb-4">
-    Configuration pour fichier {{ base_config.file_name }} 
-    sur {{ base_config.software_version.software.name }} 
-    (version {{ base_config.software_version.version }})
+        Configuration pour fichier {{ base_config.file_name }} 
+        sur {{ base_config.software_version.software.name }} 
+        (version {{ base_config.software_version.version }})
     </h1>
-    <!-- Sous-titre avec les métadonnées -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="d-flex flex-wrap gap-2 text-muted small">
-                <div>
-                    <i class="fas fa-database me-1"></i>
-                    ID base de données : #{{ base_config.id }}
-                </div>
-                <div>
-                    <i class="fas fa-calendar-plus me-1"></i>
-                    Ajouté le : {{ base_config.created_at.strftime('%d/%m/%Y %H:%M') }}
-                </div>
-                <div>
-                    <i class="fas fa-calendar-check me-1"></i>
-                    Dernière modification : 
-                    {% if base_config.updated_at %}
-                        {{ base_config.updated_at.strftime('%d/%m/%Y %H:%M') }}
-                    {% else %}
-                        Jamais modifié
-                    {% endif %}
-                </div>
-                <div>
-                    <i class="fas fa-folder-open me-1"></i>
-                    Chemin : {{ base_config.path }}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ url_for('software_base_configurations.view_software_base_configuration', 
-                software_name=base_config.software_version.software.name,
-                software_version=base_config.software_version.version,
-                file_name=base_config.file_name) }}" 
-               class="btn btn-sm btn-outline-secondary">
-               <i class="fas fa-code me-1"></i>Voir le contenu brut
-            </a>
 
-        </div>
-    </div>
-
-    <!-- Stats clients -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Utilisation</h5>
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            Clients connus :
-                            <span class="badge bg-primary">
-                             {{ client_count }}
-                        </span>
-                        </div>
-                        <div>
-                            Paramètres :
-                            <span class="badge bg-success">
-                                {{ parameter_count }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Clients utilisant cette configuration</h5>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for config in base_config.client_configurations|map(attribute='client')|unique %}
-                            <span class="badge bg-secondary">
-                                <i class="fas fa-building me-1"></i>
-                                {{ config.name }}
-                            </span>
-                        {% else %}
-                            <div class="text-muted">Aucun client connu</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
+    <!-- Tableau des paramètres -->
     <div class="card p-4 shadow-sm">
         <div class="table-responsive">
-            <table class="config-table">
+            <table class="config-table" id="configTable" data-base-config-id="{{ base_config.id }}">
                 <thead>
                     <tr>
                         <th>Paramètre</th>
@@ -107,61 +27,94 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for key, value in parsed_data.items() %}
-                    <tr class="config-row" data-param-id="{{ param.id if param else 'undefined' }}">
-                        <td>{{ key }}</td>
+                    {% for row in table_data %}
+                    <tr class="config-row" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                        <!-- Nom du paramètre -->
                         <td>
-                            <input type="text" value="{{ value }}" readonly class="form-control-sm">
+                            {{ row.name }}
+                            <input type="hidden" name="name" value="{{ row.name }}" data-field="name">
                         </td>
+
+                        <!-- Valeur éditable -->
                         <td>
-                            <select class="type-select form-select-sm">
-                                <option value="integer" {% if value is integer %}selected{% endif %}>Entier</option>
-                                <option value="float" {% if value is float %}selected{% endif %}>Flottant</option>
-                                <option value="text" {% if not (value is number) %}selected{% endif %}>Texte</option>
+                            <input type="text" 
+                                   class="form-control-sm" 
+                                   value="{{ row.value }}"
+                                   data-field="value">
+                        </td>
+
+                        <!-- Type -->
+                        <td>
+                            <select class="form-select-sm type-select" data-field="type">
+                                <option value="integer" {% if row.type == "integer" %}selected{% endif %}>Entier</option>
+                                <option value="float" {% if row.type == "float" %}selected{% endif %}>Flottant</option>
+                                <option value="text" {% if row.type == "text" %}selected{% endif %}>Texte</option>
                             </select>
                         </td>
+
+                        <!-- Min -->
                         <td>
-                            <input type="number" class="number-input form-control-sm" 
-                                   {% if not (value is number) %}disabled{% endif %}>
+                            <input type="number" 
+                                   class="form-control-sm" 
+                                   value="{{ row.min_value if row.min_value is not none else '' }}"
+                                   data-field="min_value">
                         </td>
+
+                        <!-- Défaut (non éditable) -->
                         <td>
-                            <input type="text" value="{{ value }}" class="form-control-sm">
+                            <input type="text" 
+                                   class="form-control-sm" 
+                                   value="{{ row.default_value }}" 
+                                   readonly>
                         </td>
+
+                        <!-- Max -->
                         <td>
-                            <input type="number" class="number-input form-control-sm"
-                                   {% if not (value is number) %}disabled{% endif %}>
+                            <input type="number" 
+                                   class="form-control-sm" 
+                                   value="{{ row.max_value if row.max_value is not none else '' }}"
+                                   data-field="max_value">
                         </td>
+
+                        <!-- Règle Numérique -->
                         <td>
-                            <select class="form-select-sm" {% if not (value is number) %}disabled{% endif %}>
+                            <select class="form-select-sm" data-field="numeric_rule">
                                 <option value="">-</option>
-                                <option>=</option>
-                                <option>></option>
-                                <option><</option>
-                                <option>Entre</option>
+                                <option value="=" {% if row.numeric_rule == "=" %}selected{% endif %}>=</option>
+                                <option value=">" {% if row.numeric_rule == ">" %}selected{% endif %}>></option>
+                                <option value="<" {% if row.numeric_rule == "<" %}selected{% endif %}><</option>
+                                <option value="between" {% if row.numeric_rule == "between" %}selected{% endif %}>Entre</option>
                             </select>
                         </td>
+
+                        <!-- Regex -->
                         <td>
-                            <input type="text" class="regex-input form-control-sm" 
-                                   {% if value is number %}disabled{% endif %}>
+                            <input type="text" 
+                                   class="form-control-sm"
+                                   value="{{ row.regex_rule if row.regex_rule is not none else '' }}"
+                                   data-field="regex_rule">
                         </td>
+
+                        <!-- État -->
                         <td class="status-cell">
-                        <div class="btn-group">
-                            {% if param %}
-                            <button class="btn btn-sm btn-success status-btn" disabled>À jour</button>
-                            <button class="btn btn-sm btn-danger revert-btn" title="Réinitialiser les modifications" style="display: none;">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            {% if row.status == "À jour" %}
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-success status-btn" disabled>{{ row.status }}</button>
+                                <button class="btn btn-sm btn-danger revert-btn" title="Réinitialiser les modifications" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                             {% else %}
-                            <span class="badge bg-secondary">Inconnu</span>
+                            <span class="badge bg-secondary">{{ row.status }}</span>
                             {% endif %}
-                        </div>
-                    </td>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
+        <!-- Bouton Retour -->
         <a href="{{ url_for('software_base_configurations.list_all_software_base_configurations') }}" 
            class="btn btn-secondary mt-3">
             Retour à la liste
@@ -169,186 +122,5 @@
     </div>
 </div>
 
-<style>
-    .config-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .config-table th {
-        background: #f8f9fa;
-        padding: 0.75rem;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        font-weight: 600;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .config-table td {
-        padding: 0.5rem;
-        border-bottom: 1px solid #dee2e6;
-        vertical-align: middle;
-    }
-
-    .config-row:hover {
-        background-color: #f8f9fa !important;
-    }
-
-    .config-table input, 
-    .config-table select {
-        width: 100%;
-        padding: 0.25rem 0.5rem;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-    .number-input { width: 100px; }
-    .regex-input { min-width: 150px; }
-
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .config-table {
-            min-width: 800px;
-        }
-    }
-    tr.modified {
-    background-color: #fff3cd !important;
-    }
-
-    .status-btn {
-        transition: all 0.3s ease;
-        min-width: 120px;
-    }
-
-    .revert-btn {
-        opacity: 0.7;
-        transition: opacity 0.3s ease;
-    }
-
-    .revert-btn:hover {
-        opacity: 1;
-    }
-
-    [data-param-id="undefined"] .status-btn {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Gestion du survol
-    const rows = document.querySelectorAll('.config-row');
-    rows.forEach(row => {
-        row.addEventListener('mouseover', () => {
-            row.style.backgroundColor = '#f8f9fa';
-        });
-        row.addEventListener('mouseout', () => {
-            row.style.backgroundColor = '';
-        });
-    });
-
-    // Gestion dynamique des champs
-    document.querySelectorAll('.type-select').forEach(select => {
-        const updateFields = () => {
-            const row = select.closest('tr');
-            const isNumber = ['integer', 'float'].includes(select.value);
-            
-            row.querySelectorAll('.number-input, select:not(.type-select)').forEach(field => {
-                field.disabled = !isNumber;
-            });
-            
-            row.querySelector('.regex-input').disabled = isNumber;
-        };
-
-        // Initialisation
-        updateFields();
-        
-        // Écouteur de changement
-        select.addEventListener('change', updateFields);
-    });
-
-    // Gestion des modifications
-    document.querySelectorAll('input, select').forEach(el => {
-        el.addEventListener('input', function() {
-            const row = this.closest('tr');
-            row.classList.add('modified');
-            row.querySelector('.status-btn')
-                .classList.replace('btn-success', 'btn-primary')
-                .textContent = 'Mettre à jour';
-            row.querySelector('.revert-btn').style.display = 'block';
-        });
-    });
-
-    // Gestion du reset
-    document.querySelectorAll('.revert-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const row = this.closest('tr');
-            const paramId = row.dataset.paramId;
-            const response = await fetch(`/get_initial_value/${paramId}`);
-            const data = await response.json();
-            
-            // Réinitialiser les valeurs
-            row.querySelector('[name=value]').value = data.value;
-            row.querySelector('[name=min]').value = data.min;
-            row.querySelector('[name=max]').value = data.max;
-            row.querySelector('[name=numeric_rule]').value = data.numeric_rule;
-            row.querySelector('[name=regex]').value = data.regex;
-            
-            // Réinitialiser l'état
-            row.classList.remove('modified');
-            this.style.display = 'none';
-            row.querySelector('.status-btn')
-                .classList.replace('btn-primary', 'btn-success')
-                .textContent = 'À jour';
-        });
-    });
-
-    // Gestion de la mise à jour
-    document.querySelectorAll('.status-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const row = this.closest('tr');
-            const formData = {
-                value: row.querySelector('[name=value]').value,
-                min: row.querySelector('[name=min]').value,
-                max: row.querySelector('[name=max]').value,
-                numeric_rule: row.querySelector('[name=numeric_rule]').value,
-                regex: row.querySelector('[name=regex]').value
-            };
-            
-            try {
-                const response = await fetch(`/update_parameter/${row.dataset.paramId}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                if(result.status === 'success') {
-                    // Mettre à jour la date de modification
-                    document.getElementById('last-modified').textContent = 
-                        `Dernière modification : ${result.last_modified}`;
-                    // Réinitialiser l'état
-                    row.classList.remove('modified');
-                    this.classList.replace('btn-primary', 'btn-success');
-                    this.textContent = 'À jour';
-                    row.querySelector('.revert-btn').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        });
-    });
-});
-
-
-</script>
+<script src="{{ url_for('static', filename='js/parsed_files/ajax_base.js') }}"></script>
 {% endblock %}
