@@ -9,6 +9,91 @@
         (version {{ base_config.software_version.version }})
     </h1>
 
+    <!-- Sous-titre avec les métadonnées -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex flex-wrap gap-2 text-muted small">
+                <div>
+                    <i class="fas fa-database me-1"></i>
+                    ID base de données : #{{ base_config.id }}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-plus me-1"></i>
+                    Ajouté le : {{ base_config.created_at.strftime('%d/%m/%Y %H:%M') }}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-check me-1"></i>
+                    Dernière modification : 
+                    <span id="last-modified">
+                        {% if base_config.last_modified %}
+                            {{ base_config.last_modified.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            Jamais modifié
+                        {% endif %}
+                    </span>
+                </div>
+                <div>
+                    <i class="fas fa-folder-open me-1"></i>
+                    Chemin : {{ base_config.path }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('software_base_configurations.view_software_base_configuration', 
+                software_name=base_config.software_version.software.name,
+                software_version=base_config.software_version.version,
+                file_name=base_config.file_name) }}" 
+               class="btn btn-sm btn-outline-secondary">
+               <i class="fas fa-code me-1"></i>Voir le contenu brut
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Stats clients -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Utilisation</h5>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            Clients connus :
+                            <span class="badge bg-primary">
+                             {{ client_count }}
+                        </span>
+                        </div>
+                        <div>
+                            Paramètres :
+                            <span class="badge bg-success" id="parameter-count">
+                                {{ parameter_count }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Clients utilisant cette configuration</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for config in base_config.client_configurations|map(attribute='client')|unique %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-building me-1"></i>
+                                {{ config.name }}
+                            </span>
+                        {% else %}
+                            <div class="text-muted">Aucun client connu</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Tableau des paramètres -->
     <div class="card p-4 shadow-sm">
         <div class="table-responsive">
@@ -46,8 +131,7 @@
                         <!-- Type -->
                         <td>
                             <select class="form-select-sm type-select" data-field="type">
-                                <option value="integer" {% if row.type == "integer" %}selected{% endif %}>Entier</option>
-                                <option value="float" {% if row.type == "float" %}selected{% endif %}>Flottant</option>
+                                <option value="float" {% if row.type == "float" %}selected{% endif %}>Nombre</option>
                                 <option value="text" {% if row.type == "text" %}selected{% endif %}>Texte</option>
                             </select>
                         </td>

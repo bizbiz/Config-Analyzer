@@ -149,14 +149,14 @@ class ClientConfigurationFile(db.Model):
 class BaseConfigFileParameter(db.Model):
     __tablename__ = 'base_config_file_parameters'
     id = db.Column(db.Integer, primary_key=True)
-    in_use = db.Column(db.Boolean, nullable=False)
+    in_use = db.Column(db.Boolean, default=True, nullable=False)
     base_config_file_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
     name = db.Column(db.String(100))
     value = db.Column(db.String(100))
     type = db.Column(db.String(100))
     numeric_rule = db.Column(db.String(10))  # =, between, <, >, <=, >=, empty
     min_value = db.Column(db.Float)
-    defaut_value = db.Column(db.Float)
+    default_value = db.Column(db.Float)
     max_value = db.Column(db.Float)
     regex_rule = db.Column(db.String)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())

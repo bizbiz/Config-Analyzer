@@ -2,6 +2,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const table = document.getElementById('configTable');
     const baseConfigId = table.dataset.baseConfigId;
 
+    // Met à jour les métadonnées affichées
+    function updateMetadata(data) {
+        if (data.parameter_count !== undefined) {
+            document.getElementById('parameter-count').textContent = data.parameter_count;
+        }
+        if (data.last_modified !== undefined) {
+            document.getElementById('last-modified').textContent = data.last_modified;
+        }
+    }
+
+
+    // Change l'état visuel d'une ligne
     function toggleRowState(row, isModified) {
         const statusBtn = row.querySelector('.status-btn, .badge'); // Cible à la fois bouton et badge
         const revertBtn = row.querySelector('.revert-btn');
@@ -41,6 +53,9 @@ document.addEventListener('DOMContentLoaded', function () {
             formData[field.dataset.field] = field.value;
         });
 
+        console.log('formData:', formData);
+        console.log('baseConfigId:', baseConfigId);
+
         try {
             const response = await fetch('/create_parameter', {
                 method: 'POST',
@@ -50,6 +65,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     base_config_file_id: baseConfigId
                 })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
 
             const result = await response.json();
             if (result.status === 'success') {
@@ -62,27 +82,25 @@ document.addEventListener('DOMContentLoaded', function () {
                         </button>
                     </div>`;
                 toggleRowState(row, false);
+                updateMetadata(result); // Met à jour les métadonnées après création
+                showToast('Paramètre créé avec succès', 'success');
             }
         } catch (error) {
-            showToast('Erreur lors de la création', 'danger');
+            showToast(`Erreur lors de la création : ${error.message}`, 'danger');
         }
     }
 
     // Gestion des modifications de champs
-    table.addEventListener('input', function(e) {
-        console.log('Événement input déclenché'); // <-- Ajoutez ceci
+    table.addEventListener('input', function (e) {
         const target = e.target.closest('[data-field]');
         if (target) {
-            console.log('Champ modifié:', target); // <-- Ajoutez ceci
             const row = target.closest('tr');
-            if (row.dataset.paramId === 'undefined' || row.dataset.paramId !== 'undefined') {
-                toggleRowState(row, true);
-            }
+            toggleRowState(row, true);
         }
     });
 
     // Gestion de la réinitialisation
-    table.addEventListener('click', async function(e) {
+    table.addEventListener('click', async function (e) {
         if (e.target.closest('.revert-btn')) {
             const row = e.target.closest('tr');
             const paramId = row.dataset.paramId;
@@ -105,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Gestion des mises à jour
-    table.addEventListener('click', async function(e) {
+    table.addEventListener('click', async function (e) {
         if (e.target.closest('.status-btn, .badge')) {
             const row = e.target.closest('tr');
             const paramId = row.dataset.paramId;
@@ -129,15 +147,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: JSON.stringify(formData)
                 });
 
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                 const result = await response.json();
                 if (result.status === 'success') {
-                    document.getElementById('last-modified').textContent = 
-                        `Dernière modification : ${result.last_modified}`;
                     toggleRowState(row, false);
+                    updateMetadata(result); // Met à jour les métadonnées après mise à jour
                     showToast('Mise à jour réussie', 'success');
                 }
             } catch (error) {
-                showToast('Erreur lors de la mise à jour', 'danger');
+                showToast(`Erreur lors de la mise à jour : ${error.message}`, 'danger');
             }
         }
     });
