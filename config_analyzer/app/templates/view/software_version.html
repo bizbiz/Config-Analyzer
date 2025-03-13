@@ -10,7 +10,10 @@
             <ul class="list-group">
                 {% for config in software_version.base_configurations %}
                 <li class="list-group-item">
-                    <a href="{{ url_for('software_base_configurations.view_software_base_configuration', base_configuration_id=config.id) }}">{{ config.file_name }}</a>
+                    <a href="{{ url_for('software_base_configurations.view_software_base_configuration', 
+                    software_name=software_version.software.name,
+                    software_version=software_version.version,
+                    file_name=config.file_name) }}">{{ config.file_name }}</a>
                 </li>
                 {% endfor %}
             </ul>
