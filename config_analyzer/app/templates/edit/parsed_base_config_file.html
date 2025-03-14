@@ -93,7 +93,6 @@
         </div>
     </div>
 
-
     <!-- Tableau des paramètres -->
     <div class="card p-4 shadow-sm">
         <div class="table-responsive">
@@ -108,15 +107,20 @@
                         <th>Max</th>
                         <th>Règle Num.</th>
                         <th>Regex</th>
-                        <th>État</th>
+                        <th style="width: 40px;"></th><!-- Colonne pour l'icône -->
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in table_data %}
                     <tr class="config-row" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
-                        <!-- Nom du paramètre -->
+                        <!-- Nom du paramètre avec un événement de clic -->
                         <td>
-                            {{ row.name }}
+                            <span class="param-name-link" style="cursor: pointer;" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                                {{ row.name }}
+                                {% if row.notes is not none and row.notes|trim != '' %}
+                                    <i class="fas fa-comment-alt ml-1" style="color: white !important; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; margin-left: 5px;"></i>
+                                {% endif %}
+                            </span>
                             <input type="hidden" name="name" value="{{ row.name }}" data-field="name">
                         </td>
 
@@ -179,18 +183,26 @@
                                    data-field="regex_rule">
                         </td>
 
-                        <!-- État -->
-                        <td class="status-cell">
-                            {% if row.status == "À jour" %}
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-success status-btn" disabled>{{ row.status }}</button>
-                                <button class="btn btn-sm btn-danger revert-btn" title="Réinitialiser les modifications" style="display: none;">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                        <!-- Cellule pour l'icône de synchronisation -->
+                        <td class="text-center" style="position: relative;">
+                            <div class="sync-status-icon" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                                {% if row.status == "À jour" %}
+                                    <i class="fas fa-sync-alt text-success" title="Synchronisé avec la base de données" style="cursor: pointer;"></i>
+                                {% else %}
+                                    <i class="fas fa-sync-alt text-secondary" title="Paramètre non enregistré" style="cursor: pointer;"></i>
+                                {% endif %}
                             </div>
-                            {% else %}
-                            <span class="badge bg-secondary">{{ row.status }}</span>
-                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr class="notes-row" id="notes-row-{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}" style="display: none;">
+                        <td colspan="9">
+                            <div class="notes-container p-3 bg-light">
+                                <label for="notes-{{ row.id }}" class="form-label">Notes sur ce paramètre:</label>
+                                <textarea class="form-control notes-textarea" 
+                                  id="notes-{{ row.id }}" 
+                                  data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}"
+                                  rows="3">{% if row.notes is not none %}{{ row.notes }}{% endif %}</textarea>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

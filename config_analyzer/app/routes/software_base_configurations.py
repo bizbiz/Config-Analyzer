@@ -77,7 +77,7 @@ def get_software_versions(software_id):
     software_versions = SoftwareVersion.query.filter_by(software_id=software_id).all()
     return jsonify({'software_versions': [{'id': version.id, 'version': version.version} for version in software_versions]})
 
-
+""" déplacé dans parsed_files.py car complexe
 @software_base_configurations_bp.route('/software_base_configurations/edit/<software_name>/<software_version>/<file_name>', methods=['GET', 'POST'])
 def edit_software_base_configuration(software_name, software_version, file_name):
     software = Software.query.filter_by(name=software_name).first_or_404()
@@ -94,6 +94,7 @@ def edit_software_base_configuration(software_name, software_version, file_name)
         return redirect(url_for('software_base_configurations.view_software_base_configuration', software_name=software_name, software_version=software_version, file_name=base_configuration.file_name))
 
     return render_template('edit/software_base_configuration.html', base_configuration=base_configuration)
+"""
 
 @software_base_configurations_bp.route('/software_base_configurations/delete/<int:base_configuration_id>', methods=['GET'])
 def delete_software_base_configuration(base_configuration_id):

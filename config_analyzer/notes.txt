@@ -8,6 +8,12 @@ Dans /Evotec.exe/3.0.5.0/params.cfg qu'est ce qu'on fait si des valeurs sont pas
 On pourrait utiliser les séprateurs <nom> du fichier parsé pour diviser en plusieurs tableaux plus facile à lire
 On pourrait ajouter une notion d'ordre d'affichage des lignes pour pouvoir les modifiers (ajax glisser déposer ?)
 
+http://localhost:5000/software_versions/1/view
+sur cette page il faut afficher + d'infos dans la liste des fichiers config de base, comme par exemple, nombre de parametres, nombre de parametres avec regle, nombre de clients connu avec cette version, etc
+
+http://localhost:5000/software_base_configuration/Evotec.exe/3.0.5.0/params.cfg
+ici on peut reprendre les info affichés par l'edit
+
 Remember :
 
 Pour modif db

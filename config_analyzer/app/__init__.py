@@ -1,8 +1,15 @@
 from flask import Flask
 from flask_migrate import Migrate
 from app.extensions import db
+from flask_login import LoginManager
 
+login_manager = LoginManager()
 migrate = Migrate()
+
+@login_manager.user_loader
+def load_user(user_id):
+    from app.models import User  # Import ici pour éviter les imports circulaires
+    return User.query.get(int(user_id))
 
 def create_app():
     app = Flask(__name__)
@@ -10,6 +17,7 @@ def create_app():
     
     db.init_app(app)
     migrate.init_app(app, db)
+    login_manager.init_app(app)  # Initialiser login_manager ici
 
     # Import des modèles APRÈS initialisation de db
     from app.models import Client, PostalCode, RobotModel, Software

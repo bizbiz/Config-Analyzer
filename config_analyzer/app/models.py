@@ -2,6 +2,8 @@ from sqlalchemy import ForeignKey, UniqueConstraint, Index, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import select, func
 from app.extensions import db
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class PostalCode(db.Model):
     __tablename__ = 'postal_codes'
@@ -149,19 +151,32 @@ class ClientConfigurationFile(db.Model):
 class BaseConfigFileParameter(db.Model):
     __tablename__ = 'base_config_file_parameters'
     id = db.Column(db.Integer, primary_key=True)
-    in_use = db.Column(db.Boolean, default=True, nullable=False)
+    in_use = db.Column(db.Boolean, default=True, nullable=False)  # Indique si c'est la version active
     base_config_file_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
     name = db.Column(db.String(100))
     value = db.Column(db.String(100))
     type = db.Column(db.String(100))
-    numeric_rule = db.Column(db.String(10))  # =, between, <, >, <=, >=, empty
+    numeric_rule = db.Column(db.String(10))
     min_value = db.Column(db.Float)
     default_value = db.Column(db.Float)
     max_value = db.Column(db.Float)
     regex_rule = db.Column(db.String)
+    notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    
+    # Niveaux d'accès 
+    view_access_level = db.Column(db.Integer, nullable=False, default=0)  
+    edit_access_level = db.Column(db.Integer, nullable=False, default=0)  
 
+    # Ajout de l'ID de l'utilisateur qui a créé/modifié le paramètre
+    created_by_user_id = db.Column(db.Integer, ForeignKey('users.id'), nullable=True)
+    
+    # Nouveau champ pour lier les versions d'un même paramètre
+    parameter_group_id = db.Column(db.String(100))  # Identifiant commun pour toutes les versions d'un même paramètre
+    version = db.Column(db.Integer, default=1)  # Numéro de version du paramètre
+    
+    # Relations
+    created_by_user = db.relationship("User", foreign_keys=[created_by_user_id])
     base_config_file = db.relationship("SoftwareBaseConfigurationFile", back_populates="parameters")
     dependencies = db.relationship("BaseConfigDependence", back_populates="base_config_file_parameter")
 
@@ -194,3 +209,34 @@ class AdditionalParameter(db.Model):
     value = db.Column(db.String(255))
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
+
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(128))
+    is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
+    access_level = db.Column(db.Integer, default=0)  # 0: Public, 1: Restricted, 2: Admin
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    
+    # Paramètres créés par cet utilisateur (relation inverse)
+    created_parameters = db.relationship("BaseConfigFileParameter", 
+                                        foreign_keys="BaseConfigFileParameter.created_by_user_id",
+                                        backref="created_by_user")
+    
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+        
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def __repr__(self):
+        return f'<User {self.username}>'

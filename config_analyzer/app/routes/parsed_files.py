@@ -7,8 +7,9 @@ from datetime import datetime
 
 parsed_files_bp = Blueprint('parsed_files', __name__)
 
-@parsed_files_bp.route('/<software_name>/<software_version>/<file_name>')
+@parsed_files_bp.route('/edit_base_config_file/<software_name>/<software_version>/<file_name>')
 def edit_base_parsed_content(software_name, software_version, file_name):
+    """Affiche l'éditeur de configuration avec analyse des paramètres"""
     base_config = SoftwareBaseConfigurationFile.query \
         .join(SoftwareVersion) \
         .join(Software) \
@@ -24,22 +25,24 @@ def edit_base_parsed_content(software_name, software_version, file_name):
         .where(ClientConfigurationFile.software_base_configuration_id == base_config.id)
     ).scalar()
 
-    parameter_count = db.session.execute(
-        select(func.count(BaseConfigFileParameter.id))
-        .where(BaseConfigFileParameter.base_config_file_id == base_config.id)
-    ).scalar()
-
+    # Récupérer les paramètres actifs (in_use=True) pour ce fichier de configuration
+    active_parameters = BaseConfigFileParameter.query.filter_by(
+        base_config_file_id=base_config.id,
+        in_use=True
+    ).all()
+    
+    # Créer un dictionnaire des paramètres actifs par nom
+    active_params_dict = {param.name: param for param in active_parameters}
+    
+    # Parser le contenu du fichier
     parser = CustomConfigParser()
     parsed_data = parser.parse(base_config.content)
 
     table_data = []
     for key, value in parsed_data.items():
-        param = BaseConfigFileParameter.query.filter_by(
-            base_config_file_id=base_config.id,
-            name=key
-        ).first()
-
-        if param:
+        if key in active_params_dict:
+            # Paramètre existant et actif
+            param = active_params_dict[key]
             table_data.append({
                 'name': param.name,
                 'value': param.value,
@@ -49,9 +52,14 @@ def edit_base_parsed_content(software_name, software_version, file_name):
                 'max_value': param.max_value,
                 'numeric_rule': param.numeric_rule,
                 'regex_rule': param.regex_rule,
+                'notes': param.notes,
+                'id': param.id,
+                'parameter_group_id': param.parameter_group_id,
+                'version': param.version,
                 'status': 'À jour'
             })
         else:
+            # Nouveau paramètre
             table_data.append({
                 'name': key,
                 'value': value,
@@ -61,52 +69,24 @@ def edit_base_parsed_content(software_name, software_version, file_name):
                 'max_value': None,
                 'numeric_rule': None,
                 'regex_rule': None,
+                'notes': None,
+                'parameter_group_id': None,
+                'version': 1,
                 'status': 'Inconnu'
             })
 
     return render_template(
-        'view/parsed_base_config_file.html',
+        'edit/parsed_base_config_file.html',
         table_data=table_data,
         base_config=base_config,
         client_count=client_count,
-        parameter_count=parameter_count
+        parameter_count=len(active_parameters)
     )
 
-@parsed_files_bp.route('/update_parameter/<int:param_id>', methods=['POST'])
-def update_parameter(param_id):
-    try:
-        param = BaseConfigFileParameter.query.get_or_404(param_id)
-        data = request.get_json()
-        
-        if not all(key in data for key in ['value', 'min', 'max', 'numeric_rule', 'regex', 'type']):
-            raise ValueError("Données manquantes")
-        
-        param.value = data['value']
-        param.min_value = float(data['min']) if data['min'] else None
-        param.max_value = float(data['max']) if data['max'] else None
-        param.numeric_rule = data['numeric_rule']
-        param.regex_rule = data['regex']
-        param.type = data['type']
-        param.updated_at = datetime.utcnow()
-        
-        db.session.commit()
-        
-        base_config = param.base_config_file
-        last_modified = get_last_modified(base_config.id)
-        parameter_count = BaseConfigFileParameter.query.filter_by(base_config_file_id=base_config.id).count()
-        
-        return jsonify({
-            'status': 'success',
-            'last_modified': last_modified.strftime('%d/%m/%Y %H:%M') if last_modified else 'Jamais modifié',
-            'parameter_count': parameter_count
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @parsed_files_bp.route('/get_initial_value/<int:param_id>')
 def get_initial_value(param_id):
+    """Récupère les valeurs initiales d'un paramètre pour la réinitialisation"""
     param = BaseConfigFileParameter.query.get_or_404(param_id)
     return jsonify({
         'value': param.value,
@@ -114,11 +94,13 @@ def get_initial_value(param_id):
         'max': param.max_value,
         'numeric_rule': param.numeric_rule,
         'regex': param.regex_rule,
-        'type': param.type
+        'type': param.type,
+        'notes': param.notes
     })
 
 @parsed_files_bp.route('/create_parameter', methods=['POST'])
 def create_parameter():
+    """Crée un nouveau paramètre de configuration"""
     try:
         data = request.get_json()
         
@@ -132,6 +114,9 @@ def create_parameter():
         except ValueError:
             return jsonify({'status': 'error', 'message': 'base_config_file_id invalide'}), 400
 
+        # Générer un identifiant de groupe unique pour ce nouveau paramètre
+        parameter_group_id = f"{base_config_file_id}_{data['name']}_{uuid.uuid4().hex[:8]}"
+        
         new_param = BaseConfigFileParameter(
             base_config_file_id=base_config_file_id,
             name=data['name'],
@@ -141,26 +126,126 @@ def create_parameter():
             numeric_rule=data.get('numeric_rule'),
             regex_rule=data.get('regex_rule'),
             type=data['type'],
+            notes=data.get('notes'),
+            parameter_group_id=parameter_group_id,
+            version=1,
             in_use=True
         )
         db.session.add(new_param)
         db.session.commit()
 
-        last_modified = get_last_modified(base_config_file_id)
-        parameter_count = BaseConfigFileParameter.query.filter_by(base_config_file_id=base_config_file_id).count()
+        parameter_count = BaseConfigFileParameter.query.filter_by(
+            base_config_file_id=base_config_file_id, 
+            in_use=True
+        ).count()
 
         return jsonify({
             'status': 'success',
             'new_param_id': new_param.id,
-            'last_modified': last_modified.strftime('%d/%m/%Y %H:%M') if last_modified else 'Jamais modifié',
+            'parameter_group_id': parameter_group_id,
+            'version': 1,
+            'last_modified': new_param.created_at.strftime('%d/%m/%Y %H:%M'),
             'parameter_count': parameter_count
         })
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400
 
+
+@parsed_files_bp.route('/update_parameter_complete/<int:param_id>', methods=['POST'])
+def update_parameter_complete(param_id):
+    """Crée une nouvelle version d'un paramètre plutôt que de le mettre à jour"""
+    try:
+        # Récupérer le paramètre existant
+        old_param = BaseConfigFileParameter.query.get_or_404(param_id)
+        data = request.get_json()
+        
+        # Vérifier si les données ont réellement changé
+        has_changes = False
+        for field in ['value', 'min_value', 'max_value', 'numeric_rule', 'regex_rule', 'type', 'notes']:
+            if field in data and getattr(old_param, field) != data.get(field):
+                has_changes = True
+                break
+                
+        if not has_changes:
+            # Aucun changement, retourner simplement un succès
+            return jsonify({
+                'status': 'success',
+                'message': 'Aucun changement détecté',
+                'last_modified': old_param.created_at.strftime('%d/%m/%Y %H:%M'),
+                'parameter_count': BaseConfigFileParameter.query.filter_by(
+                    base_config_file_id=old_param.base_config_file_id, 
+                    in_use=True
+                ).count()
+            })
+        
+        # Créer un parameter_group_id s'il n'existe pas encore
+        parameter_group_id = old_param.parameter_group_id or f"{old_param.base_config_file_id}_{old_param.name}_{uuid.uuid4().hex[:8]}"
+        
+        # Désactiver l'ancien paramètre
+        old_param.in_use = False
+        
+        # Créer un nouveau paramètre avec les nouvelles valeurs
+        new_param = BaseConfigFileParameter(
+            base_config_file_id=old_param.base_config_file_id,
+            name=old_param.name,
+            value=data.get('value', old_param.value),
+            min_value=float(data.get('min_value')) if data.get('min_value') else None,
+            max_value=float(data.get('max_value')) if data.get('max_value') else None,
+            numeric_rule=data.get('numeric_rule', old_param.numeric_rule),
+            regex_rule=data.get('regex_rule', old_param.regex_rule),
+            type=data.get('type', old_param.type),
+            notes=data.get('notes', old_param.notes),
+            parameter_group_id=parameter_group_id,
+            version=old_param.version + 1,
+            in_use=True
+        )
+        
+        db.session.add(new_param)
+        db.session.commit()
+        
+        # Récupérer les informations pour la réponse
+        parameter_count = BaseConfigFileParameter.query.filter_by(
+            base_config_file_id=old_param.base_config_file_id, 
+            in_use=True
+        ).count()
+        
+        return jsonify({
+            'status': 'success',
+            'new_param_id': new_param.id,
+            'parameter_group_id': parameter_group_id,
+            'version': new_param.version,
+            'last_modified': new_param.created_at.strftime('%d/%m/%Y %H:%M'),
+            'parameter_count': parameter_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+
 def get_last_modified(base_config_file_id):
+    """Récupère la date de dernière modification pour un fichier de configuration"""
     last_modified = db.session.query(func.max(func.coalesce(BaseConfigFileParameter.updated_at, BaseConfigFileParameter.created_at))).filter_by(base_config_file_id=base_config_file_id).scalar()
     base_config = SoftwareBaseConfigurationFile.query.get(base_config_file_id)
     base_date = base_config.updated_at or base_config.created_at
     return max(filter(None, [last_modified, base_date]))
+
+@parsed_files_bp.route('/parameter_history/<parameter_group_id>')
+def parameter_history(parameter_group_id):
+    """Affiche l'historique des versions d'un paramètre"""
+    parameters = BaseConfigFileParameter.query.filter_by(
+        parameter_group_id=parameter_group_id
+    ).order_by(BaseConfigFileParameter.version.desc()).all()
+    
+    if not parameters:
+        abort(404)
+    
+    # Récupérer les informations du fichier de configuration
+    base_config = parameters[0].base_config_file
+    
+    return render_template(
+        'view/parameter_history.html',
+        parameters=parameters,
+        base_config=base_config
+    )

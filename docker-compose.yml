@@ -11,6 +11,7 @@ services:
       - DATABASE_URL=postgresql://postgres_u_config_analyzer:password_ca@config_analyzer_db:5432/config_analyzer_db
       - FLASK_APP=app:create_app  # Point d'entrée corrigé
       - FLASK_DEBUG=1
+      - TZ=Europe/Paris 
     depends_on:
       config_analyzer_db:
         condition: service_healthy  # Attend que la base soit prête
@@ -29,6 +30,8 @@ services:
       POSTGRES_USER: postgres_u_config_analyzer
       POSTGRES_PASSWORD: password_ca
       POSTGRES_DB: config_analyzer_db
+      TZ: Europe/Paris  # Ajoutez cette ligne
+      PGTZ: Europe/Paris  # Ajoutez cette ligne
     healthcheck:  # Vérification de disponibilité
       test: ["CMD-SHELL", "pg_isready -U postgres_u_config_analyzer -d config_analyzer_db"]
       interval: 5s

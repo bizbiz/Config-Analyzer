@@ -1,6 +1,6 @@
 /* Styles généraux du tableau */
 .config-table {
-    width: 100%;
+    width: calc(100% - 40px);
     border-collapse: collapse;
     background: white;
 }
@@ -115,4 +115,40 @@ tr.modified td {
     .form-control-sm {
         padding: 0.25rem 0.5rem;
     }
+}
+
+/* Container pour les icônes de synchronisation */
+.table-responsive {
+    position: relative;
+    overflow: visible !important; /* Important pour que les icônes soient visibles */
+}
+
+.sync-icons-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 100%;
+    z-index: 10;
+}
+
+.sync-status-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: 10px;
+    background-color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 20;
+    transform: translate(-50%, -50%);
+}
+
+.sync-status-icon i {
+    font-size: 16px;
 }
