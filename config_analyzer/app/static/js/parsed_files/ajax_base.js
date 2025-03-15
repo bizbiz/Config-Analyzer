@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const table = document.getElementById('configTable');
     const baseConfigId = table.dataset.baseConfigId;
+    let tempIdCounter = 0; // Compteur pour générer des IDs temporaires uniques
 
     // ======== FONCTIONS UTILITAIRES ========
 
@@ -103,6 +104,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Attribue un ID temporaire unique à tous les éléments liés à un paramètre
+     * @param {string} oldId - ID actuel (généralement 'undefined')
+     * @returns {string} - Nouvel ID temporaire
+     */
+    function assignTempId(oldId) {
+        const tempId = `temp-${tempIdCounter++}`;
+        
+        // Mettre à jour tous les éléments avec l'ancien ID
+        document.querySelectorAll(`[data-param-id="${oldId}"]`).forEach(el => {
+            el.dataset.paramId = tempId;
+            
+            // Mettre à jour également les IDs des éléments spécifiques
+            if (el.id && el.id.includes(oldId)) {
+                el.id = el.id.replace(oldId, tempId);
+            }
+        });
+        
+        return tempId;
+    }
+
     // ======== CRÉATION ET MISE À JOUR DES PARAMÈTRES ========
 
     /**
@@ -116,8 +138,11 @@ document.addEventListener('DOMContentLoaded', function () {
             formData[field.dataset.field] = field.value;
         });
         
+        // Récupérer l'ID temporaire du paramètre
+        const tempId = row.dataset.paramId; // Sera "g1", "g2", etc.
+        
         // Récupérer les notes si elles existent
-        const notesRow = document.getElementById(`notes-row-undefined`);
+        const notesRow = document.getElementById(`notes-row-${tempId}`);
         if (notesRow) {
             const notesTextarea = notesRow.querySelector('.notes-textarea');
             if (notesTextarea) {
@@ -142,21 +167,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const result = await response.json();
             if (result.status === 'success') {
-                row.dataset.paramId = result.new_param_id;
+                // Mettre à jour tous les éléments avec l'ID temporaire
+                document.querySelectorAll(`[data-param-id="${tempId}"]`).forEach(el => {
+                    el.dataset.paramId = result.new_param_id;
+                    if (el.id && el.id.includes(tempId)) {
+                        el.id = el.id.replace(tempId, result.new_param_id);
+                    }
+                });
                 
                 // Mettre à jour l'icône de synchronisation
                 updateSyncIcon(row, 'synced');
-                
-                // Mettre à jour l'ID de la ligne de notes
-                const notesRow = document.getElementById('notes-row-undefined');
-                if (notesRow) {
-                    notesRow.id = `notes-row-${result.new_param_id}`;
-                    const notesTextarea = notesRow.querySelector('.notes-textarea');
-                    if (notesTextarea) {
-                        notesTextarea.dataset.paramId = result.new_param_id;
-                        notesTextarea.id = `notes-${result.new_param_id}`;
-                    }
-                }
                 
                 // Mettre à jour l'icône de note si nécessaire
                 if (formData.notes) {
@@ -202,11 +222,22 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const result = await response.json();
             if (result.status === 'success') {
+                // Si l'ID a changé (nouvelle version), mettre à jour tous les éléments
+                if (result.new_param_id && result.new_param_id !== parseInt(paramId)) {
+                    document.querySelectorAll(`[data-param-id="${paramId}"]`).forEach(el => {
+                        el.dataset.paramId = result.new_param_id;
+                        if (el.id && el.id.includes(paramId)) {
+                            el.id = el.id.replace(paramId, result.new_param_id);
+                        }
+                    });
+                    row.dataset.paramId = result.new_param_id;
+                }
+                
                 updateSyncIcon(row, 'synced');
                 updateMetadata(result);
                 
                 // Mettre à jour l'icône de note
-                updateNoteIcon(paramId, formData.notes);
+                updateNoteIcon(result.new_param_id || paramId, formData.notes);
                 
                 showToast('Synchronisation réussie', 'success');
             }
@@ -256,16 +287,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Détecter les modifications dans les zones de texte des notes
-    document.querySelectorAll('.notes-textarea').forEach(textarea => {
-        textarea.addEventListener('input', function() {
-            const paramId = this.dataset.paramId;
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('notes-textarea')) {
+            const paramId = e.target.dataset.paramId;
             if (paramId === 'undefined') return;
             
             const row = document.querySelector(`tr[data-param-id="${paramId}"]`);
             if (row) {
                 updateSyncIcon(row, 'modified');
             }
-        });
+        }
     });
 
     // Gestion des clics sur les icônes de synchronisation
@@ -275,8 +306,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const paramId = syncIcon.dataset.paramId;
             const row = document.querySelector(`tr[data-param-id="${paramId}"]`);
             
-            if (paramId === 'undefined') {
+            if (!row) return;
+            
+            // Modification ici : vérifier si l'ID commence par 'g' (paramètre inconnu)
+            if (paramId.startsWith('g')) {
                 await createNewParameter(row);
+            } else if (paramId.startsWith('temp-')) {
+                // Déjà en cours de création, ne rien faire
+                showToast('Création en cours...', 'warning');
             } else {
                 await syncParameter(paramId, row);
             }
@@ -284,10 +321,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Gestion de l'affichage/masquage des notes
-    document.querySelectorAll('.param-name-link').forEach(link => {
-        link.addEventListener('click', function(e) {
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.param-name-link');
+        if (link) {
             e.preventDefault();
-            const paramId = this.dataset.paramId;
+            const paramId = link.dataset.paramId;
             if (paramId === 'undefined') return;
             
             // Récupérer la ligne de notes pour ce paramètre
@@ -308,16 +346,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Afficher la ligne de notes pour ce paramètre
                 notesRow.style.display = 'table-row';
             }
-        });
+        }
     });
 
     // Initialisation : marquer tous les paramètres comme synchronisés au chargement
+    // Initialisation : marquer tous les paramètres comme synchronisés au chargement
     document.querySelectorAll('tr.config-row').forEach(row => {
         const paramId = row.dataset.paramId;
-        if (paramId && paramId !== 'undefined') {
+        if (paramId && !paramId.startsWith('g')) {
             updateSyncIcon(row, 'synced');
         } else {
             updateSyncIcon(row, 'unknown');
         }
     });
+
 });

@@ -176,7 +176,6 @@ class BaseConfigFileParameter(db.Model):
     version = db.Column(db.Integer, default=1)  # Numéro de version du paramètre
     
     # Relations
-    created_by_user = db.relationship("User", foreign_keys=[created_by_user_id])
     base_config_file = db.relationship("SoftwareBaseConfigurationFile", back_populates="parameters")
     dependencies = db.relationship("BaseConfigDependence", back_populates="base_config_file_parameter")
 
@@ -224,8 +223,8 @@ class User(db.Model, UserMixin):
     
     # Paramètres créés par cet utilisateur (relation inverse)
     created_parameters = db.relationship("BaseConfigFileParameter", 
-                                        foreign_keys="BaseConfigFileParameter.created_by_user_id",
-                                        backref="created_by_user")
+                                    foreign_keys="BaseConfigFileParameter.created_by_user_id",
+                                    backref="created_by_user")
     
     @property
     def password(self):

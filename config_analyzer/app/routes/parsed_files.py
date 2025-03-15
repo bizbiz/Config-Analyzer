@@ -4,6 +4,9 @@ from app.extensions import db
 from app.utils.custom_config_parser import CustomConfigParser
 from sqlalchemy import select, func
 from datetime import datetime
+import uuid
+import traceback
+import logging
 
 parsed_files_bp = Blueprint('parsed_files', __name__)
 
@@ -102,21 +105,34 @@ def get_initial_value(param_id):
 def create_parameter():
     """Crée un nouveau paramètre de configuration"""
     try:
+        # Vérifier si les données sont bien au format JSON
+        if not request.is_json:
+            logging.error("Les données ne sont pas au format JSON")
+            return jsonify({'status': 'error', 'message': 'Les données doivent être au format JSON'}), 400
+            
         data = request.get_json()
+        logging.info(f"Données reçues: {data}")
         
+        # Vérifier les champs requis
         required_fields = ['base_config_file_id', 'name', 'value', 'type']
         for field in required_fields:
             if field not in data:
+                logging.error(f"Champ manquant: {field}")
                 return jsonify({'status': 'error', 'message': f'Champ manquant: {field}'}), 400
 
         try:
             base_config_file_id = int(data['base_config_file_id'])
-        except ValueError:
-            return jsonify({'status': 'error', 'message': 'base_config_file_id invalide'}), 400
+        except ValueError as e:
+            logging.error(f"base_config_file_id invalide: {data['base_config_file_id']}")
+            return jsonify({'status': 'error', 'message': f'base_config_file_id invalide: {str(e)}'}), 400
 
         # Générer un identifiant de groupe unique pour ce nouveau paramètre
         parameter_group_id = f"{base_config_file_id}_{data['name']}_{uuid.uuid4().hex[:8]}"
         
+        # Afficher les valeurs avant création
+        logging.info(f"Création d'un paramètre avec: base_config_file_id={base_config_file_id}, name={data['name']}")
+        
+        # Créer le nouveau paramètre avec des valeurs par défaut pour les champs non requis
         new_param = BaseConfigFileParameter(
             base_config_file_id=base_config_file_id,
             name=data['name'],
@@ -129,10 +145,15 @@ def create_parameter():
             notes=data.get('notes'),
             parameter_group_id=parameter_group_id,
             version=1,
-            in_use=True
+            in_use=True,
+            view_access_level=0,  # Valeur par défaut
+            edit_access_level=0,  # Valeur par défaut
+            created_by_user_id=None  # Valeur par défaut (à remplacer par current_user.id quand l'authentification sera implémentée)
         )
+        
         db.session.add(new_param)
         db.session.commit()
+        logging.info(f"Paramètre créé avec succès, ID: {new_param.id}")
 
         parameter_count = BaseConfigFileParameter.query.filter_by(
             base_config_file_id=base_config_file_id, 
@@ -149,10 +170,11 @@ def create_parameter():
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 400
+        error_details = traceback.format_exc()
+        logging.error(f"Erreur lors de la création du paramètre: {str(e)}\n{error_details}")
+        return jsonify({'status': 'error', 'message': str(e), 'details': error_details}), 400
 
-
-@parsed_files_bp.route('/update_parameter_complete/<int:param_id>', methods=['POST'])
+@parsed_files_bp.route('/update_parameter_complete/<param_id>', methods=['POST'])
 def update_parameter_complete(param_id):
     """Crée une nouvelle version d'un paramètre plutôt que de le mettre à jour"""
     try:
@@ -198,7 +220,10 @@ def update_parameter_complete(param_id):
             notes=data.get('notes', old_param.notes),
             parameter_group_id=parameter_group_id,
             version=old_param.version + 1,
-            in_use=True
+            in_use=True,
+            view_access_level=old_param.view_access_level,
+            edit_access_level=old_param.edit_access_level,
+            created_by_user_id=None  # À remplacer par current_user.id quand l'authentification sera implémentée
         )
         
         db.session.add(new_param)
@@ -221,12 +246,14 @@ def update_parameter_complete(param_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 400
+        error_details = traceback.format_exc()
+        logging.error(f"Erreur lors de la mise à jour du paramètre: {str(e)}\n{error_details}")
+        return jsonify({'status': 'error', 'message': str(e), 'details': error_details}), 400
 
 
 def get_last_modified(base_config_file_id):
     """Récupère la date de dernière modification pour un fichier de configuration"""
-    last_modified = db.session.query(func.max(func.coalesce(BaseConfigFileParameter.updated_at, BaseConfigFileParameter.created_at))).filter_by(base_config_file_id=base_config_file_id).scalar()
+    last_modified = db.session.query(func.max(func.coalesce(BaseConfigFileParameter.created_at, BaseConfigFileParameter.created_at))).filter_by(base_config_file_id=base_config_file_id).scalar()
     base_config = SoftwareBaseConfigurationFile.query.get(base_config_file_id)
     base_date = base_config.updated_at or base_config.created_at
     return max(filter(None, [last_modified, base_date]))

@@ -112,10 +112,10 @@
                 </thead>
                 <tbody>
                     {% for row in table_data %}
-                    <tr class="config-row" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                    <tr class="config-row" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}">
                         <!-- Nom du paramètre avec un événement de clic -->
                         <td>
-                            <span class="param-name-link" style="cursor: pointer;" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                            <span class="param-name-link" style="cursor: pointer;" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}">
                                 {{ row.name }}
                                 {% if row.notes is not none and row.notes|trim != '' %}
                                     <i class="fas fa-comment-alt ml-1" style="color: white !important; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; margin-left: 5px;"></i>
@@ -185,7 +185,7 @@
 
                         <!-- Cellule pour l'icône de synchronisation -->
                         <td class="text-center" style="position: relative;">
-                            <div class="sync-status-icon" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}">
+                            <div class="sync-status-icon" data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}">
                                 {% if row.status == "À jour" %}
                                     <i class="fas fa-sync-alt text-success" title="Synchronisé avec la base de données" style="cursor: pointer;"></i>
                                 {% else %}
@@ -194,14 +194,14 @@
                             </div>
                         </td>
                     </tr>
-                    <tr class="notes-row" id="notes-row-{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}" style="display: none;">
+                    <tr class="notes-row" id="notes-row-{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}" style="display: none;">
                         <td colspan="9">
                             <div class="notes-container p-3 bg-light">
-                                <label for="notes-{{ row.id }}" class="form-label">Notes sur ce paramètre:</label>
+                                <label for="notes-{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}" class="form-label">Notes sur ce paramètre:</label>
                                 <textarea class="form-control notes-textarea" 
-                                  id="notes-{{ row.id }}" 
-                                  data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}undefined{% endif %}"
-                                  rows="3">{% if row.notes is not none %}{{ row.notes }}{% endif %}</textarea>
+                                          id="notes-{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}" 
+                                          data-param-id="{% if row.status == 'À jour' %}{{ row.id }}{% else %}g{{ loop.index }}{% endif %}"
+                                          rows="3">{% if row.notes is not none %}{{ row.notes }}{% endif %}</textarea>
                             </div>
                         </td>
                     </tr>
