@@ -1,35 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Liste des Configurations de Base{% endblock %}
+{% block title %}Liste des Configurations de Base de Logiciels{% endblock %}
+
 {% block content %}
 <div class="container py-5">
-    <h1 class="text-center mb-4">Liste des Configurations de Base</h1>
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nom du Fichier</th>
-                    <th>Chemin</th>
-                    <th>Logiciel</th>
-                    <th>Version</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for base_configuration in base_configurations %}
-                    <tr>
-                        <td><a href="{{ url_for('software_base_configurations.view_software_base_configuration', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}">{{ base_configuration.file_name }}</a></td>
-                        <td>{{ base_configuration.path }}</td>
-                        <td>{{ base_configuration.software_version.software.name }}</td>
-                        <td>{{ base_configuration.software_version.version }}</td>
-                        <td>
-                            <a href="{{ url_for('parsed_files.edit_base_parsed_content',
-        software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}" class="btn btn-warning btn-sm">Modifier</a>
-                            <a href="{{ url_for('software_base_configurations.delete_software_base_configuration', base_configuration_id=base_configuration.id) }}" class="btn btn-danger btn-sm">Supprimer</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% include "list/partials/software_base_configurations.html" %}
 </div>
 {% endblock %}

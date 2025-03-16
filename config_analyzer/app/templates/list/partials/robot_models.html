@@ -1,0 +1,75 @@
+{% extends "list/generic_list.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        filterItems('searchInput', 'robotModelsTable', 3);
+    });
+</script>
+{% endblock %}
+
+{% block list_title %}Liste des Modèles de Robots{% endblock %}
+{% block list_heading %}Liste des Modèles de Robots{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" 
+           placeholder="Rechercher un modèle de robot..." 
+           onkeyup="filterItems('searchInput', 'robotModelsTable', 3)">
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th>Nom</th>
+    <th>Entreprise</th>
+    <th>Logiciels Associés</th>
+    <th>Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for robot_model in items %}
+    <tr>
+        <td>{{ robot_model.name }}</td>
+        <td>{{ robot_model.company }}</td>
+        <td>{{ robot_model.software.name if robot_model.software else 'N/A' }}</td>
+        <td class="text-center">
+            <a href="{{ url_for('robot_models.view', name=robot_model.name) }}" 
+               class="btn btn-sm btn-info me-2">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{{ url_for('robot_models.edit', name=robot_model.name) }}" 
+               class="btn btn-sm btn-warning me-2">
+                <i class="fas fa-edit"></i>
+            </a>
+            <form action="{{ url_for('robot_models.delete', name=robot_model.name) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger" 
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce modèle de robot ?')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block empty_list_message %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>Aucun modèle de robot trouvé.
+    <a href="{{ url_for('robot_models.add') }}" class="alert-link">Ajouter un modèle de robot</a>
+</div>
+{% endblock %}
+
+{% block post_table_content %}
+<!-- Titre pour le formulaire d'ajout -->
+<h2 class="text-center mt-5">Ajouter un modèle de Robot</h2>
+
+<!-- Formulaire d'ajout -->
+{% include 'add/robot_model.html' %}
+
+<!-- Lien de retour -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+</div>
+{% endblock %}

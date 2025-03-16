@@ -1,0 +1,115 @@
+{% extends "list/generic_list.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        filterItems('searchInput', 'softwareTable', 3);
+    });
+    
+    function addRobotModelSelect() {
+        const container = document.getElementById('robot-model-container');
+        const newSelectDiv = document.createElement('div');
+        newSelectDiv.className = 'input-group mb-2';
+        newSelectDiv.innerHTML = `
+            <select class="form-select" name="robot_model_ids">
+                <option value="">Sélectionner un modèle de robot</option>
+                {% for robot_model in robot_models %}
+                <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
+        `;
+        container.appendChild(newSelectDiv);
+    }
+
+    function removeRobotModelSelect(button) {
+        button.parentElement.remove();
+    }
+</script>
+{% endblock %}
+
+{% block list_title %}Liste des Logiciels{% endblock %}
+{% block list_heading %}Liste des Logiciels{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" 
+           placeholder="Rechercher un logiciel..." 
+           onkeyup="filterItems('searchInput', 'softwareTable', 3)">
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th scope="col">Nom</th>
+    <th scope="col">Modèles de Robot Associés</th>
+    <th scope="col">Versions</th>
+    <th scope="col">Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for software in items %}
+    <tr>
+        <td>
+            <a href="{{ url_for('softwares.view', name=software.name) }}">
+                {{ software.name }}
+            </a>
+        </td>
+        <td>
+            {% for relation in software.robot_modeles %}
+                <span class="badge bg-secondary">{{ relation.robot_modele.name }}</span>
+                {% if not loop.last %} {% endif %}
+            {% else %}
+                <span class="text-muted">Aucun modèle associé</span>
+            {% endfor %}
+        </td>
+        <td>
+            {% for version in software.versions %}
+                <a href="{{ url_for('software_versions.view', 
+                          software_name=software.name, 
+                          version=version.version) }}" 
+                   class="badge bg-info text-dark">
+                    {{ version.version }}
+                </a>
+                {% if not loop.last %} {% endif %}
+            {% else %}
+                <span class="text-muted">Aucune version</span>
+            {% endfor %}
+        </td>
+        <td class="text-center">
+            <a href="{{ url_for('softwares.edit', name=software.name) }}" 
+               class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i>
+            </a>
+            <form action="{{ url_for('softwares.delete', name=software.name) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger mx-1" 
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce logiciel ?')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+            <a href="{{ url_for('software_versions.list_by_software', software_name=software.name) }}" 
+               class="btn btn-sm btn-info">
+                <i class="fas fa-list"></i>
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block empty_list_message %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>Aucun logiciel trouvé.
+    <a href="{{ url_for('softwares.add') }}" class="alert-link">Ajouter un logiciel</a>
+</div>
+{% endblock %}
+
+{% block post_table_content %}
+<!-- Formulaire d'ajout -->
+{% include 'add/software.html' %}
+
+<!-- Lien de retour -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "list/generic_list.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        filterItems('searchInput', 'paramsConfigTable', 3);
+    });
+</script>
+{% endblock %}
+
+{% block list_title %}Configurations de Paramètres{% endblock %}
+{% block list_heading %}Configurations de Paramètres{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" 
+           placeholder="Rechercher une configuration..." 
+           onkeyup="filterItems('searchInput', 'paramsConfigTable', 3)">
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th>Nom</th>
+    <th>Type</th>
+    <th>Valeurs possibles</th>
+    <th>Créé le</th>
+    <th>Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for config in items %}
+    <tr>
+        <td>{{ config.name }}</td>
+        <td>
+            {% if config.type.value == 'text' %}
+                <span class="badge bg-info">{{ config.type_display }}</span>
+            {% elif config.type.value == 'numeric' %}
+                <span class="badge bg-primary">{{ config.type_display }}</span>
+            {% elif config.type.value == 'enum' %}
+                <span class="badge bg-success">{{ config.type_display }}</span>
+            {% else %}
+                <span class="badge bg-secondary">{{ config.type_display }}</span>
+            {% endif %}
+        </td>
+        <td>{{ config.value }}</td>
+        <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td class="text-center">
+            <a href="{{ url_for('params_config.edit', entity_name=config.entity_name, config_id=config.id) }}" 
+               class="btn btn-sm btn-warning me-2">
+                <i class="fas fa-edit"></i>
+            </a>
+            <form action="{{ url_for('params_config.delete', entity_name=config.entity_name, config_id=config.id) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger" 
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block empty_list_message %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>Aucune configuration de paramètres définie.
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "list/generic_list.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        filterItems('searchInput', 'softwareBaseConfigsTable', 5);
+    });
+</script>
+{% endblock %}
+
+{% block list_title %}Liste des Configurations de Base de Logiciels{% endblock %}
+{% block list_heading %}
+    {% if software_version %}
+        Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
+    {% elif software %}
+        Configurations pour {{ software.name }}
+    {% else %}
+        Liste des Configurations de Base de Logiciels
+    {% endif %}
+{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" 
+           placeholder="Rechercher une configuration..." 
+           onkeyup="filterItems('searchInput', 'softwareBaseConfigsTable', 5)">
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th>Nom du Fichier</th>
+    <th>Chemin</th>
+    <th>Logiciel</th>
+    <th>Version</th>
+    <th>Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for config in items %}
+    <tr>
+        <td>
+            <a href="{{ url_for('software_base_configurations.view', 
+                      software_name=config.software_version.software.name, 
+                      version=config.software_version.version,
+                      file_name=config.file_name) }}">
+                {{ config.file_name }}
+            </a>
+        </td>
+        <td>{{ config.path }}</td>
+        <td>{{ config.software_version.software.name }}</td>
+        <td>{{ config.software_version.version }}</td>
+        <td class="text-center">
+            <a href="{{ url_for('parsed_files.edit_base_parsed_content',
+                      software_name=config.software_version.software.name, 
+                      software_version=config.software_version.version, 
+                      file_name=config.file_name) }}" 
+               class="btn btn-sm btn-warning">
+               <i class="fas fa-edit"></i>
+            </a>
+            <form action="{{ url_for('software_base_configurations.delete', 
+                          software_name=config.software_version.software.name, 
+                          version=config.software_version.version,
+                          file_name=config.file_name) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger" 
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block empty_list_message %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>Aucune configuration de base trouvée.
+    {% if software_version %}
+        <a href="{{ url_for('software_base_configurations.add_for_version', version_id=software_version.id) }}" class="alert-link">
+            Ajouter une configuration pour {{ software_version.software.name }} v{{ software_version.version }}
+        </a>
+    {% else %}
+        <a href="{{ url_for('software_base_configurations.add') }}" class="alert-link">
+            Ajouter une configuration
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block post_table_content %}
+<div class="text-center mt-4">
+    {% if software_version %}
+        <a href="{{ url_for('software_base_configurations.add_for_version', version_id=software_version.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Ajouter une configuration
+        </a>
+    {% elif software %}
+        <a href="{{ url_for('software_base_configurations.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Ajouter une configuration
+        </a>
+    {% else %}
+        <a href="{{ url_for('software_base_configurations.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Ajouter une configuration
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

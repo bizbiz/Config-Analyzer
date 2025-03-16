@@ -4,9 +4,8 @@ from app.extensions import db
 from sqlalchemy.exc import SQLAlchemyError
 import uuid
 
-additional_params_bp = Blueprint('additional_params', __name__)
+additional_params_bp = Blueprint('additional_params', __name__, url_prefix='/additional-params')
 
-# Fonction utilitaire améliorée pour récupérer l'entité associée et le nom de la table
 def get_entity_by_table_name(table_name, table_id=None, entity_name=None):
     # Normaliser le nom de la table (enlever le 's' final si présent)
     normalized_table_name = table_name.rstrip('s')
@@ -58,6 +57,7 @@ def get_entity_by_table_name(table_name, table_id=None, entity_name=None):
     # Retourner à la fois l'entité et le nom réel de la table
     return entity, actual_table_name
 
+
 # Fonction utilitaire pour obtenir le nom d'affichage de l'entité
 def get_entity_display_name(entity, table_name):
     if table_name == 'clients':
@@ -75,10 +75,9 @@ def get_entity_display_name(entity, table_name):
 
 # ======== ROUTES D'AFFICHAGE ========
 
-@additional_params_bp.route('/additional_params/view/<table_name>/<int:table_id>')
-def view_additional_params(table_name, table_id):
-    """Affiche les paramètres additionnels d'une entité"""
-    entity, actual_table_name = get_entity_by_table_name(table_name, table_id=table_id)
+@additional_params_bp.route('/view/<string:table_name>/<string:entity_identifier>')
+def view_additional_params(table_name, entity_identifier):
+    entity, actual_table_name = get_entity_by_table_name(table_name, entity_name=entity_identifier)
     entity_name = get_entity_display_name(entity, actual_table_name)
     
     # Récupérer la configuration des paramètres additionnels
@@ -104,7 +103,7 @@ def view_additional_params(table_name, table_id):
         config=config
     )
 
-@additional_params_bp.route('/additional_params/list')
+@additional_params_bp.route('/list')
 def list_additional_params():
     """Liste toutes les configurations de paramètres additionnels"""
     configs = AdditionalParametersConfig.query.all()
@@ -128,10 +127,9 @@ def list_additional_params():
 
 # ======== ROUTES D'ÉDITION ========
 
-@additional_params_bp.route('/additional_params/edit/<table_name>/<int:table_id>', methods=['GET', 'POST'])
-def edit_additional_params(table_name, table_id):
-    """Édite les paramètres additionnels d'une entité"""
-    entity, actual_table_name = get_entity_by_table_name(table_name, table_id=table_id)
+@additional_params_bp.route('/edit/<string:table_name>/<string:entity_identifier>', methods=['GET', 'POST'])
+def edit_additional_params(table_name, entity_identifier):
+    entity, actual_table_name = get_entity_by_table_name(table_name, entity_name=entity_identifier)
     entity_name = get_entity_display_name(entity, actual_table_name)
     
     # Récupérer ou créer la configuration
@@ -220,11 +218,9 @@ def edit_additional_params(table_name, table_id):
         config=config
     )
 
-@additional_params_bp.route('/<string:model_type>/<string:entity_name>/additionalparameters/add', methods=['GET', 'POST'])
-def add_additional_param(model_type, entity_name):
-    """Ajoute des paramètres additionnels à une entité"""
-    # Récupérer l'entité et le nom de la table en utilisant la fonction améliorée
-    entity, table_name = get_entity_by_table_name(model_type, entity_name=entity_name)
+@additional_params_bp.route('/add/<string:table_name>/<string:entity_identifier>', methods=['GET', 'POST'])
+def add_additional_param(table_name, entity_identifier):
+    entity, actual_table_name = get_entity_by_table_name(table_name, entity_name=entity_identifier)
     table_id = entity.id
     
     if request.method == 'POST':
