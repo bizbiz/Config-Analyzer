@@ -21,4 +21,15 @@
         <a href="{{ url_for('softwares.list_softwares') }}" class="btn btn-secondary">Retour à la liste des logiciels</a>
     </div>
 </div>
+
+<!-- Section des paramètres additionnels -->
+{% set table_name = 'software' %}  <!-- ou 'softwares', 'robot_models', etc. selon la page -->
+{% set table_id = software.id %}    <!-- ou software.id, robot_model.id, etc. selon la page -->
+
+{% set additional_params_data = get_additional_params_data(table_name, table_id) %}
+{% set additional_params = additional_params_data.additional_params %}
+{% set dependencies = additional_params_data.dependencies %}
+
+{% include 'list/additional_params.html' %}
+
 {% endblock %}

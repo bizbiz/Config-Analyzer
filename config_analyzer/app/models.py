@@ -193,9 +193,17 @@ class BaseConfigDependence(db.Model):
 class AdditionalParametersConfig(db.Model):
     __tablename__ = 'additional_parameters_config'
     id = db.Column(db.Integer, primary_key=True)
-    table_name = db.Column(db.String(30))  # clients, robot_clients, software_versions, robot_modeles
+    table_name = db.Column(db.String(30)) 
     table_id = db.Column(db.Integer)
-    type = db.Column(db.String(20))  # numeric, text
+    type = db.Column(db.String(20))  # numeric, text, enum
+    name = db.Column(db.String(100))
+    value = db.Column(db.String(255)) # can be an enumeration of different possible value 
+    
+    # Champs de traçabilité
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    updated_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
     dependencies = db.relationship("BaseConfigDependence", back_populates="additional_parameters_config")
     additional_parameters = db.relationship("AdditionalParameter", back_populates="additional_parameters_config")
@@ -206,8 +214,13 @@ class AdditionalParameter(db.Model):
     additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
     name = db.Column(db.String(100))
     value = db.Column(db.String(255))
+    
+    # Champs de traçabilité
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'

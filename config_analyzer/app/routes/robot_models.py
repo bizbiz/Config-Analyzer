@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import RobotModel, Software
+from app.models import RobotModel, Software, AdditionalParametersConfig
 from app.extensions import db
 
 robot_models_bp = Blueprint('robot_models', __name__)
@@ -10,10 +10,24 @@ def list_robot_models():
     softwares = Software.query.all()
     return render_template('list/robot_models.html', robot_models=robot_models, softwares=softwares)
 
-@robot_models_bp.route('/robot_models/<int:robot_model_id>/view')
-def view_robot_model(robot_model_id):
-    robot_model = RobotModel.query.get_or_404(robot_model_id)
-    return render_template('view/robot_model.html', robot_model=robot_model)
+@robot_models_bp.route('/robot_models/<string:robot_model_name>')
+def view_robot_model(robot_model_name):
+    # Récupérer le modèle de robot par son nom
+    robot_model = RobotModel.query.filter_by(name=robot_model_name).first_or_404()
+    
+    # Récupérer les configurations de paramètres pour ce modèle
+    params_configs = AdditionalParametersConfig.query.filter_by(
+        table_name='robot_models',
+        table_id=robot_model.id
+    ).all()
+    
+    return render_template(
+        'view/robot_model.html',
+        robot_model=robot_model,
+        params_configs=params_configs,
+        entity=robot_model,
+        entity_type='robot_model'
+    )
 
 @robot_models_bp.route('/robot_models/add', methods=['GET', 'POST'])
 def add_robot_model():

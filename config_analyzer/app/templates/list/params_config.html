@@ -1,0 +1,66 @@
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Configurations de paramètres additionnels</h5>
+        {% if entity_type == 'robot_model' %}
+            <a href="{{ url_for('additional_params_config.add_params_config', robot_model_name=entity.name) }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>Ajouter une configuration
+            </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if params_configs %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Nom</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Valeurs possibles</th>
+                            <th scope="col">Créé le</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in params_configs %}
+                        <tr>
+                            <td>{{ config.name }}</td>
+                            <td>
+                                {% if config.type == 'text' %}
+                                    <span class="badge bg-info">Texte</span>
+                                {% elif config.type == 'numeric' %}
+                                    <span class="badge bg-primary">Nombre</span>
+                                {% elif config.type == 'enum' %}
+                                    <span class="badge bg-success">Énumération</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ config.type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ config.value }}</td>
+                            <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-center">
+                                {% if entity_type == 'robot_model' %}
+                                <a href="{{ url_for('additional_params_config.edit_params_config', robot_model_name=entity.name, config_id=config.id) }}" class="btn btn-sm btn-warning me-2">
+                                    <i class="fas fa-edit"></i> Modifier
+                                </a>
+                                <form action="{{ url_for('additional_params_config.delete_params_config', robot_model_name=entity.name, config_id=config.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>Aucune configuration de paramètres définie.
+                {% if entity_type == 'robot_model' %}
+                    <a href="{{ url_for('additional_params_config.add_params_config', robot_model_name=entity.name) }}" class="alert-link">Ajouter une configuration</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>

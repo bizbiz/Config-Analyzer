@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Ajouter un paramètre à {{ model_type }}: {{ entity_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter un paramètre à {{ model_type }}: {{ entity_name }}</h2>
+        <form action="{{ url_for('additional_params.add_additional_param', model_type=model_type, entity_name=entity_name) }}" method="POST" id="addParamForm">
+            <div class="mb-3">
+                <label for="name" class="form-label">Nom :</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="type" class="form-label">Type :</label>
+                <select id="type" name="type" class="form-select" required onchange="showValueField()">
+                    <option value="">Sélectionner un type</option>
+                    <option value="text">Texte</option>
+                    <option value="number">Nombre</option>
+                    <option value="enum">Énumération</option>
+                </select>
+            </div>
+            <div id="valueField" class="mb-3" style="display: none;">
+                <!-- Le champ de valeur sera inséré ici dynamiquement -->
+            </div>
+            <div id="enumContainer" class="mb-3" style="display: none;">
+                <!-- Les champs d'énumération seront insérés ici dynamiquement -->
+            </div>
+            <button type="submit" class="btn btn-success">Ajouter</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showValueField() {
+    const type = document.getElementById('type').value;
+    const valueField = document.getElementById('valueField');
+    const enumContainer = document.getElementById('enumContainer');
+    
+    valueField.innerHTML = '';
+    enumContainer.innerHTML = '';
+    valueField.style.display = 'none';
+    enumContainer.style.display = 'none';
+
+    if (type === 'text') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur :</label>
+            <input type="text" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+    } else if (type === 'number') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur :</label>
+            <input type="number" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+    } else if (type === 'enum') {
+        // Ajouter le premier champ d'énumération
+        addNewEnumField();
+        enumContainer.style.display = 'block';
+    }
+}
+
+function addNewEnumField() {
+    const enumContainer = document.getElementById('enumContainer');
+    const newField = document.createElement('div');
+    newField.className = 'enum-value mb-2';
+    newField.innerHTML = `
+        <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
+    `;
+    
+    // Ajouter l'événement d'entrée après la création de l'élément
+    const input = newField.querySelector('input');
+    input.addEventListener('input', function() {
+        if (this.value && this.closest('.enum-value') === enumContainer.lastElementChild) {
+            addNewEnumField();
+        }
+    });
+    
+    enumContainer.appendChild(newField);
+}
+
+</script>
+{% endblock %}

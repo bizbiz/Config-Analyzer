@@ -25,7 +25,9 @@
             <tbody>
                 {% for software in softwares %}
                 <tr>
-                    <td>{{ software.name }}</td>
+                    <td>
+                        <a href="{{ url_for('softwares.view_software_by_name', software_name=software.name) }}">{{ software.name }}</a>
+                    </td>
                     <td>
                         {% for relation in software.robot_modeles %}
                             {{ relation.robot_modele.name }}{% if not loop.last %}, {% endif %}

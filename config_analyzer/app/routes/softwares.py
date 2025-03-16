@@ -1,8 +1,14 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models import Software, RobotModel
 from app.extensions import db
+from app.routes.additional_params import get_additional_params_data
 
 softwares_bp = Blueprint('softwares', __name__)
+
+# Ajoutez cette fonction pour rendre get_additional_params_data disponible dans les templates
+@softwares_bp.app_template_global()
+def get_template_additional_params_data(table_name, table_id):
+    return get_additional_params_data(table_name, table_id)
 
 @softwares_bp.route('/softwares')
 def list_softwares():
@@ -65,7 +71,9 @@ def delete_software(software_id):
     flash("Logiciel supprimé avec succès !", "success")
     return redirect(url_for('softwares.list_softwares'))
 
-@softwares_bp.route('/softwares/<int:software_id>/view', methods=['GET'])
-def view_software(software_id):
-    software = Software.query.get_or_404(software_id)
-    return render_template('view/software.html', software=software)
+@softwares_bp.route('/softwares/<string:software_name>/view', methods=['GET'])
+def view_software_by_name(software_name):
+    software = Software.query.filter_by(name=software_name).first_or_404()
+    return render_template('view/software.html', 
+                          software=software, 
+                          get_additional_params_data=get_additional_params_data)

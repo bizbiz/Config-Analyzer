@@ -51,4 +51,10 @@ def create_app():
     from app.routes.parsed_files import parsed_files_bp
     app.register_blueprint(parsed_files_bp)
 
+    from app.routes.additional_params import additional_params_bp
+    app.register_blueprint(additional_params_bp)
+
+    from app.routes.additional_params_config import additional_params_config_bp
+    app.register_blueprint(additional_params_config_bp)
+
     return app
