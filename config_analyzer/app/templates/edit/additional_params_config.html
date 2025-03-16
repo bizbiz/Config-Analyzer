@@ -13,6 +13,12 @@
             </div>
             
             <div class="mb-3">
+                <label for="description" class="form-label">Description (facultative) :</label>
+                <textarea id="description" name="description" class="form-control" rows="3" 
+                          placeholder="Description détaillée du paramètre...">{{ config.description }}</textarea>
+            </div>
+            
+            <div class="mb-3">
                 <label for="type" class="form-label">Type de paramètre :</label>
                 <select id="type" name="type" class="form-select" required onchange="showValueField()">
                     <option value="">Sélectionner un type</option>
@@ -25,6 +31,28 @@
             <div id="valueField" class="mb-3" style="display: {% if config.type.value in ['text', 'numeric'] %}block{% else %}none{% endif %};">
                 <label for="value" class="form-label">Valeur par défaut :</label>
                 <input type="{{ 'number' if config.type.value == 'numeric' else 'text' }}" id="value" name="value" class="form-control" value="{{ config.values[0] if config.values and config.values|length > 0 else '' }}">
+            </div>
+            
+            <!-- Champs min/max pour les nombres -->
+            <div id="numericRangeFields" class="mb-3" style="display: {% if config.type.value == 'numeric' %}block{% else %}none{% endif %};">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="min_value" class="form-label">Valeur minimale (facultative) :</label>
+                        <input type="number" id="min_value" name="min_value" class="form-control" 
+                               value="{{ config.values[1] if config.values and config.values|length > 1 else '' }}">
+                        {% if known_min is defined and known_min is not none %}
+                        <small class="form-text text-muted">Valeur minimale connue: {{ known_min }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="max_value" class="form-label">Valeur maximale (facultative) :</label>
+                        <input type="number" id="max_value" name="max_value" class="form-control" 
+                               value="{{ config.values[2] if config.values and config.values|length > 2 else '' }}">
+                        {% if known_max is defined and known_max is not none %}
+                        <small class="form-text text-muted">Valeur maximale connue: {{ known_max }}</small>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             
             <div id="enumContainer" class="mb-3" style="display: {% if config.type.value == 'enum' %}block{% else %}none{% endif %};">
@@ -58,7 +86,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-2"></i> Enregistrer
                 </button>
-                <a href="{{ url_for('robot_models.view', name=robot_model.name) }}" class="btn btn-secondary">
+                <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Retour
                 </a>
             </div>
@@ -71,16 +99,25 @@ function showValueField() {
     const type = document.getElementById('type').value;
     const valueField = document.getElementById('valueField');
     const enumContainer = document.getElementById('enumContainer');
+    const numericRangeFields = document.getElementById('numericRangeFields');
     
     valueField.style.display = 'none';
     enumContainer.style.display = 'none';
+    numericRangeFields.style.display = 'none';
 
-    if (type === 'text' || type === 'numeric') {
+    if (type === 'text') {
         valueField.innerHTML = `
             <label for="value" class="form-label">Valeur par défaut :</label>
-            <input type="${type === 'numeric' ? 'number' : 'text'}" id="value" name="value" class="form-control">
+            <input type="text" id="value" name="value" class="form-control">
         `;
         valueField.style.display = 'block';
+    } else if (type === 'numeric') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur par défaut :</label>
+            <input type="number" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+        numericRangeFields.style.display = 'block';
     } else if (type === 'enum') {
         // Vider le conteneur d'énumération et ajouter le premier champ
         enumContainer.innerHTML = `

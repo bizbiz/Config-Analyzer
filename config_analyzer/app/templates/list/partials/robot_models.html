@@ -34,15 +34,15 @@
         <td>{{ robot_model.company }}</td>
         <td>{{ robot_model.software.name if robot_model.software else 'N/A' }}</td>
         <td class="text-center">
-            <a href="{{ url_for('robot_models.view', name=robot_model.name) }}" 
+            <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}" 
                class="btn btn-sm btn-info me-2">
                 <i class="fas fa-eye"></i>
             </a>
-            <a href="{{ url_for('robot_models.edit', name=robot_model.name) }}" 
+            <a href="{{ url_for('robot_models.edit', slug=robot_model.slug) }}" 
                class="btn btn-sm btn-warning me-2">
                 <i class="fas fa-edit"></i>
             </a>
-            <form action="{{ url_for('robot_models.delete', name=robot_model.name) }}" 
+            <form action="{{ url_for('robot_models.delete', slug=robot_model.slug) }}" 
                   method="POST" class="d-inline">
                 <button type="submit" class="btn btn-sm btn-danger" 
                         onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce modèle de robot ?')">

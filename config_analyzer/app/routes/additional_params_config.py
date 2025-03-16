@@ -61,6 +61,7 @@ def add(entity_name):
     
     if request.method == 'POST':
         name = request.form.get('name')
+        description = request.form.get('description')  # Nouveau champ
         param_type = request.form.get('type')
         
         if not name or not param_type:
@@ -78,8 +79,26 @@ def add(entity_name):
             if enum_type == ParameterType.ENUM:
                 # Récupérer les valeurs d'énumération (filtre les valeurs vides)
                 values_array = [v for v in request.form.getlist('enum_values[]') if v.strip()]
+            elif enum_type == ParameterType.NUMERIC:
+                # Pour numérique, prendre la valeur, min et max
+                value = request.form.get('value')
+                min_value = request.form.get('min_value')
+                max_value = request.form.get('max_value')
+                
+                values_array = [value] if value else ['']
+                
+                if min_value:
+                    values_array.append(min_value)
+                elif max_value:  # Si max mais pas min
+                    values_array.append('')
+                    
+                if max_value:
+                    # S'assurer que min existe avant max
+                    if len(values_array) < 2:
+                        values_array.append('')
+                    values_array.append(max_value)
             else:
-                # Pour text et numeric, on prend juste la valeur unique
+                # Pour text, on prend juste la valeur unique
                 value = request.form.get('value')
                 if value:
                     values_array = [value]
@@ -93,6 +112,9 @@ def add(entity_name):
                 values=values_array,
                 created_by_user_id=current_user.id if current_user.is_authenticated else None
             )
+
+            # Puis définissez la description séparément (test pour éviter une erreur)
+            new_config.description = description
             
             db.session.add(new_config)
             db.session.commit()
@@ -109,6 +131,7 @@ def add(entity_name):
         robot_model=robot_model
     )
 
+
 @additional_params_config_bp.route('/edit/<string:entity_name>/<int:config_id>', methods=['GET', 'POST'])
 def edit(entity_name, config_id):
     """Édite une configuration de paramètres existante"""
@@ -119,8 +142,12 @@ def edit(entity_name, config_id):
     if config.table_name != 'robot_models' or config.table_id != robot_model.id:
         abort(404)
     
+    # Récupérer les valeurs min/max connues
+    known_min, known_max = config.get_known_min_max()
+    
     if request.method == 'POST':
         config.name = request.form.get('name')
+        config.description = request.form.get('description')  # Nouveau champ
         new_type = ParameterType(request.form.get('type'))
         config.type = new_type
         
@@ -128,8 +155,27 @@ def edit(entity_name, config_id):
         if new_type == ParameterType.ENUM:
             # Récupérer les valeurs d'énumération (filtre les valeurs vides)
             config.values = [v for v in request.form.getlist('enum_values[]') if v.strip()]
+        elif new_type == ParameterType.NUMERIC:
+            # Pour numérique, prendre la valeur, min et max
+            value = request.form.get('value')
+            min_value = request.form.get('min_value')
+            max_value = request.form.get('max_value')
+            
+            values_array = [value] if value else ['']
+            if min_value:
+                values_array.append(min_value)
+            elif max_value:  # Si max existe mais pas min
+                values_array.append('')
+                
+            if max_value:
+                # S'assurer qu'il y a min avant max
+                if len(values_array) < 2:
+                    values_array.append('')
+                values_array.append(max_value)
+                
+            config.values = values_array
         else:
-            # Pour text et numeric, on prend juste la valeur unique
+            # Pour text, on prend juste la valeur unique
             value = request.form.get('value')
             config.values = [value] if value else []
         
@@ -146,8 +192,11 @@ def edit(entity_name, config_id):
     return render_template(
         'edit/additional_params_config.html',
         robot_model=robot_model,
-        config=config
+        config=config,
+        known_min=known_min,
+        known_max=known_max
     )
+
 
 @additional_params_config_bp.route('/delete/<string:entity_name>/<int:config_id>', methods=['POST'])
 def delete(entity_name, config_id):

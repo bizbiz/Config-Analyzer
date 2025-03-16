@@ -207,6 +207,7 @@ class AdditionalParametersConfig(db.Model):
     table_id = db.Column(db.Integer)
     type = db.Column(Enum(ParameterType), nullable=False)
     name = db.Column(db.String(100))
+    description = db.Column(db.Text, nullable=True)
     values = db.Column(ARRAY(db.String(255)))
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
@@ -233,6 +234,23 @@ class AdditionalParametersConfig(db.Model):
         elif self.type == ParameterType.ENUM:
             return "Énumération"
         return str(self.type)
+
+    # Méthode pour obtenir les valeurs min/max connues des paramètres existants
+    def get_known_min_max(self):
+        if self.type != ParameterType.NUMERIC:
+            return None, None
+            
+        numeric_values = []
+        for param in self.additional_parameters:
+            try:
+                numeric_values.append(float(param.value))
+            except (ValueError, TypeError):
+                pass
+                
+        if not numeric_values:
+            return None, None
+            
+        return min(numeric_values), max(numeric_values)
 
 class AdditionalParameter(db.Model):
     __tablename__ = 'additional_parameters'
