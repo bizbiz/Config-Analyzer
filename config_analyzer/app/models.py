@@ -8,8 +8,6 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy import Enum
 import enum
 
-
-# Définition de l'enum Python pour les types de paramètres
 class ParameterType(enum.Enum):
     TEXT = "text"
     NUMERIC = "numeric"
@@ -161,7 +159,7 @@ class ClientConfigurationFile(db.Model):
 class BaseConfigFileParameter(db.Model):
     __tablename__ = 'base_config_file_parameters'
     id = db.Column(db.Integer, primary_key=True)
-    in_use = db.Column(db.Boolean, default=True, nullable=False)  # Indique si c'est la version active
+    in_use = db.Column(db.Boolean, default=True, nullable=False)
     base_config_file_id = db.Column(db.Integer, db.ForeignKey('software_base_configuration_files.id'), nullable=False)
     name = db.Column(db.String(100))
     value = db.Column(db.String(100))
@@ -173,19 +171,12 @@ class BaseConfigFileParameter(db.Model):
     regex_rule = db.Column(db.String)
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
-    # Niveaux d'accès 
-    view_access_level = db.Column(db.Integer, nullable=False, default=0)  
-    edit_access_level = db.Column(db.Integer, nullable=False, default=0)  
-
-    # Ajout de l'ID de l'utilisateur qui a créé/modifié le paramètre
+    view_access_level = db.Column(db.Integer, nullable=False, default=0)
+    edit_access_level = db.Column(db.Integer, nullable=False, default=0)
     created_by_user_id = db.Column(db.Integer, ForeignKey('users.id'), nullable=True)
+    parameter_group_id = db.Column(db.String(100))
+    version = db.Column(db.Integer, default=1)
     
-    # Nouveau champ pour lier les versions d'un même paramètre
-    parameter_group_id = db.Column(db.String(100))  # Identifiant commun pour toutes les versions d'un même paramètre
-    version = db.Column(db.Integer, default=1)  # Numéro de version du paramètre
-    
-    # Relations
     base_config_file = db.relationship("SoftwareBaseConfigurationFile", back_populates="parameters")
     dependencies = db.relationship("BaseConfigDependence", back_populates="base_config_file_parameter")
 
@@ -194,7 +185,7 @@ class BaseConfigDependence(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     base_config_file_parameters_id = db.Column(db.Integer, db.ForeignKey('base_config_file_parameters.id'))
     additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
-    depend_rules_type = db.Column(db.String(100))  # numeric or regex
+    depend_rules_type = db.Column(db.String(100))
     depend_rules = db.Column(db.Text)
 
     base_config_file_parameter = db.relationship("BaseConfigFileParameter", back_populates="dependencies")
@@ -205,16 +196,9 @@ class AdditionalParametersConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     table_name = db.Column(db.String(30)) 
     table_id = db.Column(db.Integer)
-    # Utilisation de l'enum Python avec SQLAlchemy Enum
     type = db.Column(Enum(ParameterType), nullable=False)
     name = db.Column(db.String(100))
-    
-    # Utilisation d'un tableau PostgreSQL pour stocker toutes les valeurs
-    # Pour les types text/numeric, ce sera un tableau avec un seul élément
-    # Pour les enums, ce sera un tableau avec plusieurs valeurs
     values = db.Column(ARRAY(db.String(255)))
-    
-    # Champs de traçabilité inchangés
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -223,10 +207,8 @@ class AdditionalParametersConfig(db.Model):
     dependencies = db.relationship("BaseConfigDependence", back_populates="additional_parameters_config")
     additional_parameters = db.relationship("AdditionalParameter", back_populates="additional_parameters_config")
     
-    # Propriété pour la compatibilité avec le code existant
     @property
     def value(self):
-        """Retourne la première valeur du tableau ou une chaîne jointe pour compatibilité"""
         if not self.values:
             return None
         if self.type == ParameterType.ENUM:
@@ -235,7 +217,6 @@ class AdditionalParametersConfig(db.Model):
 
     @property
     def type_display(self):
-        """Retourne un nom convivial pour le type de paramètre"""
         if self.type == ParameterType.TEXT:
             return "Texte"
         elif self.type == ParameterType.NUMERIC:
@@ -250,13 +231,10 @@ class AdditionalParameter(db.Model):
     additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
     name = db.Column(db.String(100))
     value = db.Column(db.String(255))
-    
-    # Champs de traçabilité
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
-
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -267,10 +245,9 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128))
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
-    access_level = db.Column(db.Integer, default=0)  # 0: Public, 1: Restricted, 2: Admin
+    access_level = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     
-    # Paramètres créés par cet utilisateur (relation inverse)
     created_parameters = db.relationship("BaseConfigFileParameter", 
                                     foreign_keys="BaseConfigFileParameter.created_by_user_id",
                                     backref="created_by_user")
