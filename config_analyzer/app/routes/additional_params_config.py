@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, abort
-from app.models import AdditionalParametersConfig, AdditionalParameter, RobotModel
+from app.models import AdditionalParametersConfig, AdditionalParameter, RobotModel, ParameterType
 from app.extensions import db
 from sqlalchemy.exc import SQLAlchemyError
 from flask_login import current_user

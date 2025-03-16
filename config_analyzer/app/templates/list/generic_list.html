@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/list_filters.js') }}"></script>
+{% endblock %}
+
+{% block title %}{% block list_title %}Liste Générique{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">{% block list_heading %}{% endblock %}</h1>
+    
+    {% block pre_table_content %}{% endblock %}
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% block card_title %}Liste des éléments{% endblock %}</h5>
+            {% block add_button %}{% endblock %}
+        </div>
+        <div class="card-body">
+            {% if items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                {% block table_headers %}{% endblock %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% block table_rows %}{% endblock %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    {% block empty_list_message %}Aucun élément trouvé.{% endblock %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% block post_table_content %}{% endblock %}
+</div>
+{% endblock %}

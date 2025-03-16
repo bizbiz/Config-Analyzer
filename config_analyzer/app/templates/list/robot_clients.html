@@ -1,42 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Liste des Clients Robots{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">Liste des Clients Robots</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Modèle de Robot</th>
-                <th>Numéro de Série</th>
-                <th>Longueur (m)</th>
-                <th>Hauteur (m)</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for robot_client in robot_clients %}
-            <tr>
-                <td>{{ robot_client.id }}</td>
-                <td>{{ robot_client.client.name }}</td>
-                <td>{{ robot_client.robot_modele.name }}</td>
-                <td>{{ robot_client.serial_number }}</td>
-                <td>{{ robot_client.length }}</td>
-                <td>{{ robot_client.height }}</td>
-                <td>
-                    <a href="{{ url_for('robot_clients.view_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-info btn-sm">Voir</a>
-                    <a href="{{ url_for('robot_clients.edit_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-warning btn-sm">Modifier</a>
-                    <a href="{{ url_for('robot_clients.delete_robot_client', robot_client_id=robot_client.id) }}" class="btn btn-danger btn-sm">Supprimer</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="text-center mt-4">
-        <a href="{{ url_for('robot_clients.add_robot_client') }}" class="btn btn-light btn-lg rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: #f0f0f0; color: black; font-size: 48px;">
-            +
-        </a>
-    </div>
+<div class="container py-5">
+    {% include "list/partials/robot_clients.html" %}
 </div>
 {% endblock %}

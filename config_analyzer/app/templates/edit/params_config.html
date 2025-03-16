@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier la configuration de paramètre : {{ config.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-4">Modifier la configuration de paramètre</h1>
+    <div class="card p-4 shadow-sm">
+        <form action="{{ url_for('additional_params_config.edit_params_config', robot_model_name=robot_model.name, config_id=config.id) }}" method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Nom :</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ config.name }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="type" class="form-label">Type de paramètre :</label>
+                <select id="type" name="type" class="form-select" required onchange="showValueField()">
+                    <option value="">Sélectionner un type</option>
+                    <option value="text" {% if config.type.value == 'text' %}selected{% endif %}>Texte</option>
+                    <option value="numeric" {% if config.type.value == 'numeric' %}selected{% endif %}>Nombre</option>
+                    <option value="enum" {% if config.type.value == 'enum' %}selected{% endif %}>Énumération</option>
+                </select>
+            </div>
+            
+            <div id="valueField" class="mb-3" style="display: {% if config.type.value in ['text', 'numeric'] %}block{% else %}none{% endif %};">
+                <label for="value" class="form-label">Valeur par défaut :</label>
+                <input type="{{ 'number' if config.type.value == 'numeric' else 'text' }}" id="value" name="value" class="form-control" value="{{ config.values[0] if config.values and config.values|length > 0 else '' }}">
+            </div>
+            
+            <div id="enumContainer" class="mb-3" style="display: {% if config.type.value == 'enum' %}block{% else %}none{% endif %};">
+                <label class="form-label">Valeurs d'énumération :</label>
+                {% if config.values and config.values|length > 0 %}
+                    {% for value in config.values %}
+                        <div class="enum-value mb-2">
+                            <div class="input-group">
+                                <input type="text" name="enum_values[]" class="form-control" value="{{ value }}" placeholder="Valeur d'énumération">
+                                {% if not loop.first %}
+                                <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="enum-value mb-2">
+                        <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
+                    </div>
+                {% endif %}
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addEnumField()">
+                        <i class="fas fa-plus me-1"></i>Ajouter une valeur
+                    </button>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> Enregistrer
+                </button>
+                <a href="{{ url_for('robot_models.view_robot_model', robot_model_name=robot_model.name) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Retour
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showValueField() {
+    const type = document.getElementById('type').value;
+    const valueField = document.getElementById('valueField');
+    const enumContainer = document.getElementById('enumContainer');
+    
+    valueField.style.display = 'none';
+    enumContainer.style.display = 'none';
+
+    if (type === 'text' || type === 'numeric') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur par défaut :</label>
+            <input type="${type === 'numeric' ? 'number' : 'text'}" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+    } else if (type === 'enum') {
+        // Vider le conteneur d'énumération et ajouter le premier champ
+        enumContainer.innerHTML = `
+            <label class="form-label">Valeurs d'énumération :</label>
+            <div class="enum-value mb-2">
+                <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
+            </div>
+            <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addEnumField()">
+                    <i class="fas fa-plus me-1"></i>Ajouter une valeur
+                </button>
+            </div>
+        `;
+        enumContainer.style.display = 'block';
+    }
+}
+
+function addEnumField() {
+    const enumContainer = document.getElementById('enumContainer');
+    
+    const newField = document.createElement('div');
+    newField.className = 'enum-value mb-2';
+    newField.innerHTML = `
+        <div class="input-group">
+            <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
+            <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    // Insérer avant le bouton "Ajouter une valeur"
+    enumContainer.insertBefore(newField, enumContainer.querySelector('.mt-2'));
+}
+
+function removeEnumField(button) {
+    const fieldDiv = button.closest('.enum-value');
+    fieldDiv.remove();
+}
+</script>
+{% endblock %}

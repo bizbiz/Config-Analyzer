@@ -174,7 +174,7 @@ def create_parameter():
         logging.error(f"Erreur lors de la création du paramètre: {str(e)}\n{error_details}")
         return jsonify({'status': 'error', 'message': str(e), 'details': error_details}), 400
 
-@parsed_files_bp.route('/update_parameter_complete/<param_id>', methods=['POST'])
+@parsed_files_bp.route('/update_parameter_complete/<int:param_id>', methods=['POST'])
 def update_parameter_complete(param_id):
     """Crée une nouvelle version d'un paramètre plutôt que de le mettre à jour"""
     try:

@@ -34,19 +34,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('clients.list_clients') }}">Clients</a>
+                        <a class="nav-link" href="{{ url_for('clients.list') }}">Clients</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('robot_models.list_robot_models') }}">Modèles de robot</a>
+                        <a class="nav-link" href="{{ url_for('robot_models.list') }}">Modèles de robot</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('softwares.list_softwares') }}">Logiciels</a>
+                        <a class="nav-link" href="{{ url_for('softwares.list') }}">Logiciels</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('software_versions.list_all_software_versions') }}">Versions de Logiciels</a>
+                        <a class="nav-link" href="{{ url_for('software_versions.list') }}">Versions de Logiciels</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('robot_clients.list_robot_clients') }}">Clients Robots</a>
+                        <a class="nav-link" href="{{ url_for('robot_clients.list') }}">Clients Robots</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('additional_params_config.list') }}">Configurations Avancées</a>
                     </li>
                 </ul>
             </div>
@@ -56,5 +59,6 @@
         {% block content %}{% endblock %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

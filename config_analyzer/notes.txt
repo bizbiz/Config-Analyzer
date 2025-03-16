@@ -14,6 +14,16 @@ sur cette page il faut afficher + d'infos dans la liste des fichiers config de b
 http://localhost:5000/software_base_configuration/Evotec.exe/3.0.5.0/params.cfg
 ici on peut reprendre les info affichés par l'edit
 
+On peut dans la db pour les champs dangereux (par exemple les nom de table dans additionalparam utiliser des enums plutôt que laisser le champ libre)
+class TableType(enum.Enum):
+    CLIENT = "clients"
+    ROBOT_CLIENT = "robot_clients"
+    ROBOT_MODEL = "robot_models"
+    SOFTWARE = "softwares"
+    SOFTWARE_VERSION = "software_versions"
+
+idem pour les regles (equals/contains/regex-match/ignore/etc)
+
 Remember :
 
 Pour modif db
@@ -32,16 +42,7 @@ docker exec -it config_analyzer_app flask db stamp head
 convention de nommage avec Flask :
 
 Structure de dossiers
-.
-├── app/
-│   ├── models/          # Tous les modèles de données
-│   ├── routes/          # Tous les blueprints/controllers
-│   ├── templates/        # Templates HTML
-│   ├── static/          # Assets statiques
-│   ├── utils/           # Helpers et utilitaires
-│   └── __init__.py      # Factory d'application
-├── migrations/          # Migrations de base de données
-└── config.py            # Configuration
+tree /F /A config_analyzer > arborescence.txt
 
 2. Règles pour les modèles
 

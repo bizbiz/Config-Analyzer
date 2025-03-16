@@ -1,0 +1,66 @@
+{% extends "list/generic_list.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        filterItems('searchInput', 'robotClientsTable', 6);
+    });
+</script>
+{% endblock %}
+
+{% block list_title %}Liste des Clients Robots{% endblock %}
+{% block list_heading %}Liste des Clients Robots{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" 
+           placeholder="Rechercher un client robot..." 
+           onkeyup="filterItems('searchInput', 'robotClientsTable', 6)">
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th>ID</th>
+    <th>Client</th>
+    <th>Modèle Robot</th>
+    <th>N° Série</th>
+    <th>Longueur</th>
+    <th>Hauteur</th>
+    <th>Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for robot_client in items %}
+    <tr>
+        <td>{{ robot_client.id }}</td>
+        <td>{{ robot_client.client.name }}</td>
+        <td>{{ robot_client.robot_model.name }}</td>
+        <td>{{ robot_client.serial_number }}</td>
+        <td>{{ robot_client.length|float }}</td>
+        <td>{{ robot_client.height|float }}</td>
+        <td>
+            <a href="{{ url_for('robot_clients.view', robot_client_id=robot_client.id) }}" 
+               class="btn btn-info btn-sm">
+               <i class="fas fa-eye"></i>
+            </a>
+            <a href="{{ url_for('robot_clients.edit', robot_client_id=robot_client.id) }}" 
+               class="btn btn-warning btn-sm">
+               <i class="fas fa-edit"></i>
+            </a>
+            <a href="{{ url_for('robot_clients.delete', robot_client_id=robot_client.id) }}" 
+               class="btn btn-danger btn-sm" 
+               onclick="return confirm('Supprimer ce client robot ?')">
+               <i class="fas fa-trash"></i>
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block empty_list_message %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>Aucun client robot trouvé.
+    <a href="{{ url_for('robot_clients.add') }}" class="alert-link">Ajouter un client robot</a>
+</div>
+{% endblock %}

@@ -233,6 +233,17 @@ class AdditionalParametersConfig(db.Model):
             return ','.join(self.values)
         return self.values[0] if self.values else None
 
+    @property
+    def type_display(self):
+        """Retourne un nom convivial pour le type de paramètre"""
+        if self.type == ParameterType.TEXT:
+            return "Texte"
+        elif self.type == ParameterType.NUMERIC:
+            return "Nombre"
+        elif self.type == ParameterType.ENUM:
+            return "Énumération"
+        return str(self.type)
+
 class AdditionalParameter(db.Model):
     __tablename__ = 'additional_parameters'
     id = db.Column(db.Integer, primary_key=True)

@@ -1,9 +1,9 @@
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Configurations de paramètres additionnels</h5>
+        <h5 class="mb-0">Configurations possible :</h5>
         {% if entity_type == 'robot_model' %}
             <a href="{{ url_for('additional_params_config.add_params_config', robot_model_name=entity.name) }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Ajouter une configuration
+                <i class="fas fa-plus me-1"></i>Ajouter une option
             </a>
         {% endif %}
     </div>
@@ -25,14 +25,14 @@
                         <tr>
                             <td>{{ config.name }}</td>
                             <td>
-                                {% if config.type == 'text' %}
-                                    <span class="badge bg-info">Texte</span>
-                                {% elif config.type == 'numeric' %}
-                                    <span class="badge bg-primary">Nombre</span>
-                                {% elif config.type == 'enum' %}
-                                    <span class="badge bg-success">Énumération</span>
+                                {% if config.type.value == 'text' %}
+                                    <span class="badge bg-info">{{ config.type_display }}</span>
+                                {% elif config.type.value == 'numeric' %}
+                                    <span class="badge bg-primary">{{ config.type_display }}</span>
+                                {% elif config.type.value == 'enum' %}
+                                    <span class="badge bg-success">{{ config.type_display }}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">{{ config.type }}</span>
+                                    <span class="badge bg-secondary">{{ config.type_display }}</span>
                                 {% endif %}
                             </td>
                             <td>{{ config.value }}</td>
