@@ -1,7 +1,7 @@
 {% block add_software_version_form %}
 <div class="card p-4 shadow-sm">
     <h2 class="mb-3">Ajouter une Version de Logiciel</h2>
-    <form action="{{ url_for('software_versions.add_software_version') }}" method="POST">
+    <form action="{{ url_for('software_versions.add') }}" method="POST">
         <div class="mb-3">
             <label for="software_id" class="form-label">Logiciel :</label>
             <select class="form-select" id="software_id" name="software_id" required>

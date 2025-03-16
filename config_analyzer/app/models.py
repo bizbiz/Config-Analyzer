@@ -48,12 +48,21 @@ class RobotModel(db.Model):
     __tablename__ = 'robots_modeles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False, unique=True)
+    slug = db.Column(db.String(255), nullable=False, unique=True)
     company = db.Column(db.String(255))
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     software = db.relationship("RobotModelSoftware", back_populates="robot_modele")
     clients = db.relationship("RobotClient", back_populates="robot_modele")
+
+    # Définir le slug automatiquement
+    @staticmethod
+    def generate_slug(name):
+        return name.replace(' ', '_')
+    
+    def __init__(self, name, **kwargs):
+        super().__init__(name=name, slug=self.generate_slug(name), **kwargs)
 
 class Software(db.Model):
     __tablename__ = 'software'

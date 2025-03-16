@@ -1,69 +1,99 @@
-{% extends "list/generic_list.html" %}
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% if params_configs is defined %}
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Configurations possibles</h5>
+        {% if entity_type == 'robot_model' %}
+            <a href="{{ url_for('additional_params_config.add', entity_name=entity.name) }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>Ajouter une option
+            </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if params_configs %}
+            <div class="mb-3">
+                <input type="text" id="configSearchInput" class="form-control" 
+                       placeholder="Rechercher une configuration...">
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle" id="configParamsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Nom</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Valeurs possibles</th>
+                            <th scope="col">Créé le</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in params_configs %}
+                        <tr>
+                            <td>{{ config.name }}</td>
+                            <td>
+                                {% if config.type.value == 'text' %}
+                                    <span class="badge bg-info">{{ config.type_display }}</span>
+                                {% elif config.type.value == 'numeric' %}
+                                    <span class="badge bg-primary">{{ config.type_display }}</span>
+                                {% elif config.type.value == 'enum' %}
+                                    <span class="badge bg-success">{{ config.type_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ config.type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ config.value }}</td>
+                            <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('additional_params_config.edit', entity_name=entity.name, config_id=config.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ url_for('additional_params_config.delete', entity_name=entity.name, config_id=config.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if total_items is defined and total_items > items_per_page %}
+                {% include 'includes/_pagination.html' %}
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>Aucune configuration de paramètres définie.
+                {% if entity_type == 'robot_model' %}
+                    <a href="{{ url_for('additional_params_config.add', entity_name=entity.name) }}" class="alert-link">Ajouter une configuration</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
 
-{% block scripts %}
-{{ super() }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        filterItems('searchInput', 'paramsConfigTable', 3);
+        // Filtrage local
+        const searchInput = document.getElementById('configSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const filter = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#configParamsTable tbody tr');
+                
+                rows.forEach(row => {
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const type = row.cells[1].textContent.toLowerCase();
+                    const values = row.cells[2].textContent.toLowerCase();
+                    row.style.display = (name.includes(filter) || type.includes(filter) || values.includes(filter)) 
+                                       ? '' 
+                                       : 'none';
+                });
+            });
+        }
     });
 </script>
-{% endblock %}
-
-{% block list_title %}Configurations de Paramètres{% endblock %}
-{% block list_heading %}Configurations de Paramètres{% endblock %}
-
-{% block pre_table_content %}
-<div class="mb-4">
-    <input type="text" id="searchInput" class="form-control" 
-           placeholder="Rechercher une configuration..." 
-           onkeyup="filterItems('searchInput', 'paramsConfigTable', 3)">
-</div>
-{% endblock %}
-
-{% block table_headers %}
-    <th>Nom</th>
-    <th>Type</th>
-    <th>Valeurs possibles</th>
-    <th>Créé le</th>
-    <th>Actions</th>
-{% endblock %}
-
-{% block table_rows %}
-    {% for config in items %}
-    <tr>
-        <td>{{ config.name }}</td>
-        <td>
-            {% if config.type.value == 'text' %}
-                <span class="badge bg-info">{{ config.type_display }}</span>
-            {% elif config.type.value == 'numeric' %}
-                <span class="badge bg-primary">{{ config.type_display }}</span>
-            {% elif config.type.value == 'enum' %}
-                <span class="badge bg-success">{{ config.type_display }}</span>
-            {% else %}
-                <span class="badge bg-secondary">{{ config.type_display }}</span>
-            {% endif %}
-        </td>
-        <td>{{ config.value }}</td>
-        <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-        <td class="text-center">
-            <a href="{{ url_for('params_config.edit', entity_name=config.entity_name, config_id=config.id) }}" 
-               class="btn btn-sm btn-warning me-2">
-                <i class="fas fa-edit"></i>
-            </a>
-            <form action="{{ url_for('params_config.delete', entity_name=config.entity_name, config_id=config.id) }}" 
-                  method="POST" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-danger" 
-                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-{% endblock %}
-
-{% block empty_list_message %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>Aucune configuration de paramètres définie.
-</div>
-{% endblock %}
+{% endif %}

@@ -13,7 +13,7 @@
 
         <div class="card p-4 shadow-sm">
             <h2 class="mb-3">Modifier les informations du Client</h2>
-            <form action="{{ url_for('clients.edit_client', client_id=client.id) }}" method="POST">
+            <form action="{{ url_for('clients.edit', client_id=client.id) }}" method="POST">
                 <div class="mb-3">
                     <label for="name" class="form-label">Nom :</label>
                     <input type="text" id="name" name="name" class="form-control" 
@@ -38,7 +38,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>Enregistrer
                     </button>
-                    <a href="{{ url_for('clients.list_clients') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('clients.list') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Retour à la liste
                     </a>
                 </div>

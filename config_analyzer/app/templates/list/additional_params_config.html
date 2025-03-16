@@ -1,8 +1,68 @@
-{% extends "base.html" %}
-{% block title %}Liste des Configurations de Paramètres{% endblock %}
+{% extends "list/generic_list.html" %}
 
-{% block content %}
-<div class="container py-5">
-    {% include "list/partials/params_config.html" %}
+{% block list_title %}Configurations de Paramètres{% endblock %}
+{% block list_heading %}Liste des Configurations de Paramètres{% endblock %}
+
+{% block pre_table_content %}
+<div class="mb-4">
+    <form method="GET" action="{{ url_for('additional_params_config.list') }}">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Rechercher..." 
+                   value="{{ request.args.get('q', '') }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block card_title %}Configurations de paramètres{% endblock %}
+
+{% block table_headers %}
+    <th scope="col">Nom</th>
+    <th scope="col">Type</th>
+    <th scope="col">Valeurs possibles</th>
+    <th scope="col">Créé le</th>
+    <th scope="col">Actions</th>
+{% endblock %}
+
+{% block table_rows %}
+    {% for config in items %}
+    <tr>
+        <td>{{ config.name }}</td>
+        <td>
+            {% if config.type.value == 'text' %}
+                <span class="badge bg-info">{{ config.type_display }}</span>
+            {% elif config.type.value == 'numeric' %}
+                <span class="badge bg-primary">{{ config.type_display }}</span>
+            {% elif config.type.value == 'enum' %}
+                <span class="badge bg-success">{{ config.type_display }}</span>
+            {% else %}
+                <span class="badge bg-secondary">{{ config.type_display }}</span>
+            {% endif %}
+        </td>
+        <td>{{ config.value }}</td>
+        <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td class="text-center">
+            <a href="{{ url_for('additional_params_config.edit', entity_name=config.entity_name, config_id=config.id) }}" 
+               class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i>
+            </a>
+            <form action="{{ url_for('additional_params_config.delete', entity_name=config.entity_name, config_id=config.id) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger" 
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block post_table_content %}
+    {% if total_items > items_per_page %}
+        {% include 'includes/_pagination.html' %}
+    {% endif %}
 {% endblock %}

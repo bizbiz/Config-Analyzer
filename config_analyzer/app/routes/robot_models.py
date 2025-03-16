@@ -12,22 +12,37 @@ def list():
     softwares = Software.query.all()
     return render_template('list/partials/robot_models.html', items=robot_models, softwares=softwares)
 
-@robot_models_bp.route('/view/<string:name>')
-def view(name):
-    """Affiche un modèle de robot spécifique"""
-    # Récupérer le modèle de robot par son nom
-    robot_model = RobotModel.query.filter_by(name=name).first_or_404()
+@robot_models_bp.route('/view/<string:slug>')
+def view(slug):
+    """Affiche un modèle de robot spécifique via son slug"""
+    robot_model = RobotModel.query.filter_by(slug=slug).first_or_404()
+    
+    # Pagination pour les configurations de paramètres
+    page = request.args.get('config_page', 1, type=int)
+    items_per_page = 20
     
     # Récupérer les configurations de paramètres pour ce modèle
-    params_configs = AdditionalParametersConfig.query.filter_by(
+    params_query = AdditionalParametersConfig.query.filter_by(
         table_name='robot_models',
         table_id=robot_model.id
-    ).all()
+    )
+    
+    total_items = params_query.count()
+    params_configs = params_query.paginate(
+        page=page, 
+        per_page=items_per_page, 
+        error_out=False
+    ).items
     
     return render_template(
         'view/robot_model.html',
         robot_model=robot_model,
         params_configs=params_configs,
+        total_items=total_items,
+        items_per_page=items_per_page,
+        page=page,
+        total_pages=(total_items + items_per_page - 1) // items_per_page,
+        offset=(page - 1) * items_per_page,
         entity=robot_model,
         entity_type='robot_model'
     )
@@ -44,6 +59,13 @@ def add():
             flash("Le nom du modèle de robot est obligatoire.", "error")
             return redirect(url_for('robot_models.add'))
         
+        # Vérifie si un modèle avec ce nom existe déjà
+        slug = RobotModel.generate_slug(name)
+        existing = RobotModel.query.filter_by(slug=slug).first()
+        if existing:
+            flash(f"Un modèle avec ce nom ou un nom similaire existe déjà: {existing.name}", "error")
+            return redirect(url_for('robot_models.add'))
+        
         new_robot_model = RobotModel(name=name, company=company, software_id=software_id)
         db.session.add(new_robot_model)
         db.session.commit()
@@ -54,13 +76,25 @@ def add():
     softwares = Software.query.all()
     return render_template('add/robot_model.html', softwares=softwares)
 
-@robot_models_bp.route('/edit/<string:name>', methods=['GET', 'POST'])
-def edit(name):
-    """Édite un modèle de robot existant"""
-    robot_model = RobotModel.query.filter_by(name=name).first_or_404()
+@robot_models_bp.route('/edit/<string:slug>', methods=['GET', 'POST'])
+def edit(slug):
+    """Édite un modèle de robot existant via son slug"""
+    robot_model = RobotModel.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
-        robot_model.name = request.form['name']
+        new_name = request.form['name']
+        new_slug = RobotModel.generate_slug(new_name)
+        
+        # Vérifier si le nouveau slug existe déjà et n'appartient pas à ce modèle
+        if new_slug != robot_model.slug:
+            existing = RobotModel.query.filter_by(slug=new_slug).first()
+            if existing and existing.id != robot_model.id:
+                flash(f"Un modèle avec ce nom ou un nom similaire existe déjà: {existing.name}", "error")
+                return render_template('edit/robot_model.html', robot_model=robot_model, softwares=Software.query.all())
+        
+        # Mettre à jour les champs
+        robot_model.name = new_name
+        robot_model.slug = new_slug  # Mettre à jour le slug
         robot_model.company = request.form['company']
         robot_model.software_id = request.form['software_id']
         
@@ -71,10 +105,10 @@ def edit(name):
     softwares = Software.query.all()
     return render_template('edit/robot_model.html', robot_model=robot_model, softwares=softwares)
 
-@robot_models_bp.route('/delete/<string:name>', methods=['GET', 'POST'])
-def delete(name):
-    """Supprime un modèle de robot"""
-    robot_model = RobotModel.query.filter_by(name=name).first_or_404()
+@robot_models_bp.route('/delete/<string:slug>', methods=['GET', 'POST'])
+def delete(slug):
+    """Supprime un modèle de robot via son slug"""
+    robot_model = RobotModel.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
         db.session.delete(robot_model)

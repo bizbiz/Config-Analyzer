@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Détails de la Version {{ software_version.version }} de <a href="{{ url_for('softwares.view_software', software_id=software_version.software.id) }}">{{ software_version.software.name }}</a>{% endblock %}
+{% block title %}Détails de la Version {{ software_version.version }} de {{ software_version.software.name }}{% endblock %}
 {% block content %}
 <div class="container py-5">
     <div class="card p-4 shadow-sm mt-4">
-        <h2 class="mb-3">Détails de la Version {{ software_version.version }} de <a href="{{ url_for('softwares.view_software', software_id=software_version.software.id) }}">{{ software_version.software.name }}</a></h2>
+        <h2 class="mb-3">Détails de la Version {{ software_version.version }} de <a href="{{ url_for('softwares.view', name=software_version.software.name) }}">{{ software_version.software.name }}</a></h2>
 
         <div class="mb-3">
             <label for="base_configurations" class="form-label">Configurations de Base :</label>
             <ul class="list-group">
                 {% for config in software_version.base_configurations %}
                 <li class="list-group-item">
-                    <a href="{{ url_for('software_base_configurations.view_software_base_configuration', 
+                    <a href="{{ url_for('software_base_configurations.view', 
                     software_name=software_version.software.name,
-                    software_version=software_version.version,
+                    version=software_version.version,
                     file_name=config.file_name) }}">{{ config.file_name }}</a>
                 </li>
                 {% endfor %}
@@ -24,7 +24,7 @@
             <ul class="list-group">
                 {% for robot in software_version.robots %}
                 <li class="list-group-item">
-                    {{ robot.robot_client.client.name }} - [{{ robot.robot_client.robot_modele.name }}] - <a href="{{ url_for('robot_clients.view_robot_client', robot_client_id=robot.robot_client.id) }}">{{ robot.robot_client.serial_number }}</a>
+                    {{ robot.robot_client.client.name }} - [{{ robot.robot_client.robot_modele.name }}] - <a href="{{ url_for('robot_clients.view', serial_number=robot.robot_client.serial_number) }}">{{ robot.robot_client.serial_number }}</a>
                 </li>
                 {% endfor %}
             </ul>
@@ -33,7 +33,7 @@
 
     <!-- Lien de retour -->
     <div class="text-center mt-4">
-        <a href="{{ url_for('software_versions.list_software_versions', software_id=software_version.software.id) }}" class="btn btn-secondary">Retour à la liste des versions</a>
+        <a href="{{ url_for('software_versions.list_by_software', software_name=software_version.software.name) }}" class="btn btn-secondary">Retour à la liste des versions</a>
     </div>
 </div>
 {% endblock %}

@@ -8,11 +8,32 @@ additional_params_config_bp = Blueprint('additional_params_config', __name__, ur
 
 @additional_params_config_bp.route('/list')
 def list():
-    """Liste toutes les configurations de paramètres"""
-    configs = AdditionalParametersConfig.query.all()
+    """Liste toutes les configurations de paramètres avec pagination"""
+    page = request.args.get('page', 1, type=int)
+    items_per_page = 20
+    search_query = request.args.get('q', '')
     
-    # Enrichir les données avec des informations sur l'entité liée
-    for config in configs:
+    # Requête de base
+    query = AdditionalParametersConfig.query
+    
+    # Ajouter la recherche si un terme est fourni
+    if search_query:
+        query = query.filter(
+            AdditionalParametersConfig.name.ilike(f'%{search_query}%')
+        )
+    
+    # Compter le total d'éléments
+    total_items = query.count()
+    
+    # Récupérer la page courante
+    paginated = query.paginate(
+        page=page, 
+        per_page=items_per_page, 
+        error_out=False
+    )
+    
+    # Enrichir les données
+    for config in paginated.items:
         try:
             if config.table_name == 'robot_models':
                 entity = RobotModel.query.get(config.table_id)
@@ -22,7 +43,16 @@ def list():
         except Exception:
             config.entity_name = "Entité inconnue"
     
-    return render_template('list/partials/additional_params_config.html', items=configs)
+    return render_template(
+        'list/additional_params_config.html', 
+        items=paginated.items,
+        total_items=total_items,
+        total_pages=paginated.pages,
+        page=page,
+        items_per_page=items_per_page,
+        offset=(page - 1) * items_per_page
+    )
+
 
 @additional_params_config_bp.route('/add/<string:entity_name>', methods=['GET', 'POST'])
 def add(entity_name):
@@ -68,7 +98,7 @@ def add(entity_name):
             db.session.commit()
             
             flash(f"Configuration de paramètre '{name}' ajoutée avec succès", "success")
-            return redirect(url_for('robot_models.view', name=entity_name))
+            return redirect(url_for('robot_models.view', slug=robot_model.slug))
             
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -108,7 +138,7 @@ def edit(entity_name, config_id):
         try:
             db.session.commit()
             flash("Configuration mise à jour avec succès", "success")
-            return redirect(url_for('robot_models.view', name=entity_name))
+            return redirect(url_for('robot_models.view', slug=robot_model.slug))
         except SQLAlchemyError as e:
             db.session.rollback()
             flash(f"Erreur lors de la mise à jour : {str(e)}", "error")
@@ -142,4 +172,4 @@ def delete(entity_name, config_id):
         db.session.rollback()
         flash(f"Erreur lors de la suppression : {str(e)}", "error")
     
-    return redirect(url_for('robot_models.view', name=entity_name))
+    return redirect(url_for('robot_models.view', slug=robot_model.slug))

@@ -3,56 +3,61 @@
 {% block title %}Détails du robot : {{ robot_model.name }}{% endblock %}
 
 {% block content %}
-<div class="card p-4 shadow-sm mt-4">
-    <h2 class="mb-3">Détails du robot : {{ robot_model.name }}</h2>
-    
-    <div class="mb-3">
-        <label for="company" class="form-label">Fabricant :</label>
-        <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" disabled>
-    </div>
-    
-    <div class="mb-3">
-        <label for="softwares" class="form-label">Logiciels et Versions Associés :</label>
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th scope="col">Logiciel utilisé par {{ robot_model.name }}
-                            <a href="#" class="sort-link" onclick="sortTable()">
-                                <span id="sort-arrow" class="ms-1">&#9650;</span>
-                            </a>
-                        </th>
-                        <th scope="col">Versions utilisées par Nom du robot</th>
-                    </tr>
-                </thead>
-                <tbody id="software-table-body">
-                    {% for software_association in robot_model.software %}
-                    <tr>
-                        <td>
-                            <a href="{{ url_for('software_versions.view_software_version', software_version_id=software_association.software.versions[0].id) }}">
-                                {{ software_association.software.name }}
-                            </a>
-                        </td>
-                        <td>
-                            <ul>
-                                {% for version in software_association.software.versions %}
-                                <li>{{ version.version }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="container py-5">
+    <div class="card p-4 shadow-sm">
+        <h2 class="mb-3">Détails du robot : {{ robot_model.name }}</h2>
+        
+        <div class="mb-3">
+            <label for="company" class="form-label">Fabricant :</label>
+            <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" disabled>
+        </div>
+        
+        <div class="mb-3">
+            <label for="softwares" class="form-label">Logiciels et Versions Associés :</label>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Logiciel utilisé par {{ robot_model.name }}
+                                <a href="#" class="sort-link" onclick="sortTable()">
+                                    <span id="sort-arrow" class="ms-1">&#9650;</span>
+                                </a>
+                            </th>
+                            <th scope="col">Versions utilisées par Nom du robot</th>
+                        </tr>
+                    </thead>
+                    <tbody id="software-table-body">
+                        {% for software_association in robot_model.software %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('software_versions.view', 
+                                             software_name=software_association.software.name, 
+                                             version=software_association.software.versions[0].version) }}">
+                                    {{ software_association.software.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <ul>
+                                    {% for version in software_association.software.versions %}
+                                    <li>{{ version.version }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
-{% include 'list/params_config.html' %}
+    {# Inclure le partiel des configurations de paramètres #}
+    {% include 'list/partials/additional_params_config.html' %}
 
-<!-- Lien de retour -->
-<div class="text-center mt-4">
-    <a href="{{ url_for('robot_models.list_robot_models') }}" class="btn btn-secondary">Retour à la liste des modèles de robot</a>
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('robot_models.list') }}" class="btn btn-secondary">Retour à la liste des modèles de robot</a>
+    </div>
 </div>
 
 <script>

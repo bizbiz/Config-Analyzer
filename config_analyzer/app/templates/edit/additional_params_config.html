@@ -6,7 +6,7 @@
 <div class="container py-5">
     <h1 class="text-center mb-4">Modifier la configuration de paramètre</h1>
     <div class="card p-4 shadow-sm">
-        <form action="{{ url_for('additional_params_config.edit_params_config', robot_model_name=robot_model.name, config_id=config.id) }}" method="POST">
+        <form action="{{ url_for('additional_params_config.edit', entity_name=robot_model.name, config_id=config.id) }}" method="POST">
             <div class="mb-3">
                 <label for="name" class="form-label">Nom :</label>
                 <input type="text" id="name" name="name" class="form-control" value="{{ config.name }}" required>
@@ -58,7 +58,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-2"></i> Enregistrer
                 </button>
-                <a href="{{ url_for('robot_models.view_robot_model', robot_model_name=robot_model.name) }}" class="btn btn-secondary">
+                <a href="{{ url_for('robot_models.view', name=robot_model.name) }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Retour
                 </a>
             </div>

@@ -6,7 +6,7 @@
     <div class="card p-4 shadow-sm mt-4">
         <h2 class="mb-3">Ajouter une configuration de paramètres pour {{ robot_model.name }}</h2>
         
-        <form action="{{ url_for('additional_params_config.add_params_config', robot_model_name=robot_model.name) }}" method="POST">
+        <form action="{{ url_for('additional_params_config.add', entity_name=robot_model.name) }}" method="POST">
             <div class="mb-3">
                 <label for="name" class="form-label">Nom du paramètre :</label>
                 <input type="text" id="name" name="name" class="form-control" required>
@@ -32,7 +32,7 @@
             </div>
             
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('robot_models.view_robot_model', robot_model_name=robot_model.name) }}" class="btn btn-secondary">Annuler</a>
+                <a href="{{ url_for('robot_models.view', name=robot_model.name) }}" class="btn btn-secondary">Annuler</a>
                 <button type="submit" class="btn btn-success">Ajouter</button>
             </div>
         </form>
