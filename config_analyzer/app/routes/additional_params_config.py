@@ -14,19 +14,35 @@ def add_params_config(robot_model_name):
     if request.method == 'POST':
         name = request.form.get('name')
         param_type = request.form.get('type')
-        value = request.form.get('value')
         
         if not name or not param_type:
             flash("Le nom et le type sont obligatoires", "error")
             return redirect(url_for('additional_params_config.add_params_config', robot_model_name=robot_model_name))
         
         try:
+            # Convertir le type en ParameterType enum
+            enum_type = ParameterType(param_type)
+            
+            # Initialiser le tableau de valeurs
+            values_array = []
+            
+            # Gérer les valeurs selon le type
+            if enum_type == ParameterType.ENUM:
+                # Récupérer les valeurs d'énumération (filtre les valeurs vides)
+                values_array = [v for v in request.form.getlist('enum_values[]') if v.strip()]
+            else:
+                # Pour text et numeric, on prend juste la valeur unique
+                value = request.form.get('value')
+                if value:
+                    values_array = [value]
+            
+            # Créer le nouveau paramètre
             new_config = AdditionalParametersConfig(
                 table_name='robot_models',
                 table_id=robot_model.id,
-                type=param_type,
+                type=enum_type,
                 name=name,
-                value=value,
+                values=values_array,
                 created_by_user_id=current_user.id if current_user.is_authenticated else None
             )
             
@@ -57,8 +73,18 @@ def edit_params_config(robot_model_name, config_id):
     
     if request.method == 'POST':
         config.name = request.form.get('name')
-        config.type = request.form.get('type')
-        config.value = request.form.get('value')
+        new_type = ParameterType(request.form.get('type'))
+        config.type = new_type
+        
+        # Gérer les valeurs selon le type
+        if new_type == ParameterType.ENUM:
+            # Récupérer les valeurs d'énumération (filtre les valeurs vides)
+            config.values = [v for v in request.form.getlist('enum_values[]') if v.strip()]
+        else:
+            # Pour text et numeric, on prend juste la valeur unique
+            value = request.form.get('value')
+            config.values = [value] if value else []
+        
         config.updated_by_user_id = current_user.id if current_user.is_authenticated else None
         
         try:
@@ -74,6 +100,7 @@ def edit_params_config(robot_model_name, config_id):
         robot_model=robot_model,
         config=config
     )
+
 
 @additional_params_config_bp.route('/robot_models/<string:robot_model_name>/params_config/<int:config_id>/delete', methods=['POST'])
 def delete_params_config(robot_model_name, config_id):

@@ -24,11 +24,11 @@
             </div>
             
             <div id="valueField" class="mb-3" style="display: none;">
-                <label for="value" class="form-label">Valeurs possibles :</label>
-                <input type="text" id="value" name="value" class="form-control">
-                <div class="form-text" id="valueHelp">
-                    Pour une énumération, séparez les valeurs possibles par des virgules. Exemple : "1,2,3" ou "Rouge,Vert,Bleu"
-                </div>
+                <!-- Champ générique pour texte et nombre -->
+            </div>
+            
+            <div id="enumContainer" class="mb-3" style="display: none;">
+                <!-- Les champs d'énumération seront ajoutés ici -->
             </div>
             
             <div class="d-flex justify-content-between">
@@ -45,6 +45,7 @@ function showValueField() {
     const valueField = document.getElementById('valueField');
     const enumContainer = document.getElementById('enumContainer');
     
+    // Réinitialiser les champs
     valueField.innerHTML = '';
     enumContainer.innerHTML = '';
     valueField.style.display = 'none';
@@ -52,40 +53,54 @@ function showValueField() {
 
     if (type === 'text') {
         valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur :</label>
+            <label for="value" class="form-label">Valeur par défaut :</label>
             <input type="text" id="value" name="value" class="form-control">
         `;
         valueField.style.display = 'block';
-    } else if (type === 'number') {
+    } else if (type === 'numeric') {
         valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur :</label>
+            <label for="value" class="form-label">Valeur par défaut :</label>
             <input type="number" id="value" name="value" class="form-control">
         `;
         valueField.style.display = 'block';
     } else if (type === 'enum') {
-        // Ajouter le premier champ d'énumération
-        addNewEnumField();
+        // Afficher le conteneur d'énumération
         enumContainer.style.display = 'block';
+        
+        // Ajouter la première valeur d'énumération
+        const firstField = document.createElement('div');
+        firstField.className = 'enum-value mb-2';
+        firstField.innerHTML = `
+            <label class="form-label">Valeurs d'énumération :</label>
+            <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
+        `;
+        enumContainer.appendChild(firstField);
+        
+        // Ajouter l'écouteur d'événement au champ
+        const input = firstField.querySelector('input');
+        input.addEventListener('input', checkAndAddField);
     }
 }
 
-function addNewEnumField() {
+function checkAndAddField(event) {
+    const input = event.target;
     const enumContainer = document.getElementById('enumContainer');
-    const newField = document.createElement('div');
-    newField.className = 'enum-value mb-2';
-    newField.innerHTML = `
-        <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
-    `;
+    const allFields = enumContainer.querySelectorAll('.enum-value');
+    const lastField = allFields[allFields.length - 1];
     
-    // Ajouter l'événement d'entrée après la création de l'élément
-    const input = newField.querySelector('input');
-    input.addEventListener('input', function() {
-        if (this.value && this.closest('.enum-value') === enumContainer.lastElementChild) {
-            addNewEnumField();
-        }
-    });
-    
-    enumContainer.appendChild(newField);
+    // Si l'input est dans le dernier champ et contient une valeur
+    if (input.value && input.closest('.enum-value') === lastField) {
+        const newField = document.createElement('div');
+        newField.className = 'enum-value mb-2';
+        newField.innerHTML = `
+            <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
+        `;
+        enumContainer.appendChild(newField);
+        
+        // Ajouter l'écouteur d'événement au nouveau champ
+        const newInput = newField.querySelector('input');
+        newInput.addEventListener('input', checkAndAddField);
+    }
 }
 </script>
 {% endblock %}

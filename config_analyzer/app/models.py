@@ -4,6 +4,16 @@ from sqlalchemy.sql import select, func
 from app.extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.dialects.postgresql import ENUM, ARRAY
+from sqlalchemy import Enum
+import enum
+
+
+# Définition de l'enum Python pour les types de paramètres
+class ParameterType(enum.Enum):
+    TEXT = "text"
+    NUMERIC = "numeric"
+    ENUM = "enum"
 
 class PostalCode(db.Model):
     __tablename__ = 'postal_codes'
@@ -195,11 +205,16 @@ class AdditionalParametersConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     table_name = db.Column(db.String(30)) 
     table_id = db.Column(db.Integer)
-    type = db.Column(db.String(20))  # numeric, text, enum
+    # Utilisation de l'enum Python avec SQLAlchemy Enum
+    type = db.Column(Enum(ParameterType), nullable=False)
     name = db.Column(db.String(100))
-    value = db.Column(db.String(255)) # can be an enumeration of different possible value 
     
-    # Champs de traçabilité
+    # Utilisation d'un tableau PostgreSQL pour stocker toutes les valeurs
+    # Pour les types text/numeric, ce sera un tableau avec un seul élément
+    # Pour les enums, ce sera un tableau avec plusieurs valeurs
+    values = db.Column(ARRAY(db.String(255)))
+    
+    # Champs de traçabilité inchangés
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -207,6 +222,16 @@ class AdditionalParametersConfig(db.Model):
 
     dependencies = db.relationship("BaseConfigDependence", back_populates="additional_parameters_config")
     additional_parameters = db.relationship("AdditionalParameter", back_populates="additional_parameters_config")
+    
+    # Propriété pour la compatibilité avec le code existant
+    @property
+    def value(self):
+        """Retourne la première valeur du tableau ou une chaîne jointe pour compatibilité"""
+        if not self.values:
+            return None
+        if self.type == ParameterType.ENUM:
+            return ','.join(self.values)
+        return self.values[0] if self.values else None
 
 class AdditionalParameter(db.Model):
     __tablename__ = 'additional_parameters'
