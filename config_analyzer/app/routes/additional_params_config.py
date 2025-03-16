@@ -4,10 +4,9 @@ from app.extensions import db
 from sqlalchemy.exc import SQLAlchemyError
 from flask_login import current_user
 
-# Renommer le blueprint pour plus de clarté
-params_config_bp = Blueprint('params_config', __name__, url_prefix='/params-config')
+additional_params_config_bp = Blueprint('additional_params_config', __name__, url_prefix='/additional-params-config')
 
-@params_config_bp.route('/list')
+@additional_params_config_bp.route('/list')
 def list():
     """Liste toutes les configurations de paramètres"""
     configs = AdditionalParametersConfig.query.all()
@@ -23,9 +22,9 @@ def list():
         except Exception:
             config.entity_name = "Entité inconnue"
     
-    return render_template('list/partials/params_config.html', items=configs)
+    return render_template('list/partials/additional_params_config.html', items=configs)
 
-@params_config_bp.route('/add/<string:entity_name>', methods=['GET', 'POST'])
+@additional_params_config_bp.route('/add/<string:entity_name>', methods=['GET', 'POST'])
 def add(entity_name):
     """Ajoute une configuration de paramètres pour une entité"""
     robot_model = RobotModel.query.filter_by(name=entity_name).first_or_404()
@@ -36,7 +35,7 @@ def add(entity_name):
         
         if not name or not param_type:
             flash("Le nom et le type sont obligatoires", "error")
-            return redirect(url_for('params_config.add', entity_name=entity_name))
+            return redirect(url_for('additional_params_config.add', entity_name=entity_name))
         
         try:
             # Convertir le type en ParameterType enum
@@ -69,18 +68,18 @@ def add(entity_name):
             db.session.commit()
             
             flash(f"Configuration de paramètre '{name}' ajoutée avec succès", "success")
-            return redirect(url_for('robot_models.view', robot_model_name=entity_name))
+            return redirect(url_for('robot_models.view', name=entity_name))
             
         except SQLAlchemyError as e:
             db.session.rollback()
             flash(f"Erreur lors de l'ajout de la configuration : {str(e)}", "error")
     
     return render_template(
-        'add/params_config.html',
+        'add/additional_params_config.html',
         robot_model=robot_model
     )
 
-@params_config_bp.route('/edit/<string:entity_name>/<int:config_id>', methods=['GET', 'POST'])
+@additional_params_config_bp.route('/edit/<string:entity_name>/<int:config_id>', methods=['GET', 'POST'])
 def edit(entity_name, config_id):
     """Édite une configuration de paramètres existante"""
     robot_model = RobotModel.query.filter_by(name=entity_name).first_or_404()
@@ -109,18 +108,18 @@ def edit(entity_name, config_id):
         try:
             db.session.commit()
             flash("Configuration mise à jour avec succès", "success")
-            return redirect(url_for('robot_models.view', robot_model_name=entity_name))
+            return redirect(url_for('robot_models.view', name=entity_name))
         except SQLAlchemyError as e:
             db.session.rollback()
             flash(f"Erreur lors de la mise à jour : {str(e)}", "error")
     
     return render_template(
-        'edit/params_config.html',
+        'edit/additional_params_config.html',
         robot_model=robot_model,
         config=config
     )
 
-@params_config_bp.route('/delete/<string:entity_name>/<int:config_id>', methods=['POST'])
+@additional_params_config_bp.route('/delete/<string:entity_name>/<int:config_id>', methods=['POST'])
 def delete(entity_name, config_id):
     """Supprime une configuration de paramètres"""
     robot_model = RobotModel.query.filter_by(name=entity_name).first_or_404()
@@ -143,4 +142,4 @@ def delete(entity_name, config_id):
         db.session.rollback()
         flash(f"Erreur lors de la suppression : {str(e)}", "error")
     
-    return redirect(url_for('robot_models.view', robot_model_name=entity_name))
+    return redirect(url_for('robot_models.view', name=entity_name))
