@@ -22,15 +22,22 @@
             <label for="robot_modele_id" class="form-label">Modèle de Robot</label>
             <div class="input-group">
                 <select class="form-select" id="robot_modele_id" name="robot_modele_id" required>
-                    <option value="" selected disabled>Choisir un modèle de robot</option>
+                    <option value="" disabled {% if not form_data.robot_modele_id and not preselected_model_id %}selected{% endif %}>Choisir un modèle de robot</option>
                     {% for robot_model in robot_models %}
-                    <option value="{{ robot_model.id }}" {% if form_data.robot_modele_id == robot_model.id %}selected{% endif %}>{{ robot_model.name }}</option>
+                    <option value="{{ robot_model.id }}" 
+                            {% if (form_data.robot_modele_id == robot_model.id) or 
+                                  (preselected_model_id and preselected_model_id|int == robot_model.id) %}
+                            selected
+                            {% endif %}>
+                        {{ robot_model.name }}
+                    </option>
                     {% endfor %}
                 </select>
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ url_for('robot_models.add_robot_model') }}'">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ url_for('robot_models.add') }}'">
                     Ajouter un Modèle de Robot
                 </button>
             </div>
+
         </div>
         <div class="mb-3">
             <label for="serial_number" class="form-label">Numéro de Série</label>

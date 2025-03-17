@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Liste des Clients Robots{% endblock %}
+
+{% block title %}Liste des Robots Clients{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/robot_clients.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Robots Clients</h1>
+    
+    {% with items=robot_clients, show_add_button=true %}
+        {% include 'list/partials/robot_clients.html' %}
+    {% endwith %}
 </div>
 {% endblock %}

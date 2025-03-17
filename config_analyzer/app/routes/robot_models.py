@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import RobotModel, Software, AdditionalParametersConfig
+from app.models import RobotModel, Software, AdditionalParametersConfig, RobotClient
 from app.extensions import db
 
 # Définir le préfixe d'URL pour toutes les routes liées aux modèles de robots
@@ -10,12 +10,15 @@ def list():
     """Liste tous les modèles de robots"""
     robot_models = RobotModel.query.all()
     softwares = Software.query.all()
-    return render_template('list/partials/robot_models.html', items=robot_models, softwares=softwares)
+    return render_template('list/robot_models.html', robot_models=robot_models, softwares=softwares)
 
 @robot_models_bp.route('/view/<string:slug>')
 def view(slug):
     """Affiche un modèle de robot spécifique via son slug"""
     robot_model = RobotModel.query.filter_by(slug=slug).first_or_404()
+    
+    # Récupérer les robots clients qui utilisent ce modèle
+    robot_clients = RobotClient.query.filter_by(robot_modele_id=robot_model.id).all()
     
     # Pagination pour les configurations de paramètres
     page = request.args.get('config_page', 1, type=int)
@@ -37,6 +40,7 @@ def view(slug):
     return render_template(
         'view/robot_model.html',
         robot_model=robot_model,
+        robot_clients=robot_clients,  # Ajouter cette variable
         params_configs=params_configs,
         total_items=total_items,
         items_per_page=items_per_page,

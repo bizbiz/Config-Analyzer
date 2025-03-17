@@ -1,8 +1,19 @@
-{% extends "base.html" %}
+{% extends "list/generic_list.html" %}
+
 {% block title %}Liste des Modèles de Robots{% endblock %}
+{% block list_heading %}Liste des Modèles de Robots{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/robot_models.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Modèles de Robots</h1>
+    
+    {% with items=robot_models, show_add_button=true, show_add_form=true %}
+        {% include 'list/partials/robot_models.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+    </div>
 </div>
 {% endblock %}

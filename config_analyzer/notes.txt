@@ -7,6 +7,7 @@ S'assurer que /software.name/software.version/SoftwareBaseConfigurationFile.file
 Dans /Evotec.exe/3.0.5.0/params.cfg qu'est ce qu'on fait si des valeurs sont pas dans le parsed file ? On les affiche à la fin ?
 On pourrait utiliser les séprateurs <nom> du fichier parsé pour diviser en plusieurs tableaux plus facile à lire
 On pourrait ajouter une notion d'ordre d'affichage des lignes pour pouvoir les modifiers (ajax glisser déposer ?)
+Ajouter un compteur sur les routes, les vues et les vues pour pouvoir supprimer du code qui ne sert a rien si le compteur reste à zéro pendant l'utilisation de l'application sur un temp long
 
 http://localhost:5000/software_versions/1/view
 sur cette page il faut afficher + d'infos dans la liste des fichiers config de base, comme par exemple, nombre de parametres, nombre de parametres avec regle, nombre de clients connu avec cette version, etc

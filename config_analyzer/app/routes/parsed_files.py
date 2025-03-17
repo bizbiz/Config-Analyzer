@@ -86,7 +86,6 @@ def edit_base_parsed_content(software_name, software_version, file_name):
         parameter_count=len(active_parameters)
     )
 
-
 @parsed_files_bp.route('/get_initial_value/<int:param_id>')
 def get_initial_value(param_id):
     """Récupère les valeurs initiales d'un paramètre pour la réinitialisation"""
@@ -249,7 +248,6 @@ def update_parameter_complete(param_id):
         error_details = traceback.format_exc()
         logging.error(f"Erreur lors de la mise à jour du paramètre: {str(e)}\n{error_details}")
         return jsonify({'status': 'error', 'message': str(e), 'details': error_details}), 400
-
 
 def get_last_modified(base_config_file_id):
     """Récupère la date de dernière modification pour un fichier de configuration"""

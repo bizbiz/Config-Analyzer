@@ -1,8 +1,14 @@
-{% extends "base.html" %}
+{% extends "list/generic_list.html" %}
+
 {% block title %}Liste des Clients{% endblock %}
+{% block list_heading %}Liste des Clients{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/clients.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Clients</h1>
+    
+    {% with items=clients, show_add_button=true %}
+        {% include 'list/partials/clients.html' %}
+    {% endwith %}
 </div>
 {% endblock %}

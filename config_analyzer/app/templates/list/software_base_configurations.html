@@ -1,8 +1,47 @@
-{% extends "base.html" %}
+{% extends "list/generic_list.html" %}
+
 {% block title %}Liste des Configurations de Base de Logiciels{% endblock %}
+{% block list_heading %}
+    {% if software_version %}
+        Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
+    {% elif software %}
+        Configurations pour {{ software.name }}
+    {% else %}
+        Liste des Configurations de Base de Logiciels
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/software_base_configurations.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">
+        {% if software_version %}
+            Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
+        {% elif software %}
+            Configurations pour {{ software.name }}
+        {% else %}
+            Liste des Configurations de Base de Logiciels
+        {% endif %}
+    </h1>
+    
+    {% with items=configs, show_add_button=true, software=software, software_version=software_version %}
+        {% include 'list/partials/software_base_configurations.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        {% if software_version %}
+            <a href="{{ url_for('software_versions.view', software_name=software_version.software.name, version=software_version.version) }}" class="btn btn-secondary">
+                Retour à la version
+            </a>
+        {% elif software %}
+            <a href="{{ url_for('softwares.view', name=software.name) }}" class="btn btn-secondary">
+                Retour au logiciel
+            </a>
+        {% else %}
+            <a href="{{ url_for('softwares.list') }}" class="btn btn-secondary">
+                Retour aux logiciels
+            </a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

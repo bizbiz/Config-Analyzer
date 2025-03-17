@@ -8,10 +8,13 @@ robot_clients_bp = Blueprint('robot_clients', __name__, url_prefix='/robot-clien
 def list():
     """Affiche la liste des clients robots"""
     robot_clients = RobotClient.query.all()
-    return render_template('list/partials/robot_clients.html', items=robot_clients)
+    return render_template('list/robot_clients.html', robot_clients=robot_clients)
 
 @robot_clients_bp.route('/add', methods=['GET', 'POST'])
 def add():
+    # Récupérer le modèle de robot pré-sélectionné s'il existe
+    preselected_model_id = request.args.get('robot_model_id')
+
     """Ajoute un nouveau client robot"""
     if request.method == 'POST':
         # ... (logique existante inchangée)
@@ -20,12 +23,13 @@ def add():
     return render_template('add/robot_client.html', 
                          clients=Client.query.all(),
                          robot_models=RobotModel.query.all(),
-                         form_data=request.form)
+                         form_data=request.form,
+                         preselected_model_id=preselected_model_id)
 
-@robot_clients_bp.route('/edit/<int:robot_client_id>', methods=['GET', 'POST'])
-def edit(robot_client_id):
+@robot_clients_bp.route('/edit/<string:serial_number>', methods=['GET', 'POST'])
+def edit(serial_number):
     """Modifie un client robot existant"""
-    robot_client = RobotClient.query.get_or_404(robot_client_id)
+    robot_client = RobotClient.query.filter_by(serial_number=serial_number).first_or_404()
     
     if request.method == 'POST':
         serial_number = request.form['serial_number']
@@ -60,17 +64,17 @@ def edit(robot_client_id):
                          robot_client=robot_client,
                          form_data=request.form)
 
-@robot_clients_bp.route('/delete/<int:robot_client_id>')
-def delete(robot_client_id):
+@robot_clients_bp.route('/delete/<string:serial_number>')
+def delete(serial_number):
     """Supprime un client robot"""
-    robot_client = RobotClient.query.get_or_404(robot_client_id)
+    robot_client = RobotClient.query.filter_by(serial_number=serial_number).first_or_404()
     db.session.delete(robot_client)
     db.session.commit()
     flash("Client robot supprimé avec succès !", "success")
     return redirect(url_for('robot_clients.list'))
 
-@robot_clients_bp.route('/view/<int:robot_client_id>')
-def view(robot_client_id):
+@robot_clients_bp.route('/view/<string:serial_number>')
+def view(serial_number):
     """Affiche les détails d'un client robot"""
-    robot_client = RobotClient.query.get_or_404(robot_client_id)
+    robot_client = RobotClient.query.filter_by(serial_number=serial_number).first_or_404()
     return render_template('view/robot_client.html', robot_client=robot_client)

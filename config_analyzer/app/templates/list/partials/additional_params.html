@@ -1,57 +1,86 @@
-{% extends "list/generic_list.html" %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        filterItems('paramSearchInput', 'additionalParamsTable', 2);
-    });
-</script>
-{% endblock %}
-
-{% block list_title %}Paramètres additionnels{% endblock %}
-{% block list_heading %}Paramètres additionnels{% endblock %}
-
-{% block pre_table_content %}
-<div class="mb-4">
-    <input type="text" id="paramSearchInput" class="form-control" 
-           placeholder="Rechercher un paramètre..." 
-           onkeyup="filterItems('paramSearchInput', 'additionalParamsTable', 2)">
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% if items is defined %}
+{% from 'includes/_table_search.html' import init_search %}
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Paramètres additionnels{% endif %}</h5>
+        {% if show_add_button|default(true) %}
+            {% if table_name == 'software' %}
+                <a href="{{ url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
+                </a>
+            {% elif table_name == 'clients' %}
+                <a href="{{ url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
+                </a>
+            {% elif table_name == 'robot_models' %}
+                <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
+                </a>
+            {% elif table_name == 'robot_clients' %}
+                <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if items %}
+            {% if show_search|default(true) %}
+            <div class="mb-3">
+                <input type="text" id="paramSearchInput" class="form-control" 
+                       placeholder="Rechercher un paramètre...">
+            </div>
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle" 
+                       id="additionalParamsTable"
+                       data-list-filter="true"
+                       data-filter-input="paramSearchInput" 
+                       data-filter-columns="2">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Valeur</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param in items %}
+                        <tr>
+                            <td>{{ param.name }}</td>
+                            <td>{{ param.value }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('additional_params.edit_additional_params', table_name=table_name, table_id=table_id) }}" 
+                                   class="btn btn-sm btn-warning">
+                                   <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>Aucun paramètre additionnel défini.
+                {% if show_add_button|default(true) %}
+                    {% if table_name == 'software' %}
+                        <a href="{{ url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) }}" class="alert-link">Ajouter des paramètres</a>
+                    {% elif table_name == 'clients' %}
+                        <a href="{{ url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) }}" class="alert-link">Ajouter des paramètres</a>
+                    {% elif table_name == 'robot_models' %}
+                        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) }}" class="alert-link">Ajouter des paramètres</a>
+                    {% elif table_name == 'robot_clients' %}
+                        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) }}" class="alert-link">Ajouter des paramètres</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>
-{% endblock %}
 
-{% block table_headers %}
-    <th>Nom</th>
-    <th>Valeur</th>
-    <th>Actions</th>
-{% endblock %}
-
-{% block table_rows %}
-    {% for param in items %}
-    <tr>
-        <td>{{ param.name }}</td>
-        <td>{{ param.value }}</td>
-        <td class="text-center">
-            <a href="{{ url_for('additional_params.edit_additional_params', table_name=table_name, table_id=table_id) }}" 
-               class="btn btn-sm btn-warning">
-               <i class="fas fa-edit"></i>
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-{% endblock %}
-
-{% block empty_list_message %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>Aucun paramètre additionnel défini.
-    {% if table_name == 'software' %}
-        <a href="{{ url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) }}" class="alert-link">Ajouter des paramètres</a>
-    {% elif table_name == 'clients' %}
-        <a href="{{ url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) }}" class="alert-link">Ajouter des paramètres</a>
-    {% elif table_name == 'robot_models' %}
-        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) }}" class="alert-link">Ajouter des paramètres</a>
-    {% elif table_name == 'robot_clients' %}
-        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) }}" class="alert-link">Ajouter des paramètres</a>
-    {% endif %}
-</div>
-{% endblock %}
+{# Utiliser la macro d'initialisation pour la recherche #}
+{{ init_search('additionalParamsTable', 'paramSearchInput') }}
+{% endif %}

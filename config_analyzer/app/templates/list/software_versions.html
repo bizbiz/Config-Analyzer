@@ -1,8 +1,39 @@
-{% extends "base.html" %}
-{% block title %}Liste des Versions de Logiciels{% endblock %}
+{% extends "list/generic_list.html" %}
+
+{% block title %}Versions de Logiciels{% endblock %}
+{% block list_heading %}
+    {% if software %}
+        Versions du logiciel {{ software.name }}
+    {% else %}
+        Liste des Versions de Logiciels
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/software_versions.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">
+        {% if software %}
+            Versions du logiciel {{ software.name }}
+        {% else %}
+            Liste des Versions de Logiciels
+        {% endif %}
+    </h1>
+    
+    {% with items=versions, show_add_button=true, software=software, show_add_form=true %}
+        {% include 'list/partials/software_versions.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        {% if software %}
+            <a href="{{ url_for('softwares.view', name=software.name) }}" class="btn btn-secondary">
+                Retour au logiciel
+            </a>
+        {% else %}
+            <a href="{{ url_for('home.home') }}" class="btn btn-secondary">
+                Retour à l'accueil
+            </a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,87 @@
+{# templates/macros/_action_buttons.html #}
+{# Doit contenir les macro Jira utilisé sur les tableaux #}
+
+{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[]) %}
+<td class="text-center">
+    {% if view_url %}
+    <a href="{{ view_url }}" class="btn btn-sm btn-info me-1">
+        <i class="fas fa-eye"></i>
+    </a>
+    {% endif %}
+    
+    {% if edit_url %}
+    <a href="{{ edit_url }}" class="btn btn-sm btn-warning me-1">
+        <i class="fas fa-edit"></i>
+    </a>
+    {% endif %}
+    
+    {% if delete_url %}
+    <form action="{{ delete_url }}" method="POST" class="d-inline{% if not loop.last %} me-1{% endif %}">
+        <button type="submit" class="btn btn-sm btn-danger" 
+                onclick="return confirm('{{ delete_message }}')">
+            <i class="fas fa-trash"></i>
+        </button>
+    </form>
+    {% endif %}
+    
+    {% for button in additional_buttons %}
+        {{ button|safe }}
+    {% endfor %}
+</td>
+{% endmacro %}
+
+{# templates/macros/_pagination.html #}
+{% macro render_pagination(page, total_pages, total_items, items_length, offset, endpoint=request.endpoint, endpoint_args=request.view_args) %}
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Affichage de {{ offset + 1 }} à {{ offset + items_length }} sur {{ total_items }} éléments
+    </div>
+    <nav aria-label="Navigation des pages">
+        <ul class="pagination">
+            <li class="page-item {{ 'disabled' if page == 1 else '' }}">
+                <a class="page-link" href="{{ url_for(endpoint, page=page-1, **endpoint_args) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {% set start_page = [1, page - 2]|max %}
+            {% set end_page = [start_page + 4, total_pages]|min %}
+            {% set start_page = [end_page - 4, 1]|max %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {{ 'active' if p == page else '' }}">
+                    <a class="page-link" href="{{ url_for(endpoint, page=p, **endpoint_args) }}">{{ p }}</a>
+                </li>
+            {% endfor %}
+            
+            <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
+                <a class="page-link" href="{{ url_for(endpoint, page=page+1, **endpoint_args) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endmacro %}
+
+{# Fragment pour initialiser la recherche sur un tableau #}
+{% macro init_search(table_id, input_id, column_indexes=[], row_selector='tbody tr') %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initTableSearch('{{ table_id }}', '{{ input_id }}', {{ column_indexes|tojson }}, '{{ row_selector }}');
+    });
+</script>
+{% endmacro %}
+
+
+{# Bouton d'ajout destiné à être placé en haut à droite d'un tableau #}
+{% macro card_header(title, add_url=None, add_text="Ajouter", show_button=true, entity_name="élément") %}
+<div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">{{ title }}</h5>
+    {% if show_button and add_url %}
+        <a href="{{ add_url }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>{{ add_text|default('Ajouter un ' + entity_name) }}
+        </a>
+    {% endif %}
+</div>
+{% endmacro %}

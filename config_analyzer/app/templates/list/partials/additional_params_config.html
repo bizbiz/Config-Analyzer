@@ -1,8 +1,9 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if params_configs is defined %}
+{% from 'includes/_table_search.html' import init_search %}
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Configurations possibles pour {{ entity.name }}</h5>
+        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Configurations possibles pour {{ entity.name }}{% endif %}</h5>
         {% if entity_type == 'robot_model' %}
             <a href="{{ url_for('additional_params_config.add', entity_name=entity.name) }}" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i>Ajouter une option
@@ -11,13 +12,19 @@
     </div>
     <div class="card-body">
         {% if params_configs %}
+            {% if show_search|default(true) %}
             <div class="mb-3">
                 <input type="text" id="configSearchInput" class="form-control" 
                        placeholder="Rechercher une configuration...">
             </div>
+            {% endif %}
             
             <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" id="configParamsTable">
+                <table class="table table-striped table-bordered align-middle" 
+                       id="configParamsTable" 
+                       data-list-filter="true"
+                       data-filter-input="configSearchInput" 
+                       data-filter-columns="4">
                     <thead class="table-light">
                         <tr>
                             <th scope="col">Nom</th>
@@ -122,26 +129,12 @@
     </div>
 </div>
 
+{# Utiliser la macro d'initialisation pour la recherche avec un sélecteur qui exclut les lignes de description #}
+{{ init_search('configParamsTable', 'configSearchInput', [], '#configParamsTable tbody tr:not(.description-row)') }}
+
+{# Script pour les descriptions extensibles #}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Filtrage local
-        const searchInput = document.getElementById('configSearchInput');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function() {
-                const filter = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#configParamsTable tbody tr:not(.description-row)');
-                
-                rows.forEach(row => {
-                    const name = row.cells[0].textContent.toLowerCase();
-                    const type = row.cells[1].textContent.toLowerCase();
-                    const values = row.cells[2].textContent.toLowerCase();
-                    row.style.display = (name.includes(filter) || type.includes(filter) || values.includes(filter)) 
-                                       ? '' 
-                                       : 'none';
-                });
-            });
-        }
-        
         // Gestion des boutons de description
         document.querySelectorAll('.toggle-description').forEach(button => {
             button.addEventListener('click', function() {

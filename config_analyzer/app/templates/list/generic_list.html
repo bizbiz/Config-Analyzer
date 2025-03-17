@@ -19,24 +19,26 @@
             {% block add_button %}{% endblock %}
         </div>
         <div class="card-body">
-            {% if items %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-bordered align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                {% block table_headers %}{% endblock %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% block table_rows %}{% endblock %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    {% block empty_list_message %}Aucun élément trouvé.{% endblock %}
-                </div>
-            {% endif %}
+            {% block table_content %}
+                {% if items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    {% block table_headers %}{% endblock %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% block table_rows %}{% endblock %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        {% block empty_list_message %}Aucun élément trouvé.{% endblock %}
+                    </div>
+                {% endif %}
+            {% endblock %}
         </div>
     </div>
     

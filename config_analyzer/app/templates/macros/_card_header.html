@@ -1,0 +1,11 @@
+{# templates/macros/_card_header.html #}
+{% macro card_header(title, add_url=None, add_text="Ajouter", show_button=true) %}
+<div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">{{ title }}</h5>
+    {% if show_button and add_url %}
+        <a href="{{ add_url }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>{{ add_text }}
+        </a>
+    {% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,35 @@
+/* static/css/custom.css */
+
+/* Styles communs pour les tableaux de données */
+.data-table th {
+    position: relative;
+}
+
+.data-table .sort-indicator {
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+/* Styles pour les descriptions extensibles */
+.expandable-description {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.expandable-description.expanded {
+    max-height: 200px;
+    transition: max-height 0.5s ease-in;
+}
+
+/* Styles pour les champs de formulaire dynamiques */
+.dynamic-field-container {
+    position: relative;
+}
+
+.dynamic-field-actions {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}

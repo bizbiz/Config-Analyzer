@@ -9,7 +9,7 @@ clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 def list():
     """Affiche la liste des clients."""
     clients = Client.query.all()
-    return render_template('list/partials/clients.html', items=clients)
+    return render_template('list/clients.html', clients=clients)
 
 @clients_bp.route('/add', methods=['GET', 'POST'])
 def add():

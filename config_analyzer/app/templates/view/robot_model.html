@@ -4,16 +4,16 @@
 
 {% block content %}
 <div class="container py-5">
+    <h2 class="mb-3">Détails du robot : {{ robot_model.name }}</h2>
     <div class="card p-4 shadow-sm">
-        <h2 class="mb-3">Détails du robot : {{ robot_model.name }}</h2>
+        
         
         <div class="mb-3">
             <label for="company" class="form-label">Fabricant :</label>
-            <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" disabled>
+            <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" autocomplete="off" disabled>
         </div>
         
         <div class="mb-3">
-            <label for="softwares" class="form-label">Logiciels et Versions Associés :</label>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -50,6 +50,11 @@
             </div>
         </div>
     </div>
+
+    {# Inclure la liste des clients utilisant ce robot #}
+    {% with items=robot_clients, hide_model=true, title="Clients utilisant le " + robot_model.name %}
+    {% include 'list/partials/robot_clients.html' %}
+    {% endwith %}
 
     {# Inclure le partiel des configurations de paramètres #}
     {% include 'list/partials/additional_params_config.html' %}

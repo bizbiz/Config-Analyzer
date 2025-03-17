@@ -1,9 +1,19 @@
-{% extends "base.html" %}
+{% extends "list/generic_list.html" %}
 
 {% block title %}Liste des Logiciels{% endblock %}
+{% block list_heading %}Liste des Logiciels{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    {% include "list/partials/softwares.html" %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Logiciels</h1>
+    
+    {% with items=softwares, show_add_button=true, show_add_form=true, robot_models=robot_models %}
+        {% include 'list/partials/softwares.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+    </div>
 </div>
 {% endblock %}
