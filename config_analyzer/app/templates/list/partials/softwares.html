@@ -1,15 +1,16 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{% from 'macros/_common_ui.html' import badge with context %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Logiciels{% endif %}</h5>
-        {% if show_add_button|default(true) %}
-            <a href="{{ url_for('softwares.add') }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Ajouter un logiciel
-            </a>
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=title|default('Logiciels'),
+        add_url=url_for('softwares.add'),
+        add_text="Ajouter un logiciel",
+        show_button=show_add_button|default(true)
+    ) }}
+    
     <div class="card-body">
         {% if items %}
             {% if show_search|default(true) %}
@@ -62,44 +63,30 @@
                                     <span class="text-muted">Aucune version</span>
                                 {% endfor %}
                             </td>
-                            <td class="text-center">
-                                <a href="{{ url_for('softwares.view', name=software.name) }}" 
-                                   class="btn btn-sm btn-info me-1">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ url_for('softwares.edit', name=software.name) }}" 
-                                   class="btn btn-sm btn-warning me-1">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ url_for('softwares.delete', name=software.name) }}" 
-                                      method="POST" class="d-inline me-1">
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce logiciel ?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                                <a href="{{ url_for('software_versions.list_by_software', software_name=software.name) }}" 
-                                   class="btn btn-sm btn-info">
-                                    <i class="fas fa-list"></i>
-                                </a>
-                            </td>
+                            {{ action_buttons(
+                                view_url=url_for('softwares.view', name=software.name),
+                                edit_url=url_for('softwares.edit', name=software.name),
+                                delete_url=url_for('softwares.delete', name=software.name),
+                                delete_message='Êtes-vous sûr de vouloir supprimer ce logiciel ?',
+                                additional_buttons=[
+                                    '<a href="' + url_for('software_versions.list_by_software', software_name=software.name) + '" class="btn btn-sm btn-info"><i class="fas fa-list"></i></a>'
+                                ]
+                            ) }}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucun logiciel trouvé.
-                {% if show_add_button|default(true) %}
-                    <a href="{{ url_for('softwares.add') }}" class="alert-link">Ajouter un logiciel</a>
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucun logiciel trouvé.",
+                add_url=url_for('softwares.add'),
+                add_text="Ajouter un logiciel"
+            ) }}
         {% endif %}
     </div>
 </div>
 
-{# Utiliser la macro d'initialisation pour la recherche #}
 {{ init_search('softwareTable', 'softwaresSearchInput') }}
 
 {# Afficher le formulaire d'ajout si demandé #}

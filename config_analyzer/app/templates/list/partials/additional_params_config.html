@@ -1,15 +1,16 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if params_configs is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list, display_param_values, display_param_type_badge with context %}
+{% from 'macros/_common_ui.html' import badge with context %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Configurations possibles pour {{ entity.name }}{% endif %}</h5>
-        {% if entity_type == 'robot_model' %}
-            <a href="{{ url_for('additional_params_config.add', entity_name=entity.name) }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Ajouter une option
-            </a>
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=title|default('Configurations possibles pour ' + entity.name),
+        add_url=url_for('additional_params_config.add', entity_name=entity.name) if entity_type == 'robot_model' else None,
+        add_text="Ajouter une option",
+        show_button=(entity_type == 'robot_model')
+    ) }}
+    
     <div class="card-body">
         {% if params_configs %}
             {% if show_search|default(true) %}
@@ -39,49 +40,11 @@
                         <tr id="row-{{ config.id }}">
                             <td>{{ config.name }}</td>
                             <td>
-                                {% if config.type.value == 'text' %}
-                                    <span class="badge bg-info">{{ config.type_display }}</span>
-                                {% elif config.type.value == 'numeric' %}
-                                    <span class="badge bg-primary">{{ config.type_display }}</span>
-                                {% elif config.type.value == 'enum' %}
-                                    <span class="badge bg-success">{{ config.type_display }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ config.type_display }}</span>
-                                {% endif %}
+                                {{ display_param_type_badge(config.type.value, config.type_display) }}
                             </td>
                             <td>
-                                {% if config.type.value == 'enum' %}
-                                    {% if config.values %}
-                                        {% set display_values = ", ".join(config.values[:5]) %}
-                                        {% if config.values|length > 5 %}
-                                            {{ display_values[:100] }}... ({{ config.values|length }} valeurs)
-                                        {% else %}
-                                            {{ display_values[:100] }}
-                                            {% if display_values|length > 100 %}...{% endif %}
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Aucune valeur</span>
-                                    {% endif %}
-                                {% elif config.type.value == 'numeric' %}
-                                    {% set default_value = config.values[0] if config.values and config.values|length > 0 and config.values[0]|trim else 'N/A' %}
-                                    {% set min_value = config.values[1] if config.values|length > 1 and config.values[1]|trim else none %}
-                                    {% set max_value = config.values[2] if config.values|length > 2 and config.values[2]|trim else none %}
-                                    
-                                    <span class="numeric-values">
-                                        Défaut : {{ default_value }}
-                                        {% if min_value or max_value %}
-                                            <span class="text-muted">
-                                                {% if min_value %}(min: {{ min_value }}{% if max_value %}, {% endif %}{% endif %}
-                                                {% if max_value %}max: {{ max_value }}{% endif %}
-                                                )
-                                            </span>
-                                        {% endif %}
-                                    </span>
-                                {% else %}
-                                    {{ config.values[0] if config.values and config.values|length > 0 else '' }}
-                                {% endif %}
+                                {{ display_param_values(config) }}
                             </td>
-
                             <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                             <td class="text-center">
                                 {% if config.description and config.description|trim and config.description != "None" %}
@@ -89,14 +52,13 @@
                                     <i class="fas fa-question-circle"></i>
                                 </button>
                                 {% endif %}
-                                <a href="{{ url_for('additional_params_config.edit', entity_name=entity.name, config_id=config.id) }}" class="btn btn-sm btn-warning me-1">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ url_for('additional_params_config.delete', entity_name=entity.name, config_id=config.id) }}" method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                
+                                {{ action_buttons(
+                                    edit_url=url_for('additional_params_config.edit', entity_name=entity.name, config_id=config.id),
+                                    delete_url=url_for('additional_params_config.delete', entity_name=entity.name, config_id=config.id),
+                                    delete_message='Êtes-vous sûr de vouloir supprimer cette configuration ?',
+                                    is_td=false
+                                ) }}
                             </td>
                         </tr>
                         {% if config.description %}
@@ -119,12 +81,11 @@
             {% endif %}
             
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucune configuration de paramètres définie.
-                {% if entity_type == 'robot_model' %}
-                    <a href="{{ url_for('additional_params_config.add', entity_name=entity.name) }}" class="alert-link">Ajouter une configuration</a>
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucune configuration de paramètres définie.",
+                add_url=url_for('additional_params_config.add', entity_name=entity.name) if entity_type == 'robot_model' else None,
+                add_text="Ajouter une configuration"
+            ) }}
         {% endif %}
     </div>
 </div>

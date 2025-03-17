@@ -1,29 +1,33 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+
+{# Fonction pour obtenir l'URL d'ajout en fonction du type de table #}
+{% set add_url = None %}
+{% if show_add_button|default(true) %}
+    {% if table_name == 'software' %}
+        {% set add_url = url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) %}
+        {% set entity_display_name = software.name %}
+    {% elif table_name == 'clients' %}
+        {% set add_url = url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) %}
+        {% set entity_display_name = client.name %}
+    {% elif table_name == 'robot_models' %}
+        {% set add_url = url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) %}
+        {% set entity_display_name = robot_model.name %}
+    {% elif table_name == 'robot_clients' %}
+        {% set add_url = url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) %}
+        {% set entity_display_name = robot_client.serial_number %}
+    {% endif %}
+{% endif %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Paramètres additionnels{% endif %}</h5>
-        {% if show_add_button|default(true) %}
-            {% if table_name == 'software' %}
-                <a href="{{ url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
-                </a>
-            {% elif table_name == 'clients' %}
-                <a href="{{ url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
-                </a>
-            {% elif table_name == 'robot_models' %}
-                <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
-                </a>
-            {% elif table_name == 'robot_clients' %}
-                <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
-                </a>
-            {% endif %}
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=title|default('Paramètres additionnels'),
+        add_url=add_url,
+        add_text="Ajouter un paramètre",
+        show_button=show_add_button|default(true)
+    ) }}
+    
     <div class="card-body">
         {% if items %}
             {% if show_search|default(true) %}
@@ -52,10 +56,10 @@
                             <td>{{ param.name }}</td>
                             <td>{{ param.value }}</td>
                             <td class="text-center">
-                                <a href="{{ url_for('additional_params.edit_additional_params', table_name=table_name, table_id=table_id) }}" 
-                                   class="btn btn-sm btn-warning">
-                                   <i class="fas fa-edit"></i>
-                                </a>
+                                {{ action_buttons(
+                                    edit_url=url_for('additional_params.edit_additional_params', table_name=table_name, table_id=table_id),
+                                    is_td=false
+                                ) }}
                             </td>
                         </tr>
                         {% endfor %}
@@ -63,20 +67,11 @@
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucun paramètre additionnel défini.
-                {% if show_add_button|default(true) %}
-                    {% if table_name == 'software' %}
-                        <a href="{{ url_for('additional_params.add_additional_param', model_type='softwares', entity_name=software.name) }}" class="alert-link">Ajouter des paramètres</a>
-                    {% elif table_name == 'clients' %}
-                        <a href="{{ url_for('additional_params.add_additional_param', model_type='clients', entity_name=client.name) }}" class="alert-link">Ajouter des paramètres</a>
-                    {% elif table_name == 'robot_models' %}
-                        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) }}" class="alert-link">Ajouter des paramètres</a>
-                    {% elif table_name == 'robot_clients' %}
-                        <a href="{{ url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) }}" class="alert-link">Ajouter des paramètres</a>
-                    {% endif %}
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucun paramètre additionnel défini.",
+                add_url=add_url,
+                add_text="Ajouter des paramètres"
+            ) }}
         {% endif %}
     </div>
 </div>

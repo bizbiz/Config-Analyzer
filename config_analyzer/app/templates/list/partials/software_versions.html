@@ -1,29 +1,37 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+
+{# Détermination du titre et de l'URL d'ajout #}
+{% set display_title = title %}
+{% if not display_title %}
+    {% if software %}
+        {% set display_title = 'Versions du logiciel ' + software.name %}
+    {% else %}
+        {% set display_title = 'Versions de Logiciels' %}
+    {% endif %}
+{% endif %}
+
+{% set add_url = None %}
+{% set add_text_specific = None %}
+{% if show_add_button|default(true) %}
+    {% if software %}
+        {% set add_url = url_for('software_versions.add_for_software', software_name=software.name) %}
+        {% set add_text_specific = 'Ajouter une version pour ' + software.name %}
+    {% else %}
+        {% set add_url = url_for('software_versions.add') %}
+        {% set add_text_specific = 'Ajouter une version' %}
+    {% endif %}
+{% endif %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            {% if title is defined %}
-                {{ title }}
-            {% elif software %}
-                Versions du logiciel {{ software.name }}
-            {% else %}
-                Versions de Logiciels
-            {% endif %}
-        </h5>
-        {% if show_add_button|default(true) %}
-            {% if software %}
-                <a href="{{ url_for('software_versions.add_for_software', software_name=software.name) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter une version
-                </a>
-            {% else %}
-                <a href="{{ url_for('software_versions.add') }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter une version
-                </a>
-            {% endif %}
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=display_title,
+        add_url=add_url,
+        add_text="Ajouter une version",
+        show_button=show_add_button|default(true)
+    ) }}
+    
     <div class="card-body">
         {% if items %}
             {% if show_search|default(true) %}
@@ -59,54 +67,27 @@
                                     <span class="text-muted">Aucun client</span>
                                 {% endfor %}
                             </td>
-                            <td class="text-center">
-                                <a href="{{ url_for('software_versions.view', 
-                                          software_name=version.software.name, 
-                                          version=version.version) }}" 
-                                   class="btn btn-sm btn-info me-1">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ url_for('software_versions.edit', 
-                                          software_name=version.software.name, 
-                                          version=version.version) }}" 
-                                   class="btn btn-sm btn-warning me-1">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ url_for('software_versions.delete', 
-                                              software_name=version.software.name, 
-                                              version=version.version) }}" 
-                                      method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette version?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
+                            {{ action_buttons(
+                                view_url=url_for('software_versions.view', software_name=version.software.name, version=version.version),
+                                edit_url=url_for('software_versions.edit', software_name=version.software.name, version=version.version),
+                                delete_url=url_for('software_versions.delete', software_name=version.software.name, version=version.version),
+                                delete_message='Êtes-vous sûr de vouloir supprimer cette version?'
+                            ) }}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucune version de logiciel trouvée.
-                {% if show_add_button|default(true) %}
-                    {% if software %}
-                        <a href="{{ url_for('software_versions.add_for_software', software_name=software.name) }}" class="alert-link">
-                            Ajouter une version pour {{ software.name }}
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('software_versions.add') }}" class="alert-link">
-                            Ajouter une version
-                        </a>
-                    {% endif %}
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucune version de logiciel trouvée.",
+                add_url=add_url,
+                add_text=add_text_specific
+            ) }}
         {% endif %}
     </div>
 </div>
 
-{# Utiliser la macro d'initialisation pour la recherche #}
 {{ init_search('softwareVersionsTable', 'softwareVersionsSearchInput') }}
 
 {# Afficher le formulaire d'ajout si demandé #}

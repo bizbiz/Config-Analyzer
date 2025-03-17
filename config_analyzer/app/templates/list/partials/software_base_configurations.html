@@ -1,35 +1,38 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+
+{# Détermination du titre et de l'URL d'ajout #}
+{% set display_title = title %}
+{% if not display_title %}
+    {% if software_version %}
+        {% set display_title = 'Configurations pour ' + software_version.software.name + ' version ' + software_version.version %}
+    {% elif software %}
+        {% set display_title = 'Configurations pour ' + software.name %}
+    {% else %}
+        {% set display_title = 'Configurations de Base de Logiciels' %}
+    {% endif %}
+{% endif %}
+
+{% set add_url = None %}
+{% if show_add_button|default(true) %}
+    {% if software_version %}
+        {% set add_url = url_for('software_base_configurations.add_for_version', version_id=software_version.id) %}
+        {% set add_text_specific = 'Ajouter une configuration pour ' + software_version.software.name + ' v' + software_version.version %}
+    {% else %}
+        {% set add_url = url_for('software_base_configurations.add') %}
+        {% set add_text_specific = 'Ajouter une configuration' %}
+    {% endif %}
+{% endif %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            {% if title is defined %}
-                {{ title }}
-            {% elif software_version %}
-                Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
-            {% elif software %}
-                Configurations pour {{ software.name }}
-            {% else %}
-                Configurations de Base de Logiciels
-            {% endif %}
-        </h5>
-        {% if show_add_button|default(true) %}
-            {% if software_version %}
-                <a href="{{ url_for('software_base_configurations.add_for_version', version_id=software_version.id) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter une configuration
-                </a>
-            {% elif software %}
-                <a href="{{ url_for('software_base_configurations.add') }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter une configuration
-                </a>
-            {% else %}
-                <a href="{{ url_for('software_base_configurations.add') }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter une configuration
-                </a>
-            {% endif %}
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=display_title,
+        add_url=add_url,
+        add_text="Ajouter une configuration",
+        show_button=show_add_button|default(true)
+    ) }}
+    
     <div class="card-body">
         {% if items %}
             {% if show_search|default(true) %}
@@ -68,49 +71,31 @@
                             <td>{{ config.path }}</td>
                             <td>{{ config.software_version.software.name }}</td>
                             <td>{{ config.software_version.version }}</td>
-                            <td class="text-center">
-                                <a href="{{ url_for('parsed_files.edit_base_parsed_content',
+                            {{ action_buttons(
+                                edit_url=url_for('parsed_files.edit_base_parsed_content',
                                           software_name=config.software_version.software.name, 
                                           software_version=config.software_version.version, 
-                                          file_name=config.file_name) }}" 
-                                   class="btn btn-sm btn-warning me-1">
-                                   <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ url_for('software_base_configurations.delete', 
-                                              software_name=config.software_version.software.name, 
-                                              version=config.software_version.version,
-                                              file_name=config.file_name) }}" 
-                                      method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
+                                          file_name=config.file_name),
+                                delete_url=url_for('software_base_configurations.delete', 
+                                          software_name=config.software_version.software.name, 
+                                          version=config.software_version.version,
+                                          file_name=config.file_name),
+                                delete_message='Êtes-vous sûr de vouloir supprimer cette configuration ?'
+                            ) }}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucune configuration de base trouvée.
-                {% if show_add_button|default(true) %}
-                    {% if software_version %}
-                        <a href="{{ url_for('software_base_configurations.add_for_version', version_id=software_version.id) }}" class="alert-link">
-                            Ajouter une configuration pour {{ software_version.software.name }} v{{ software_version.version }}
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('software_base_configurations.add') }}" class="alert-link">
-                            Ajouter une configuration
-                        </a>
-                    {% endif %}
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucune configuration de base trouvée.",
+                add_url=add_url,
+                add_text=add_text_specific
+            ) }}
         {% endif %}
     </div>
 </div>
 
-{# Utiliser la macro d'initialisation pour la recherche #}
 {{ init_search('softwareBaseConfigsTable', 'softwareBaseConfigsSearchInput') }}
 {% endif %}

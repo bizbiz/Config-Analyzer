@@ -1,15 +1,15 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
-{% from 'includes/_table_search.html' import init_search %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">{% if title is defined %}{{ title }}{% else %}Clients{% endif %}</h5>
-        {% if show_add_button|default(true) %}
-            <a href="{{ url_for('clients.add') }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Ajouter un client
-            </a>
-        {% endif %}
-    </div>
+    {{ card_header(
+        title=title|default('Clients'),
+        add_url=url_for('clients.add'),
+        add_text="Ajouter un client",
+        show_button=show_add_button|default(true)
+    ) }}
+    
     <div class="card-body">
         {% if items %}
             {% if show_search|default(true) %}
@@ -41,35 +41,25 @@
                             <td>{{ client.postal_code_relation.code }}</td>
                             <td>{{ client.postal_code_relation.city }}</td>
                             <td>{{ client.postal_code_relation.country_code }}</td>
-                            <td class="text-center">
-                                <a href="{{ url_for('clients.edit', client_id=client.id) }}" 
-                                   class="btn btn-sm btn-warning me-2">
-                                   <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ url_for('clients.delete', client_id=client.id) }}" 
-                                      method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirm('Supprimer ce client ?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
+                            {{ action_buttons(
+                                edit_url=url_for('clients.edit', client_id=client.id),
+                                delete_url=url_for('clients.delete', client_id=client.id),
+                                delete_message='Supprimer ce client ?'
+                            ) }}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Aucun client trouvé.
-                {% if show_add_button|default(true) %}
-                    <a href="{{ url_for('clients.add') }}" class="alert-link">Ajouter un client</a>
-                {% endif %}
-            </div>
+            {{ alert_empty_list(
+                message="Aucun client trouvé.",
+                add_url=url_for('clients.add'),
+                add_text="Ajouter un client"
+            ) }}
         {% endif %}
     </div>
 </div>
 
-{# Utiliser la macro d'initialisation pour la recherche #}
 {{ init_search('clientsTable', 'clientsSearchInput') }}
 {% endif %}

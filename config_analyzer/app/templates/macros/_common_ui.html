@@ -1,6 +1,7 @@
 {# templates/marcros/_common_ui.html #}
 {# Doit contenir les macro Jira utilisé sur la majorité des pages #}
 
+{# Bouton retour à la page précédente #}
 {% macro back_button(url, text="Retour", class="btn btn-secondary mt-4") %}
 <div class="text-center">
     <a href="{{ url }}" class="{{ class }}">
@@ -9,6 +10,7 @@
 </div>
 {% endmacro %}
 
+{# Pop up message d'alertes #}
 {% macro alert_message(message, type="info") %}
     <div class="alert alert-{{ type }} alert-dismissible fade show">
         <i class="fas fa-info-circle me-2"></i>{{ message }}
@@ -26,4 +28,9 @@
         {{ content|safe }}
     </div>
 </div>
+{% endmacro %}
+
+{# Badge de types #}
+{% macro badge(type, text, colors={'text': 'info', 'numeric': 'primary', 'enum': 'success'}) %}
+<span class="badge bg-{{ colors[type]|default('secondary') }}">{{ text }}</span>
 {% endmacro %}

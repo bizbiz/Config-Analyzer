@@ -1,8 +1,9 @@
 {# templates/macros/_action_buttons.html #}
 {# Doit contenir les macro Jira utilisé sur les tableaux #}
 
-{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[]) %}
-<td class="text-center">
+{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true) %}
+    {% if is_td %}<td class="text-center">{% endif %}
+    
     {% if view_url %}
     <a href="{{ view_url }}" class="btn btn-sm btn-info me-1">
         <i class="fas fa-eye"></i>
@@ -16,7 +17,7 @@
     {% endif %}
     
     {% if delete_url %}
-    <form action="{{ delete_url }}" method="POST" class="d-inline{% if not loop.last %} me-1{% endif %}">
+    <form action="{{ delete_url }}" method="POST" class="d-inline">
         <button type="submit" class="btn btn-sm btn-danger" 
                 onclick="return confirm('{{ delete_message }}')">
             <i class="fas fa-trash"></i>
@@ -27,8 +28,11 @@
     {% for button in additional_buttons %}
         {{ button|safe }}
     {% endfor %}
-</td>
+    
+    {% if is_td %}</td>{% endif %}
 {% endmacro %}
+
+
 
 {# templates/macros/_pagination.html #}
 {% macro render_pagination(page, total_pages, total_items, items_length, offset, endpoint=request.endpoint, endpoint_args=request.view_args) %}
@@ -84,4 +88,60 @@
         </a>
     {% endif %}
 </div>
+{% endmacro %}
+
+{# Message d'erreur à afficher en cas de liste vide #}
+{% macro alert_empty_list(message, add_url=None, add_text=None) %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>{{ message }}
+    {% if add_url and add_text %}
+        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro display_param_type_badge(type_value, type_display) %}
+{% if type_value == 'text' %}
+    <span class="badge bg-info">{{ type_display }}</span>
+{% elif type_value == 'numeric' %}
+    <span class="badge bg-primary">{{ type_display }}</span>
+{% elif type_value == 'enum' %}
+    <span class="badge bg-success">{{ type_display }}</span>
+{% else %}
+    <span class="badge bg-secondary">{{ type_display }}</span>
+{% endif %}
+{% endmacro %}
+
+{% macro display_param_values(config) %}
+{% if config.type.value == 'enum' %}
+    {% if config.values %}
+        {% set display_values = ", ".join(config.values[:5]) %}
+        {% if config.values|length > 5 %}
+            {{ display_values[:100] }}... ({{ config.values|length }} valeurs)
+        {% else %}
+            {{ display_values[:100] }}
+            {% if display_values|length > 100 %}...{% endif %}
+        {% endif %}
+    {% else %}
+        <span class="text-muted">Aucune valeur</span>
+    {% endif %}
+{% elif config.type.value == 'numeric' %}
+    {% set default_value = config.values[0] if config.values and config.values|length > 0 and config.values[0]|trim else 'N/A' %}
+    {% set min_value = config.values[1] if config.values|length > 1 and config.values[1]|trim else none %}
+    {% set max_value = config.values[2] if config.values|length > 2 and config.values[2]|trim else none %}
+    
+    <span class="numeric-values">
+        Défaut : {{ default_value }}
+        {% if min_value or max_value %}
+            <span class="text-muted">
+                {% if min_value %}(min: {{ min_value }}{% if max_value %}, {% endif %}{% endif %}
+                {% if max_value %}max: {{ max_value }}{% endif %}
+                )
+            </span>
+        {% endif %}
+    </span>
+{% else %}
+    {{ config.values[0] if config.values and config.values|length > 0 else '' }}
+{% endif %}
 {% endmacro %}
