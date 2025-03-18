@@ -1,15 +1,27 @@
-{% extends "list/generic_list.html" %}
+{% extends "base.html" %}
 
 {% block title %}Liste des Modèles de Robots{% endblock %}
-{% block list_heading %}Liste des Modèles de Robots{% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <h1 class="mb-4">Liste des Modèles de Robots</h1>
     
-    {% with items=robot_models, show_add_button=true, show_add_form=true %}
+    {% with items=robot_models, show_add_button=false %}
         {% include 'list/partials/robot_models.html' %}
     {% endwith %}
+    
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter un Modèle de Robot</h2>
+        
+        {% with 
+            softwares=softwares,
+            form_data=form_data,
+            name_error=name_error,
+            company_error=company_error
+        %}
+            {% include 'add/partials/robot_model.html' %}
+        {% endwith %}
+    </div>
     
     <!-- Lien de retour -->
     <div class="text-center mt-4">

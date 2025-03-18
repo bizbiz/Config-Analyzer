@@ -12,12 +12,19 @@ def get_template_additional_params_data(table_name, table_id):
 
 @softwares_bp.route('/list')
 def list():
-    """Liste tous les logiciels"""
     softwares = Software.query.all()
-    robot_models = RobotModel.query.all()
-    return render_template('list/partials/softwares.html', 
-                          items=softwares, 
-                          robot_models=robot_models)
+    robot_models = RobotModel.query.all()  # Pour le formulaire d'ajout
+    
+    # Variables pour le formulaire
+    form_data = {}
+    name_error = None
+    
+    return render_template('list/softwares.html', 
+                          softwares=softwares,
+                          robot_models=robot_models,
+                          form_data=form_data,
+                          name_error=name_error)
+
 
 @softwares_bp.route('/add', methods=['GET', 'POST'])
 def add():

@@ -1,68 +1,70 @@
-{% extends "list/generic_list.html" %}
+{% extends "base.html" %}
 
-{% block list_title %}Configurations de Paramètres{% endblock %}
-{% block list_heading %}Liste des Configurations de Paramètres{% endblock %}
+{% block title %}Liste des Configurations de Base de Logiciels{% endblock %}
 
-{% block pre_table_content %}
-<div class="mb-4">
-    <form method="GET" action="{{ url_for('additional_params_config.list') }}">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Rechercher..." 
-                   value="{{ request.args.get('q', '') }}">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-    </form>
-</div>
-{% endblock %}
-
-{% block card_title %}Configurations de paramètres{% endblock %}
-
-{% block table_headers %}
-    <th scope="col">Nom</th>
-    <th scope="col">Type</th>
-    <th scope="col">Valeurs possibles</th>
-    <th scope="col">Créé le</th>
-    <th scope="col">Actions</th>
-{% endblock %}
-
-{% block table_rows %}
-    {% for config in items %}
-    <tr>
-        <td>{{ config.name }}</td>
-        <td>
-            {% if config.type.value == 'text' %}
-                <span class="badge bg-info">{{ config.type_display }}</span>
-            {% elif config.type.value == 'numeric' %}
-                <span class="badge bg-primary">{{ config.type_display }}</span>
-            {% elif config.type.value == 'enum' %}
-                <span class="badge bg-success">{{ config.type_display }}</span>
-            {% else %}
-                <span class="badge bg-secondary">{{ config.type_display }}</span>
-            {% endif %}
-        </td>
-        <td>{{ config.value }}</td>
-        <td>{{ config.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-        <td class="text-center">
-            <a href="{{ url_for('additional_params_config.edit', entity_name=config.entity_name, config_id=config.id) }}" 
-               class="btn btn-sm btn-warning">
-                <i class="fas fa-edit"></i>
-            </a>
-            <form action="{{ url_for('additional_params_config.delete', entity_name=config.entity_name, config_id=config.id) }}" 
-                  method="POST" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-danger" 
-                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette configuration ?')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-{% endblock %}
-
-{% block post_table_content %}
-    {% if total_items > items_per_page %}
-        {% include 'includes/_pagination.html' %}
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">
+        {% if software_version %}
+            Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
+        {% elif software %}
+            Configurations pour {{ software.name }}
+        {% else %}
+            Liste des Configurations de Base de Logiciels
+        {% endif %}
+    </h1>
+    
+    {% with items=configs, show_add_button=false, software=software, software_version=software_version %}
+        {% include 'list/partials/software_base_configurations.html' %}
+    {% endwith %}
+    
+    {% if software_version %}
+    <!-- Formulaire spécifique à une version -->
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter une configuration pour {{ software_version.software.name }} v{{ software_version.version }}</h2>
+        
+        {% with 
+            software_version=software_version,
+            form_data=form_data,
+            file_name_error=file_name_error,
+            path_error=path_error,
+            content_error=content_error
+        %}
+            {% include 'add/partials/software_base_configuration_for_version.html' %}
+        {% endwith %}
+    </div>
+    {% else %}
+    <!-- Formulaire général -->
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter une Configuration de Base</h2>
+        
+        {% with 
+            softwares=all_softwares,
+            form_data=form_data,
+            file_name_error=file_name_error,
+            path_error=path_error,
+            content_error=content_error
+        %}
+            {% include 'add/partials/software_base_configuration.html' %}
+        {% endwith %}
+    </div>
     {% endif %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        {% if software_version %}
+            <a href="{{ url_for('software_versions.view', software_name=software_version.software.name, version=software_version.version) }}" class="btn btn-secondary">
+                Retour à la version
+            </a>
+        {% elif software %}
+            <a href="{{ url_for('softwares.view', name=software.name) }}" class="btn btn-secondary">
+                Retour au logiciel
+            </a>
+        {% else %}
+            <a href="{{ url_for('softwares.list') }}" class="btn btn-secondary">
+                Retour aux logiciels
+            </a>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

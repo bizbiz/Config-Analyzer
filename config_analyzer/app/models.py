@@ -1,12 +1,43 @@
-from sqlalchemy import ForeignKey, UniqueConstraint, Index, Text
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.sql import select, func
-from app.extensions import db
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.dialects.postgresql import ENUM, ARRAY
-from sqlalchemy import Enum
+# Imports de la bibliothèque standard Python
 import enum
+import re
+import unicodedata
+
+# Imports de bibliothèques tierces
+from flask_login import UserMixin
+from sqlalchemy import Enum, ForeignKey, Index, Text, UniqueConstraint, func, select, event
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM
+from sqlalchemy.ext.hybrid import hybrid_property
+from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime
+
+# Imports de modules locaux
+from app.extensions import db
+
+# Fonction alternative à slugify si vous ne voulez pas installer la dépendance
+def slugify(text, max_length=150):
+    """
+    Génère un slug à partir du texte donné.
+    
+    Args:
+        text (str): Le texte à convertir en slug
+        max_length (int): Longueur maximale du slug (défaut: 150)
+        
+    Returns:
+        str: Le slug généré
+    """
+    # Convertir en minuscules
+    text = str(text).lower()
+    
+    # Supprimer les accents
+    text = ''.join([c for c in unicodedata.normalize('NFKD', text) if not unicodedata.combining(c)])
+    
+    # Remplacer les espaces par des tirets
+    text = re.sub(r'[^\w\s-]', '', text).strip()
+    text = re.sub(r'[-\s]+', '-', text)
+    
+    # Limiter la longueur
+    return text[:max_length]
 
 class ParameterType(enum.Enum):
     TEXT = "text"
@@ -33,6 +64,7 @@ class Client(db.Model):
     __tablename__ = 'clients'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(150), nullable=False, unique=True, index=True)
     postal_code_id = db.Column(db.Integer, db.ForeignKey('postal_codes.id'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -43,6 +75,34 @@ class Client(db.Model):
 
     def __repr__(self):
         return f'<Client {self.name}>'
+    
+    def generate_slug(self):
+        """Génère un slug unique pour le client."""
+        # Essayer d'abord avec juste le nom
+        base_slug = slugify(self.name)
+        slug = base_slug
+        counter = 1
+        
+        # Vérifier si le slug existe déjà (exclure l'instance actuelle)
+        while Client.query.filter(Client.slug == slug, Client.id != self.id).first():
+            # Si le slug existe, essayer avec le nom + code postal
+            if self.postal_code_relation:
+                test_slug = f"{base_slug}-{slugify(self.postal_code_relation.code)}"
+                
+                # Vérifier si ce nouveau slug existe déjà
+                if not Client.query.filter(Client.slug == test_slug, Client.id != self.id).first():
+                    slug = test_slug
+                    break
+            
+            # Si le slug avec code postal existe aussi ou s'il n'y a pas de code postal,
+            # ajouter un compteur
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        
+        self.slug = slug
+        return slug
+
+from sqlalchemy import event
 
 class RobotModel(db.Model):
     __tablename__ = 'robots_modeles'
@@ -56,13 +116,34 @@ class RobotModel(db.Model):
     software = db.relationship("RobotModelSoftware", back_populates="robot_modele")
     clients = db.relationship("RobotClient", back_populates="robot_modele")
 
-    # Définir le slug automatiquement
-    @staticmethod
-    def generate_slug(name):
-        return name.replace(' ', '_')
-    
-    def __init__(self, name, **kwargs):
-        super().__init__(name=name, slug=self.generate_slug(name), **kwargs)
+    def generate_unique_slug(self):
+        """Génère un slug unique basé sur le nom."""
+        base_slug = slugify(self.name)
+        slug = base_slug
+        
+        # Vérifier si ce slug existe déjà (en excluant l'instance actuelle)
+        counter = 1
+        while RobotModel.query.filter(RobotModel.slug == slug, 
+                                    RobotModel.id != self.id).first():
+            # Si le slug existe, ajouter un compteur
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+            
+        return slug
+
+# Écouteurs d'événements pour gérer automatiquement les slugs
+@event.listens_for(RobotModel, 'before_insert')
+def set_robot_model_slug_before_insert(mapper, connection, target):
+    """Définit le slug avant l'insertion."""
+    target.slug = target.generate_unique_slug()
+
+@event.listens_for(RobotModel, 'before_update')
+def update_robot_model_slug_on_name_change(mapper, connection, target):
+    """Met à jour le slug si le nom a changé."""
+    state = db.inspect(target)
+    if state.attrs.name.history.has_changes():
+        target.slug = target.generate_unique_slug()
+
 
 class Software(db.Model):
     __tablename__ = 'software'
@@ -263,6 +344,22 @@ class AdditionalParameter(db.Model):
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
 
+# Modèle de groupe d'utilisateurs
+class UserGroup(db.Model):
+    __tablename__ = 'user_groups'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    identifier = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    slug = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(128), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    
+    users = db.relationship('User', back_populates='group')
+    
+    def __repr__(self):
+        return f'<UserGroup {self.name}>'
+
+# Modèle utilisateur amélioré
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
@@ -271,10 +368,14 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128))
     is_active = db.Column(db.Boolean, default=True)
-    is_admin = db.Column(db.Boolean, default=False)
-    access_level = db.Column(db.Integer, default=0)
+    access_level = db.Column(db.Integer, default=0)  # 0: minimum, 1: normal, 2: group manager, 3: super admin
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     
+    # Relation avec le groupe
+    group_id = db.Column(db.Integer, db.ForeignKey('user_groups.id'))
+    group = db.relationship('UserGroup', back_populates='users')
+    
+    # Relations existantes
     created_parameters = db.relationship("BaseConfigFileParameter", 
                                     foreign_keys="BaseConfigFileParameter.created_by_user_id",
                                     backref="created_by_user")
@@ -289,6 +390,12 @@ class User(db.Model, UserMixin):
         
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def is_group_manager(self):
+        return self.access_level >= 2
+    
+    def is_super_admin(self):
+        return self.access_level >= 3
     
     def __repr__(self):
         return f'<User {self.username}>'

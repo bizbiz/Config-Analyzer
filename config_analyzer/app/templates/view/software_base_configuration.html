@@ -9,7 +9,7 @@
         <p><strong>Chemin :</strong> {{ base_configuration.path }}</p>
         <p><strong>Contenu :</strong></p>
         <pre>{{ base_configuration.content }}</pre>
-        <a href="{{ url_for('software_base_configurations.list_software_base_configurations_by_version', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version) }}" class="btn btn-secondary">Retour à la liste</a>
+        <a href="{{ url_for('software_base_configurations.list_by_version', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version) }}" class="btn btn-secondary">Retour à la liste</a>
     </div>
 </div>
 {% endblock %}

@@ -42,9 +42,9 @@
                             <td>{{ client.postal_code_relation.city }}</td>
                             <td>{{ client.postal_code_relation.country_code }}</td>
                             {{ action_buttons(
-                                edit_url=url_for('clients.edit', client_id=client.id),
-                                delete_url=url_for('clients.delete', client_id=client.id),
-                                delete_message='Supprimer ce client ?'
+                                edit_url=url_for('clients.edit', slug=client.slug),
+                                delete_url=url_for('clients.delete', slug=client.slug),
+                                delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
                             ) }}
                         </tr>
                         {% endfor %}

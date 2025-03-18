@@ -7,10 +7,20 @@ robot_models_bp = Blueprint('robot_models', __name__, url_prefix='/robot-models'
 
 @robot_models_bp.route('/list')
 def list():
-    """Liste tous les modèles de robots"""
     robot_models = RobotModel.query.all()
-    softwares = Software.query.all()
-    return render_template('list/robot_models.html', robot_models=robot_models, softwares=softwares)
+    softwares = Software.query.all()  # Pour le formulaire d'ajout
+    
+    # Variables pour le formulaire
+    form_data = {}
+    name_error = None
+    company_error = None
+    
+    return render_template('list/robot_models.html', 
+                          robot_models=robot_models,
+                          softwares=softwares,
+                          form_data=form_data,
+                          name_error=name_error,
+                          company_error=company_error)
 
 @robot_models_bp.route('/view/<string:slug>')
 def view(slug):

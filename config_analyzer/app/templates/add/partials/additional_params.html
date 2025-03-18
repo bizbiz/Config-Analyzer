@@ -1,0 +1,59 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% if configs is defined %}
+{% from 'macros/_form_ui.html' import text_field, textarea_field, select_field with context %}
+
+<form method="post">
+    <input type="hidden" name="model_type" value="{{ model_type }}">
+    <input type="hidden" name="entity_name" value="{{ entity_name }}">
+    
+    {{ text_field(
+        name="name",
+        label="Nom du paramètre",
+        value=form_data.name if form_data else "",
+        required=true,
+        error=name_error
+    ) }}
+    
+    {{ text_field(
+        name="value",
+        label="Valeur du paramètre",
+        value=form_data.value if form_data else "",
+        required=true,
+        error=value_error
+    ) }}
+    
+    {% if configs %}
+    {{ select_field(
+        name="config_id",
+        label="Configuration associée (optionnel)",
+        options=configs,
+        option_value="id",
+        option_text="name",
+        selected=form_data.config_id if form_data else None,
+        required=false
+    ) }}
+    {% endif %}
+    
+    {{ textarea_field(
+        name="description",
+        label="Description (optionnel)",
+        value=form_data.description if form_data else "",
+        rows=3
+    ) }}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Ajouter le paramètre</button>
+        {% if model_type == 'robot_models' %}
+            <a href="{{ url_for('robot_models.view', slug=entity_slug) }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% elif model_type == 'softwares' %}
+            <a href="{{ url_for('softwares.view', name=entity_name) }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% elif model_type == 'clients' %}
+            <a href="{{ url_for('clients.view', client_id=entity_id) }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% elif model_type == 'robot_clients' %}
+            <a href="{{ url_for('robot_clients.view', serial_number=entity_name) }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% else %}
+            <a href="{{ url_for('home.home') }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% endif %}
+    </div>
+</form>
+{% endif %}

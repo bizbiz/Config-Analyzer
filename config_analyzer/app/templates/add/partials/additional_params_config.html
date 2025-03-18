@@ -1,0 +1,142 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% if robot_model is defined %}
+{% from 'macros/_form_ui.html' import text_field, textarea_field, select_field with context %}
+
+<form action="{{ url_for('additional_params_config.add', entity_name=robot_model.name) }}" method="POST">
+    {{ text_field(
+        name="name",
+        label="Nom du paramètre :",
+        required=true,
+        help_text="Exemple : \"Nombre de bras\", \"Couleur\", etc."
+    ) }}
+    
+    {{ textarea_field(
+        name="description",
+        label="Description (facultative) :",
+        rows=3,
+        placeholder="Description détaillée du paramètre...",
+        help_text="Ajoutez des détails qui aideront les utilisateurs à comprendre ce paramètre."
+    ) }}
+    
+    {{ select_field(
+        name="type",
+        label="Type de paramètre :",
+        options=[
+            {"value": "text", "text": "Texte"},
+            {"value": "numeric", "text": "Nombre"},
+            {"value": "enum", "text": "Énumération"}
+        ],
+        option_value="value",
+        option_text="text",
+        required=true,
+        attributes="onchange=\"showValueField()\""
+    ) }}
+    
+    <div id="valueField" class="mb-3" style="display: none;">
+        <!-- Champ générique pour texte et nombre -->
+    </div>
+    
+    <div id="numericRangeFields" class="mb-3" style="display: none;">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="min_value" class="form-label">Valeur minimale (facultative) :</label>
+                <input type="number" id="min_value" name="min_value" class="form-control">
+                <div class="form-text">Définit la limite inférieure acceptable pour ce paramètre</div>
+            </div>
+            <div class="col-md-6">
+                <label for="max_value" class="form-label">Valeur maximale (facultative) :</label>
+                <input type="number" id="max_value" name="max_value" class="form-control">
+                <div class="form-text">Définit la limite supérieure acceptable pour ce paramètre</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="enumContainer" class="mb-3" style="display: none;">
+        <!-- Les champs d'énumération seront ajoutés ici -->
+    </div>
+    
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-success">Ajouter</button>
+    </div>
+</form>
+
+<script>
+function showValueField() {
+    const type = document.getElementById('type').value;
+    const valueField = document.getElementById('valueField');
+    const enumContainer = document.getElementById('enumContainer');
+    const numericRangeFields = document.getElementById('numericRangeFields');
+    
+    // Réinitialiser les champs
+    valueField.innerHTML = '';
+    enumContainer.innerHTML = '';
+    valueField.style.display = 'none';
+    enumContainer.style.display = 'none';
+    numericRangeFields.style.display = 'none';
+
+    if (type === 'text') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur par défaut :</label>
+            <input type="text" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+    } else if (type === 'numeric') {
+        valueField.innerHTML = `
+            <label for="value" class="form-label">Valeur par défaut :</label>
+            <input type="number" id="value" name="value" class="form-control">
+        `;
+        valueField.style.display = 'block';
+        numericRangeFields.style.display = 'block';
+    } else if (type === 'enum') {
+        // Afficher le conteneur d'énumération
+        enumContainer.style.display = 'block';
+        
+        // Ajouter la première valeur d'énumération
+        const firstField = document.createElement('div');
+        firstField.className = 'enum-value mb-2';
+        firstField.innerHTML = `
+            <label class="form-label">Valeurs d'énumération :</label>
+            <div class="form-text mb-2">Commencez à saisir des valeurs. Un nouveau champ apparaîtra automatiquement.</div>
+            <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
+        `;
+        enumContainer.appendChild(firstField);
+        
+        // Ajouter l'écouteur d'événement au champ
+        const input = firstField.querySelector('input');
+        input.addEventListener('input', checkAndAddField);
+    }
+}
+
+function checkAndAddField(event) {
+    const input = event.target;
+    const enumContainer = document.getElementById('enumContainer');
+    const allFields = enumContainer.querySelectorAll('.enum-value');
+    const lastField = allFields[allFields.length - 1];
+    
+    // Si l'input est dans le dernier champ et contient une valeur
+    if (input.value && input.closest('.enum-value') === lastField) {
+        const newField = document.createElement('div');
+        newField.className = 'enum-value mb-2';
+        newField.innerHTML = `
+            <div class="input-group">
+                <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
+                <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        enumContainer.appendChild(newField);
+        
+        // Ajouter l'écouteur d'événement au nouveau champ
+        const newInput = newField.querySelector('input');
+        newInput.addEventListener('input', checkAndAddField);
+    }
+}
+
+function removeEnumField(button) {
+    const fieldDiv = button.closest('.enum-value');
+    fieldDiv.remove();
+}
+</script>
+{% endif %}

@@ -1,0 +1,65 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% from 'macros/_form_ui.html' import text_field, select_field with context %}
+
+<form action="{{ url_for('robot_models.add') }}" method="POST">
+    {{ text_field(
+        name="name",
+        label="Nom :",
+        value=form_data.name if form_data else "",
+        required=true,
+        error=name_error
+    ) }}
+    
+    {{ text_field(
+        name="company",
+        label="Société :",
+        value=form_data.company if form_data else "",
+        required=true,
+        error=company_error
+    ) }}
+    
+    <div class="mb-3">
+        <label for="software_ids" class="form-label">Software :</label>
+        <div id="software-container">
+            <div class="input-group mb-2">
+                <select class="form-select" name="software_ids">
+                    <option value="">Sélectionner un logiciel</option>
+                    {% for software in softwares %}
+                    <option value="{{ software.id }}" 
+                            {% if form_data and form_data.software_ids and software.id|string in form_data.software_ids %}selected{% endif %}>
+                        {{ software.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary" onclick="addSoftwareSelect()">Ajouter un autre logiciel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Ajouter</button>
+        <a href="{{ url_for('robot_models.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+    </div>
+</form>
+
+<script>
+function addSoftwareSelect() {
+    const container = document.getElementById('software-container');
+    const newSelectDiv = document.createElement('div');
+    newSelectDiv.className = 'input-group mb-2';
+    newSelectDiv.innerHTML = `
+        <select class="form-select" name="software_ids">
+            <option value="">Sélectionner un logiciel</option>
+            {% for software in softwares %}
+            <option value="{{ software.id }}">{{ software.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-danger" onclick="removeSoftwareSelect(this)">×</button>
+    `;
+    container.appendChild(newSelectDiv);
+}
+
+function removeSoftwareSelect(button) {
+    button.parentElement.remove();
+}
+</script>

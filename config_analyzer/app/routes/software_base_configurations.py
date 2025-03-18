@@ -7,20 +7,43 @@ software_base_configurations_bp = Blueprint('software_base_configurations', __na
 
 @software_base_configurations_bp.route('/list')
 def list():
-    """Liste toutes les configurations de base"""
-    base_configurations = SoftwareBaseConfigurationFile.query.all()
-    return render_template('list/partials/software_base_configurations.html', items=base_configurations)
+    configs = SoftwareBaseConfigurationFile.query.all()
+    software_version = None
+    software = None
+    
+    # Si un paramètre est fourni dans l'URL
+    if request.args.get('software_version_id'):
+        software_version = SoftwareVersion.query.get(request.args.get('software_version_id'))
+        if software_version:
+            configs = SoftwareBaseConfigurationFile.query.filter_by(software_version_id=software_version.id).all()
+    elif request.args.get('software_id'):
+        software = Software.query.get(request.args.get('software_id'))
+        if software:
+            # Récupérer toutes les versions de ce logiciel
+            version_ids = [v.id for v in software.versions]
+            configs = SoftwareBaseConfigurationFile.query.filter(
+                SoftwareBaseConfigurationFile.software_version_id.in_(version_ids)
+            ).all()
+    
+    # Pour le formulaire d'ajout général
+    all_softwares = Software.query.all()
+    
+    # Variables pour le formulaire
+    form_data = {}
+    file_name_error = None
+    path_error = None
+    content_error = None
+    
+    return render_template('list/software_base_configurations.html', 
+                          configs=configs,
+                          software_version=software_version,
+                          software=software,
+                          all_softwares=all_softwares,
+                          form_data=form_data,
+                          file_name_error=file_name_error,
+                          path_error=path_error,
+                          content_error=content_error)
 
-@software_base_configurations_bp.route('/software/<string:software_name>')
-def list_by_software(software_name):
-    """Liste les configurations de base pour un logiciel spécifique"""
-    software = Software.query.filter_by(name=software_name).first_or_404()
-    base_configurations = SoftwareBaseConfigurationFile.query.join(SoftwareVersion).filter(
-        SoftwareVersion.software_id == software.id
-    ).all()
-    return render_template('list/partials/software_base_configurations.html', 
-                          items=base_configurations, 
-                          software=software)
 
 @software_base_configurations_bp.route('/software/<string:software_name>/version/<string:version>')
 def list_by_version(software_name, version):

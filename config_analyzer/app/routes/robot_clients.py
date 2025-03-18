@@ -6,9 +6,29 @@ robot_clients_bp = Blueprint('robot_clients', __name__, url_prefix='/robot-clien
 
 @robot_clients_bp.route('/list')
 def list():
-    """Affiche la liste des clients robots"""
     robot_clients = RobotClient.query.all()
-    return render_template('list/robot_clients.html', robot_clients=robot_clients)
+    
+    # Pour le formulaire d'ajout
+    clients = Client.query.all()
+    robot_models = RobotModel.query.all()
+    
+    # Variables pour le formulaire
+    form_data = {}
+    preselected_model_id = None
+    serial_number_error = None
+    length_error = None
+    height_error = None
+    
+    return render_template('list/robot_clients.html', 
+                          robot_clients=robot_clients,
+                          clients=clients,
+                          robot_models=robot_models,
+                          form_data=form_data,
+                          preselected_model_id=preselected_model_id,
+                          serial_number_error=serial_number_error,
+                          length_error=length_error,
+                          height_error=height_error)
+
 
 @robot_clients_bp.route('/add', methods=['GET', 'POST'])
 def add():

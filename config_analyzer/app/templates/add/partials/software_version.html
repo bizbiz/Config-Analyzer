@@ -1,0 +1,28 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% from 'macros/_form_ui.html' import text_field, select_field with context %}
+
+<form action="{{ url_for('software_versions.add') }}" method="POST">
+    {{ select_field(
+        name="software_id",
+        label="Logiciel :",
+        options=softwares,
+        option_value="id",
+        option_text="name",
+        selected=form_data.software_id if form_data else (software.id if software else None),
+        required=true,
+        error=software_id_error
+    ) }}
+    
+    {{ text_field(
+        name="version",
+        label="Version :",
+        value=form_data.version if form_data else "",
+        required=true,
+        error=version_error
+    ) }}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Ajouter</button>
+        <a href="{{ url_for('software_versions.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+    </div>
+</form>

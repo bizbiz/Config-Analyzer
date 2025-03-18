@@ -1,0 +1,104 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% from 'macros/_form_ui.html' import text_field, textarea_field, select_field with context %}
+{% from 'macros/_common_ui.html' import alert_message with context %}
+
+<!-- Messages Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {{ alert_message(message, category) }}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form id="addConfigForm" action="{{ url_for('software_base_configurations.add') }}" method="POST">
+    {{ select_field(
+        name="software",
+        label="Logiciel :",
+        options=softwares,
+        option_value="id",
+        option_text="name",
+        selected=form_data.software if form_data else None,
+        required=true,
+        attributes="onchange=\"loadVersions(this.value)\""
+    ) }}
+    
+    <div class="mb-3" id="software_version_container" style="display: none;">
+        <label for="software_version" class="form-label">Version du Logiciel :</label>
+        <select id="software_version" name="software_version" class="form-control" required>
+            <option value="">Sélectionnez une version</option>
+        </select>
+    </div>
+    
+    {{ text_field(
+        name="file_name",
+        label="Nom du Fichier :",
+        value=form_data.file_name if form_data else "",
+        required=true,
+        error=file_name_error
+    ) }}
+    
+    {{ text_field(
+        name="path",
+        label="Chemin :",
+        value=form_data.path if form_data else "",
+        required=true,
+        error=path_error
+    ) }}
+    
+    {{ textarea_field(
+        name="content",
+        label="Contenu :",
+        value=form_data.content if form_data else "",
+        rows=5,
+        required=true,
+        error=content_error
+    ) }}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Ajouter</button>
+        <a href="{{ url_for('software_base_configurations.list') }}" class="btn btn-secondary ms-2">Retour à la liste</a>
+    </div>
+</form>
+
+<script>
+function loadVersions(softwareId) {
+    var softwareVersionSelect = document.getElementById('software_version');
+    var softwareVersionContainer = document.getElementById('software_version_container');
+
+    if (softwareId) {
+        fetch('/get_software_versions/' + softwareId)
+            .then(response => response.json())
+            .then(data => {
+                softwareVersionSelect.innerHTML = '<option value="">Sélectionnez une version</option>';
+                data.software_versions.forEach(function(version) {
+                    var option = document.createElement('option');
+                    option.value = version.id;
+                    option.text = version.version;
+                    softwareVersionSelect.appendChild(option);
+                });
+                softwareVersionContainer.style.display = 'block';
+            });
+    } else {
+        softwareVersionContainer.style.display = 'none';
+    }
+}
+
+document.getElementById('addConfigForm').addEventListener('submit', function(event) {
+    var software = document.getElementById('software').value;
+    var softwareVersion = document.getElementById('software_version').value;
+
+    if (!software || !softwareVersion) {
+        event.preventDefault();
+        alert('Veuillez sélectionner un logiciel et une version.');
+    }
+});
+
+// Initialiser le chargement des versions si le logiciel est déjà sélectionné
+document.addEventListener('DOMContentLoaded', function() {
+    var softwareSelect = document.getElementById('software');
+    if (softwareSelect.value) {
+        loadVersions(softwareSelect.value);
+    }
+});
+</script>

@@ -6,13 +6,33 @@ software_versions_bp = Blueprint('software_versions', __name__, url_prefix='/sof
 
 @software_versions_bp.route('/list')
 def list():
-    """Liste toutes les versions de logiciels"""
-    software_versions = SoftwareVersion.query.all()
-    softwares = Software.query.all()
-    return render_template('list/partials/software_versions.html', 
-                          items=software_versions, 
-                          softwares=softwares, 
-                          all_versions=True)
+    versions = []
+    software = None
+    
+    if request.args.get('software_name'):
+        software = Software.query.filter_by(name=request.args.get('software_name')).first()
+        if software:
+            versions = software.versions.all()
+    else:
+        versions = SoftwareVersion.query.all()
+    
+    # Récupérer tous les logiciels pour le formulaire d'ajout
+    all_softwares = Software.query.all()
+    
+    # Variables pour le formulaire
+    form_data = {}
+    software_id_error = None
+    version_error = None
+    
+    return render_template('list/software_versions.html',
+                          software=software,
+                          versions=versions,
+                          all_softwares=all_softwares,  # Ajouter cette ligne
+                          form_data=form_data,
+                          software_id_error=software_id_error,
+                          version_error=version_error)
+
+
 
 @software_versions_bp.route('/software/<string:software_name>')
 def list_by_software(software_name):

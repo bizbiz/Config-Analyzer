@@ -1,0 +1,45 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% from 'macros/_form_ui.html' import text_field with context %}
+
+<form action="{{ url_for('clients.add') }}" method="POST">
+    {{ text_field(
+        name="name",
+        label="Nom :",
+        value=form_data.name if form_data else "",
+        required=true,
+        error=name_error
+    ) }}
+    
+    {{ text_field(
+        name="postal_code",
+        label="Code Postal :",
+        value=form_data.postal_code if form_data else "",
+        required=true,
+        pattern="\\d{5}",
+        help_text="Le code postal doit contenir exactement 5 chiffres (ex: 75018)",
+        error=postal_code_error
+    ) }}
+    
+    {{ text_field(
+        name="city",
+        label="Ville :",
+        value=form_data.city if form_data else "",
+        required=true,
+        error=city_error
+    ) }}
+    
+    {{ text_field(
+        name="country_code",
+        label="Code Pays :",
+        value=form_data.country_code if form_data else "FR",
+        required=true,
+        pattern="[A-Z]{2}",
+        help_text="Le code pays doit être composé de 2 lettres majuscules (ex: FR)",
+        error=country_code_error
+    ) }}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Ajouter</button>
+        <a href="{{ url_for('clients.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+    </div>
+</form>

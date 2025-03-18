@@ -1,0 +1,65 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% if clients is defined and robot_models is defined %}
+{% from 'macros/_form_ui.html' import text_field, select_field with context %}
+
+<form method="post">
+    {{ select_field(
+        name="client_id",
+        label="Client",
+        options=clients,
+        option_value="id",
+        option_text="name",
+        selected=form_data.client_id if form_data else None,
+        required=true,
+        add_button={
+            "url": url_for('clients.add'),
+            "text": "Ajouter un Client"
+        }
+    ) }}
+    
+    {{ select_field(
+        name="robot_modele_id",
+        label="Modèle de Robot",
+        options=robot_models,
+        option_value="id",
+        option_text="name",
+        selected=(form_data.robot_modele_id if form_data else None) or preselected_model_id|default(None),
+        required=true,
+        add_button={
+            "url": url_for('robot_models.add'),
+            "text": "Ajouter un Modèle de Robot"
+        }
+    ) }}
+    
+    {{ text_field(
+        name="serial_number",
+        label="Numéro de Série",
+        value=form_data.serial_number if form_data else "",
+        required=true,
+        error=serial_number_error
+    ) }}
+    
+    {{ text_field(
+        name="length",
+        label="Longueur (m)",
+        value=form_data.length if form_data else "",
+        pattern="\d+(\.\d{1,2})?",
+        help_text="Veuillez entrer un nombre valide avec jusqu'à deux décimales.",
+        error=length_error
+    ) }}
+    
+    {{ text_field(
+        name="height",
+        label="Hauteur (m)",
+        value=form_data.height if form_data else "",
+        pattern="\d+(\.\d{1,2})?",
+        help_text="Veuillez entrer un nombre valide avec jusqu'à deux décimales.",
+        error=height_error
+    ) }}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+        <a href="{{ url_for('robot_clients.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+    </div>
+</form>
+{% endif %}

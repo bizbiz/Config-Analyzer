@@ -1,0 +1,57 @@
+{# Fragment sans extends pour inclusion dans d'autres templates #}
+{% from 'macros/_form_ui.html' import text_field with context %}
+
+<form action="{{ url_for('softwares.add') }}" method="POST">
+    {{ text_field(
+        name="name",
+        label="Nom :",
+        value=form_data.name if form_data else "",
+        required=true,
+        error=name_error
+    ) }}
+    
+    <div class="mb-3">
+        <label for="robot_model_ids" class="form-label">Modèles de Robot :</label>
+        <div id="robot-model-container">
+            <div class="input-group mb-2">
+                <select class="form-select" name="robot_model_ids">
+                    <option value="">Sélectionner un modèle de robot</option>
+                    {% for robot_model in robot_models %}
+                    <option value="{{ robot_model.id }}"
+                            {% if form_data and form_data.robot_model_ids and robot_model.id|string in form_data.robot_model_ids %}selected{% endif %}>
+                        {{ robot_model.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary" onclick="addRobotModelSelect()">Ajouter un autre modèle de robot</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Ajouter</button>
+        <a href="{{ url_for('softwares.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+    </div>
+</form>
+
+<script>
+function addRobotModelSelect() {
+    const container = document.getElementById('robot-model-container');
+    const newSelectDiv = document.createElement('div');
+    newSelectDiv.className = 'input-group mb-2';
+    newSelectDiv.innerHTML = `
+        <select class="form-select" name="robot_model_ids">
+            <option value="">Sélectionner un modèle de robot</option>
+            {% for robot_model in robot_models %}
+            <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
+    `;
+    container.appendChild(newSelectDiv);
+}
+
+function removeRobotModelSelect(button) {
+    button.parentElement.remove();
+}
+</script>

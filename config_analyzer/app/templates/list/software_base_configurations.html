@@ -1,15 +1,6 @@
-{% extends "list/generic_list.html" %}
+{% extends "base.html" %}
 
 {% block title %}Liste des Configurations de Base de Logiciels{% endblock %}
-{% block list_heading %}
-    {% if software_version %}
-        Configurations pour {{ software_version.software.name }} version {{ software_version.version }}
-    {% elif software %}
-        Configurations pour {{ software.name }}
-    {% else %}
-        Liste des Configurations de Base de Logiciels
-    {% endif %}
-{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -23,9 +14,41 @@
         {% endif %}
     </h1>
     
-    {% with items=configs, show_add_button=true, software=software, software_version=software_version %}
+    {% with items=configs, show_add_button=false, software=software, software_version=software_version %}
         {% include 'list/partials/software_base_configurations.html' %}
     {% endwith %}
+    
+    {% if software_version %}
+    <!-- Formulaire spécifique à une version -->
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter une configuration pour {{ software_version.software.name }} v{{ software_version.version }}</h2>
+        
+        {% with 
+            software_version=software_version,
+            form_data=form_data,
+            file_name_error=file_name_error,
+            path_error=path_error,
+            content_error=content_error
+        %}
+            {% include 'add/partials/software_base_configuration_for_version.html' %}
+        {% endwith %}
+    </div>
+    {% else %}
+    <!-- Formulaire général -->
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter une Configuration de Base</h2>
+        
+        {% with 
+            softwares=all_softwares,
+            form_data=form_data,
+            file_name_error=file_name_error,
+            path_error=path_error,
+            content_error=content_error
+        %}
+            {% include 'add/partials/software_base_configuration.html' %}
+        {% endwith %}
+    </div>
+    {% endif %}
     
     <!-- Lien de retour -->
     <div class="text-center mt-4">

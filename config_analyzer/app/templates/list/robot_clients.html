@@ -6,8 +6,24 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Robots Clients</h1>
     
-    {% with items=robot_clients, show_add_button=true %}
+    {% with items=robot_clients, show_add_button=false %}
         {% include 'list/partials/robot_clients.html' %}
     {% endwith %}
+    
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter un Robot Client</h2>
+        
+        {% with 
+            clients=clients,
+            robot_models=robot_models,
+            form_data=form_data,
+            preselected_model_id=preselected_model_id,
+            serial_number_error=serial_number_error,
+            length_error=length_error,
+            height_error=height_error
+        %}
+            {% include 'add/partials/robot_client.html' %}
+        {% endwith %}
+    </div>
 </div>
 {% endblock %}

@@ -1,28 +1,19 @@
-<div class="card p-4 shadow-sm mt-4">
-    <h2 class="mb-3">Ajouter un Modèle de Robot</h2>
-    <form action="{{ url_for('robot_models.add') }}" method="POST">
-        <div class="mb-3">
-            <label for="name" class="form-label">Nom :</label>
-            <input type="text" id="name" name="name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="company" class="form-label">Société :</label>
-            <input type="text" id="company" name="company" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="software_ids" class="form-label">Software :</label>
-            <div id="software-container">
-                <div class="input-group mb-2">
-                    <select class="form-select" name="software_ids">
-                        <option value="">Sélectionner un logiciel</option>
-                        {% for software in softwares %}
-                        <option value="{{ software.id }}">{{ software.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" class="btn btn-secondary" onclick="addSoftwareSelect()">Ajouter un autre logiciel</button>
-                </div>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-success">Ajouter</button>
-    </form>
+{% extends "base.html" %}
+{% block title %}Ajouter un Modèle de Robot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter un Modèle de Robot</h2>
+        
+        {% with 
+            softwares=softwares,
+            form_data=form_data,
+            name_error=name_error,
+            company_error=company_error
+        %}
+            {% include 'add/partials/robot_model.html' %}
+        {% endwith %}
+    </div>
 </div>
+{% endblock %}

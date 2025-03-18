@@ -4,85 +4,18 @@
 <div class="container py-5">
     <h1 class="text-center mb-4">Ajouter une Configuration de Base</h1>
 
-    <!-- Messages Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-danger" role="alert">
-                {% for category, message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
     <div class="card p-4 shadow-sm">
         <h2 class="mb-3">Ajouter une Configuration de Base pour la Version du Logiciel</h2>
-        <form id="addConfigForm" action="{{ url_for('software_base_configurations.add_generic_software_base_configuration') }}" method="POST">
-            <div class="mb-3">
-                <label for="software" class="form-label">Logiciel :</label>
-                <select id="software" name="software" class="form-control" required>
-                    <option value="">Sélectionnez un logiciel</option>
-                    {% for software in softwares %}
-                    <option value="{{ software.id }}">{{ software.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3" id="software_version_container" style="display: none;">
-                <label for="software_version" class="form-label">Version du Logiciel :</label>
-                <select id="software_version" name="software_version" class="form-control" required>
-                    <option value="">Sélectionnez une version</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="file_name" class="form-label">Nom du Fichier :</label>
-                <input type="text" id="file_name" name="file_name" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="path" class="form-label">Chemin :</label>
-                <input type="text" id="path" name="path" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="content" class="form-label">Contenu :</label>
-                <textarea id="content" name="content" class="form-control" rows="5" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-success">Ajouter</button>
-            <a href="{{ url_for('software_base_configurations.list_all_software_base_configurations') }}" class="btn btn-secondary">Retour à la liste</a>
-        </form>
+        
+        {% with 
+            softwares=softwares,
+            form_data=form_data,
+            file_name_error=file_name_error,
+            path_error=path_error,
+            content_error=content_error
+        %}
+            {% include 'add/partials/software_base_configuration.html' %}
+        {% endwith %}
     </div>
 </div>
-
-<script>
-document.getElementById('software').addEventListener('change', function() {
-    var softwareId = this.value;
-    var softwareVersionSelect = document.getElementById('software_version');
-    var softwareVersionContainer = document.getElementById('software_version_container');
-
-    if (softwareId) {
-        fetch('/get_software_versions/' + softwareId)
-            .then(response => response.json())
-            .then(data => {
-                softwareVersionSelect.innerHTML = '<option value="">Sélectionnez une version</option>';
-                data.software_versions.forEach(function(version) {
-                    var option = document.createElement('option');
-                    option.value = version.id;
-                    option.text = version.version;
-                    softwareVersionSelect.appendChild(option);
-                });
-                softwareVersionContainer.style.display = 'block';
-            });
-    } else {
-        softwareVersionContainer.style.display = 'none';
-    }
-});
-
-document.getElementById('addConfigForm').addEventListener('submit', function(event) {
-    var software = document.getElementById('software').value;
-    var softwareVersion = document.getElementById('software_version').value;
-
-    if (!software || !softwareVersion) {
-        event.preventDefault();
-        alert('Veuillez sélectionner un logiciel et une version.');
-    }
-});
-</script>
 {% endblock %}

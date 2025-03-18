@@ -1,13 +1,6 @@
-{% extends "list/generic_list.html" %}
+{% extends "base.html" %}
 
 {% block title %}Versions de Logiciels{% endblock %}
-{% block list_heading %}
-    {% if software %}
-        Versions du logiciel {{ software.name }}
-    {% else %}
-        Liste des Versions de Logiciels
-    {% endif %}
-{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -19,9 +12,28 @@
         {% endif %}
     </h1>
     
-    {% with items=versions, show_add_button=true, software=software, show_add_form=true %}
+    {% with items=versions, show_add_button=false, software=software %}
         {% include 'list/partials/software_versions.html' %}
     {% endwith %}
+    
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">
+            {% if software %}
+                Ajouter une Version pour {{ software.name }}
+            {% else %}
+                Ajouter une Version de Logiciel
+            {% endif %}
+        </h2>
+        
+        {% with 
+            softwares=all_softwares if not software else [software],
+            form_data=form_data,
+            software_id_error=software_id_error,
+            version_error=version_error
+        %}
+            {% include 'add/partials/software_version.html' %}
+        {% endwith %}
+    </div>
     
     <!-- Lien de retour -->
     <div class="text-center mt-4">
@@ -37,3 +49,4 @@
     </div>
 </div>
 {% endblock %}
+
