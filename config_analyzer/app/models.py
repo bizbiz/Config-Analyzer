@@ -15,29 +15,82 @@ from datetime import datetime
 from app.extensions import db
 
 # Fonction alternative à slugify si vous ne voulez pas installer la dépendance
-def slugify(text, max_length=150):
+def generate_model_slug(model_class, instance, text_field, max_length=150):
     """
-    Génère un slug à partir du texte donné.
+    Génère un slug unique pour n'importe quel modèle, en respectant strictement max_length.
     
     Args:
-        text (str): Le texte à convertir en slug
-        max_length (int): Longueur maximale du slug (défaut: 150)
-        
+        model_class: La classe du modèle (User, UserGroup, etc.)
+        instance: L'instance du modèle (pour exclure lors de la vérification d'unicité)
+        text_field: Le texte à convertir en slug (username, name, etc.)
+        max_length: Longueur maximale du slug
+    
     Returns:
-        str: Le slug généré
+        str: Un slug unique de longueur <= max_length
     """
-    # Convertir en minuscules
-    text = str(text).lower()
+    # Réserver de l'espace pour le suffixe potentiel "-999"
+    # (Un compteur jusqu'à 999 prend 4 caractères avec le tiret)
+    suffix_length = 4  
+    safe_length = max_length - suffix_length
     
-    # Supprimer les accents
-    text = ''.join([c for c in unicodedata.normalize('NFKD', text) if not unicodedata.combining(c)])
+    # Générer le slug de base avec une longueur réduite pour accommoder un éventuel suffixe
+    base_slug = slugify(text_field, safe_length)
+    slug = base_slug
+    counter = 1
     
-    # Remplacer les espaces par des tirets
-    text = re.sub(r'[^\w\s-]', '', text).strip()
-    text = re.sub(r'[-\s]+', '-', text)
+    # Création de la requête avec exclusion de l'instance actuelle si elle a un ID
+    query = model_class.query.filter(model_class.slug == slug)
+    if instance.id is not None:
+        query = query.filter(model_class.id != instance.id)
     
-    # Limiter la longueur
-    return text[:max_length]
+    # Ajout d'un compteur tant que le slug existe déjà
+    while query.first():
+        # Si le compteur atteint 1000, réduire davantage la base pour un suffixe plus long
+        if counter == 1000:
+            suffix_length += 1
+            base_slug = slugify(text_field, max_length - suffix_length)
+        
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+        query = model_class.query.filter(model_class.slug == slug)
+        if instance.id is not None:
+            query = query.filter(model_class.id != instance.id)
+    
+    return slug
+
+
+def generate_model_slug(model_class, instance, text_field, max_length=150):
+    """
+    Génère un slug unique pour n'importe quel modèle.
+    
+    Args:
+        model_class: La classe du modèle (User, UserGroup, etc.)
+        instance: L'instance du modèle (pour exclure lors de la vérification d'unicité)
+        text_field: Le texte à convertir en slug (username, name, etc.)
+        max_length: Longueur maximale du slug
+    
+    Returns:
+        str: Un slug unique
+    """
+    base_slug = slugify(text_field, max_length)
+    slug = base_slug
+    counter = 1
+    
+    # Création de la requête avec exclusion de l'instance actuelle si elle a un ID
+    query = model_class.query.filter(model_class.slug == slug)
+    if instance.id is not None:
+        query = query.filter(model_class.id != instance.id)
+    
+    # Ajout d'un compteur tant que le slug existe déjà
+    while query.first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+        query = model_class.query.filter(model_class.slug == slug)
+        if instance.id is not None:
+            query = query.filter(model_class.id != instance.id)
+    
+    return slug
+
 
 class ParameterType(enum.Enum):
     TEXT = "text"
@@ -101,8 +154,6 @@ class Client(db.Model):
         
         self.slug = slug
         return slug
-
-from sqlalchemy import event
 
 class RobotModel(db.Model):
     __tablename__ = 'robots_modeles'
@@ -350,14 +401,30 @@ class UserGroup(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column(db.String(64), unique=True, nullable=False, index=True)
-    slug = db.Column(db.String(128), unique=True, nullable=False, index=True)
     name = db.Column(db.String(128), unique=True, nullable=False)
+    slug = db.Column(db.String(150), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    
+    description = db.Column(db.Text)
+
     users = db.relationship('User', back_populates='group')
     
-    def __repr__(self):
-        return f'<UserGroup {self.name}>'
+    def generate_slug(self):
+        """Génère un slug unique basé sur le nom du groupe."""
+        return generate_model_slug(UserGroup, self, self.name)
+
+# Écouteurs d'événements pour UserGroup
+@event.listens_for(UserGroup, 'before_insert')
+def set_user_group_slug_before_insert(mapper, connection, target):
+    """Définit le slug avant l'insertion."""
+    target.slug = target.generate_slug()
+
+@event.listens_for(UserGroup, 'before_update')
+def update_user_group_slug_on_name_change(mapper, connection, target):
+    """Met à jour le slug si le nom du groupe a changé."""
+    state = db.inspect(target)
+    if state.attrs.name.history.has_changes():
+        target.slug = target.generate_slug()
+
 
 # Modèle utilisateur amélioré
 class User(db.Model, UserMixin):
@@ -368,13 +435,16 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128))
     is_active = db.Column(db.Boolean, default=True)
-    access_level = db.Column(db.Integer, default=0)  # 0: minimum, 1: normal, 2: group manager, 3: super admin
+    access_level = db.Column(db.Integer, default=0)  # 0: minimum, 1: normal, 2: group manager, 3: group admin, 4: super admin
+    slug = db.Column(db.String(150), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     
-    # Relation avec le groupe
     group_id = db.Column(db.Integer, db.ForeignKey('user_groups.id'))
     group = db.relationship('UserGroup', back_populates='users')
     
+    # Relation avec les rôles pour une autorisation plus flexible
+    roles = db.relationship('Role', secondary='user_roles')
+
     # Relations existantes
     created_parameters = db.relationship("BaseConfigFileParameter", 
                                     foreign_keys="BaseConfigFileParameter.created_by_user_id",
@@ -399,3 +469,36 @@ class User(db.Model, UserMixin):
     
     def __repr__(self):
         return f'<User {self.username}>'
+
+    def generate_slug(self):
+        """Génère un slug unique basé sur le nom d'utilisateur."""
+        return generate_model_slug(User, self, self.username)
+
+# Écouteurs d'événements pour User
+@event.listens_for(User, 'before_insert')
+def set_user_slug_before_insert(mapper, connection, target):
+    """Définit le slug avant l'insertion."""
+    target.slug = target.generate_slug()
+
+@event.listens_for(User, 'before_update')
+def update_user_slug_on_username_change(mapper, connection, target):
+    """Met à jour le slug si le nom d'utilisateur a changé."""
+    state = db.inspect(target)
+    if state.attrs.username.history.has_changes():
+        target.slug = target.generate_slug()
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    
+    users = db.relationship('User', secondary='user_roles')
+
+class UserRoles(db.Model):
+    __tablename__ = 'user_roles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))

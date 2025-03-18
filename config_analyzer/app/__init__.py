@@ -4,6 +4,10 @@ from app.extensions import db
 from flask_login import LoginManager
 
 login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Veuillez vous connecter pour accéder à cette page.'
+login_manager.login_message_category = 'info'
+
 migrate = Migrate()
 
 @login_manager.user_loader
@@ -56,5 +60,11 @@ def create_app():
 
     from app.routes.additional_params_config import additional_params_config_bp
     app.register_blueprint(additional_params_config_bp)
+
+    from app.routes.group_management import group_management_bp
+    app.register_blueprint(group_management_bp)
+
+    from app.routes.user_management import user_management_bp
+    app.register_blueprint(user_management_bp)
 
     return app
