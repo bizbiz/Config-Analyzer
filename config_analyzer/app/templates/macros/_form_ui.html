@@ -17,7 +17,7 @@
 </div>
 {% endmacro %}
 
-{% macro select_field(name, label, options, option_value, option_text, selected=None, required=false, add_button=None, attributes="", error=None) %}
+{% macro select_field(name, label, options, option_value, option_text, selected=None, required=false, add_button=None, attributes="", error=None, help_text="") %}
 <div class="mb-3">
     <label for="{{ name }}" class="form-label">{{ label }}</label>
     <div class="input-group">
@@ -41,8 +41,12 @@
         {{ error }}
     </div>
     {% endif %}
+    {% if help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
 </div>
 {% endmacro %}
+
 
 
 

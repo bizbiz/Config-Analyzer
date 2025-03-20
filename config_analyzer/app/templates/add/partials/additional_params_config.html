@@ -1,35 +1,41 @@
 {# Fragment sans extends pour inclusion dans d'autres templates #}
-{% if robot_model is defined %}
+{% if entity_type is defined %}
 {% from 'macros/_form_ui.html' import text_field, textarea_field, select_field with context %}
 
-<form action="{{ url_for('additional_params_config.add', entity_name=robot_model.name) }}" method="POST">
+<form action="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}" method="POST">
+    <input type="hidden" name="referer_url" value="{{ referer_url }}">
+
     {{ text_field(
         name="name",
         label="Nom du paramètre :",
         required=true,
-        help_text="Exemple : \"Nombre de bras\", \"Couleur\", etc."
+        help_text=
+            "Exemple : \"Nombre de bras\", \"Couleur\", etc." if entity_type == 'robot_model' else
+            "Exemple : \"Type de commerce : Pharmacie, Pizza, Epicerie, ...\", \"Client sous contrat : Oui, Non\", etc." if entity_type == 'client' else
+            "Exemple : \"Compatible avec version de windows : 10, 11, Vista, XP\", etc."
     ) }}
     
     {{ textarea_field(
         name="description",
         label="Description (facultative) :",
         rows=3,
-        placeholder="Description détaillée du paramètre...",
-        help_text="Ajoutez des détails qui aideront les utilisateurs à comprendre ce paramètre."
+        placeholder="Ajoutez des détails qui aideront les utilisateurs à comprendre ce paramètre.",
+        help_text=""
     ) }}
     
     {{ select_field(
         name="type",
         label="Type de paramètre :",
         options=[
-            {"value": "text", "text": "Texte"},
+            {"value": "enum", "text": "Énumération"},
             {"value": "numeric", "text": "Nombre"},
-            {"value": "enum", "text": "Énumération"}
+            {"value": "text", "text": "Texte"}
         ],
         option_value="value",
         option_text="text",
         required=true,
-        attributes="onchange=\"showValueField()\""
+        attributes="onchange=\"showValueField()\"",
+        help_text="Préférez toujours les énumérations quand c'est possible"
     ) }}
     
     <div id="valueField" class="mb-3" style="display: none;">
@@ -51,12 +57,22 @@
         </div>
     </div>
     
+    <div id="enumMultipleChoice" class="mb-3" style="display: none;">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="multiple_choice" name="multiple_choice">
+            <label class="form-check-label" for="multiple_choice">
+                Permettre la sélection multiple
+            </label>
+            <div class="form-text">Cochez cette case si plusieurs valeurs peuvent être sélectionnées simultanément</div>
+        </div>
+    </div>
+    
     <div id="enumContainer" class="mb-3" style="display: none;">
         <!-- Les champs d'énumération seront ajoutés ici -->
     </div>
     
     <div class="d-flex justify-content-between">
-        <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}" class="btn btn-secondary">Annuler</a>
+        <a href="{{ request.referrer if request.referrer and ('/clients/list' in request.referrer or '/softwares/list' in request.referrer or '/robot_models/list' in request.referrer) else url_for('home.home') }}" class="btn btn-secondary">Annuler</a>
         <button type="submit" class="btn btn-success">Ajouter</button>
     </div>
 </form>
@@ -67,6 +83,7 @@ function showValueField() {
     const valueField = document.getElementById('valueField');
     const enumContainer = document.getElementById('enumContainer');
     const numericRangeFields = document.getElementById('numericRangeFields');
+    const enumMultipleChoice = document.getElementById('enumMultipleChoice');
     
     // Réinitialiser les champs
     valueField.innerHTML = '';
@@ -74,6 +91,7 @@ function showValueField() {
     valueField.style.display = 'none';
     enumContainer.style.display = 'none';
     numericRangeFields.style.display = 'none';
+    enumMultipleChoice.style.display = 'none';
 
     if (type === 'text') {
         valueField.innerHTML = `
@@ -89,10 +107,13 @@ function showValueField() {
         valueField.style.display = 'block';
         numericRangeFields.style.display = 'block';
     } else if (type === 'enum') {
+        // Afficher l'option de choix multiple
+        enumMultipleChoice.style.display = 'block';
+        
         // Afficher le conteneur d'énumération
         enumContainer.style.display = 'block';
         
-        // Ajouter la première valeur d'énumération
+        // Ajouter la première valeur d'énumération (commençant à l'index 2, car 0=nom, 1=multiple)
         const firstField = document.createElement('div');
         firstField.className = 'enum-value mb-2';
         firstField.innerHTML = `
@@ -138,5 +159,10 @@ function removeEnumField(button) {
     const fieldDiv = button.closest('.enum-value');
     fieldDiv.remove();
 }
+
+// Initialiser l'affichage des champs en fonction du type sélectionné
+document.addEventListener('DOMContentLoaded', function() {
+    showValueField();
+});
 </script>
 {% endif %}

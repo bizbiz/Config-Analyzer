@@ -1,6 +1,21 @@
 TODO :
 Pas sur que edit version soit nécessaire à supprimer peut être
+Refonte de software base config en le générant à partir des config client
 Est-ce que si on créé un software base config file avec le même nom qu'un qui existe déjà mais qui est rattaché à un logiciel ou une version différente, ca ne pose pas de probleme ?
+
+harmoniser la position des boutons dans partials/add
+
+
+Dans vos routes d'édition/suppression, gérez le cas 'global' :
+
+python
+@additional_params_config_bp.route('/edit/<string:entity_type>/<string:entity_slug>/<int:config_id>', methods=['GET', 'POST'])
+def edit(entity_type, entity_slug, config_id):
+    if entity_slug == 'global':
+        # Logique pour les paramètres globaux
+    else:
+        # Logique pour les paramètres spécifiques
+
 Ajouter un login
 Ajouter une traduction
 S'assurer que /software.name/software.version/SoftwareBaseConfigurationFile.file_name est un identifiant unique
@@ -10,24 +25,35 @@ On pourrait ajouter une notion d'ordre d'affichage des lignes pour pouvoir les m
 Ajouter un compteur sur les routes, les vues et les vues pour pouvoir supprimer du code qui ne sert a rien si le compteur reste à zéro pendant l'utilisation de l'application sur un temp long
 
 Modifier robot_client.html pour inclure un bloc qui permet d'ajouter "rapidement un client", pour ce faire il va falloir creer dans templates/add/partials/robot_client.html dans lequel on pourra choisir quels champs afficher (on décide au moment de l'include)
-Et donc on viendra finallement modifier templates/add/robot_client.html qui lui affichera le partial avec le base.html 
-Modifier les fichiers html vue de liste unique pour qu'ils fonctionnent comme robot_client.html
-Modifier les tempaltes/add/ pour qu'ils fonctionnent comme templates/add/robot_client.html
+Et donc on viendra finallement modifier templates/add/robot_client.html qui lui affichera le partial avec le base.html
+
+Ne jamais supprimer quelque chose mais plutôt le mettre en in_use = 0
+Si in_use = 0 alors on renomme slon slug en d_old_slug pour qu'il gene pas les autres
+Si on essaye de créer un objet qui existe déjà avec un in_use = 0 alors on propose de réactiver à la place
 
 Reco de Claude :
 
-Utiliser des macros Jinja2 pour les éléments d'interface répétitifs
-Centraliser les fonctions JavaScript dans des fichiers dédiés
 Créer des helpers Python pour la logique CRUD et la validation
 Généraliser les styles CSS pour une cohérence visuelle
 Mettre en place un système de notifications flash standardisé
 
+toujours https
+interface d'administration
+Autorisation par rôles : Utilisez le décorateur @roles_required de Flask-User pour sécuriser vos routes
+Flexibilité des niveaux d'accès : Complétez votre système d'access_level avec des rôles plus granulaires pour des permissions spécifiques
+Gestion de session : Assurez-vous d'utiliser correctement Flask-Login pour gérer l'authentification et les sessions utilisateur
+Interface utilisateur : Ajoutez des conditions dans vos templates pour afficher différents éléments selon l'authentification et les rôles de l'utilisateur
+roles
 
 http://localhost:5000/software_versions/1/view
 sur cette page il faut afficher + d'infos dans la liste des fichiers config de base, comme par exemple, nombre de parametres, nombre de parametres avec regle, nombre de clients connu avec cette version, etc
 
 http://localhost:5000/software_base_configuration/Evotec.exe/3.0.5.0/params.cfg
 ici on peut reprendre les info affichés par l'edit
+
+Base de données vs Base document vs Base Graph (arrangoDb)
+
+Notes :
 
 On peut dans la db pour les champs dangereux (par exemple les nom de table dans additionalparam utiliser des enums plutôt que laisser le champ libre)
 class TableType(enum.Enum):

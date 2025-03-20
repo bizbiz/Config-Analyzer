@@ -1,28 +1,77 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, PostalCode
+from app.models import Client, PostalCode, RobotClient, Software, ClientConfigurationFile, AdditionalParametersConfig, EntityType
 from app.extensions import db
+from sqlalchemy import or_
+from sqlalchemy.dialects.postgresql import ARRAY
 import re
 
 # Définition du blueprint avec un préfixe explicite
 clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 
+@clients_bp.route('/view/<string:slug>')
+def view(slug):
+    """Affiche les détails d'un client spécifique identifié par son slug."""
+    client = Client.query.filter_by(slug=slug).first_or_404()
+
+    from sqlalchemy import cast
+    client_id = cast([client.id], ARRAY(db.Integer))
+    
+    robots = RobotClient.query.filter_by(client_id=client.id).all()
+    configurations = ClientConfigurationFile.query.filter_by(client_id=client.id).all()
+    
+    # Récupération des paramètres additionnels selon la nouvelle structure
+    all_params_configs = AdditionalParametersConfig.query.filter(
+        or_(
+            (AdditionalParametersConfig.target_entity == EntityType.CLIENT) & 
+            (AdditionalParametersConfig.applicable_ids.contains(client_id)),
+
+            # Paramètres globaux pour tous les clients
+            (AdditionalParametersConfig.target_entity == EntityType.CLIENT) &
+            (AdditionalParametersConfig.applicable_ids == []),
+            
+            # Paramètres super-globaux pour toutes les entités
+            (AdditionalParametersConfig.target_entity.is_(None)) &
+            (AdditionalParametersConfig.applicable_ids == [])
+        )
+    ).all()
+    
+    return render_template(
+        'view/client.html', 
+        client=client,
+        robots=robots,
+        configurations=configurations,
+        additional_params_configs=all_params_configs
+    )
+
 @clients_bp.route('/list')
 def list():
     clients = Client.query.all()
-    # Ajout des variables pour le formulaire
     form_data = {}
-    name_error = None
-    postal_code_error = None
-    city_error = None
-    country_code_error = None
+    name_error = postal_code_error = city_error = country_code_error = None
+
+    # Récupération des paramètres globaux et super-globaux
+    params_configs = AdditionalParametersConfig.query.filter(
+        or_(
+            (AdditionalParametersConfig.target_entity == EntityType.CLIENT) &
+            (AdditionalParametersConfig.applicable_ids == []),
+            
+            (AdditionalParametersConfig.target_entity.is_(None)) &
+            (AdditionalParametersConfig.applicable_ids == [])
+        )
+    ).all()
     
-    return render_template('list/clients.html', 
-                          clients=clients,
-                          form_data=form_data,
-                          name_error=name_error,
-                          postal_code_error=postal_code_error,
-                          city_error=city_error,
-                          country_code_error=country_code_error)
+    return render_template(
+        'list/clients.html', 
+        params_configs=params_configs,
+        clients=clients,
+        entity_type='client',
+        entity_slug='global',
+        form_data=form_data,
+        name_error=name_error,
+        postal_code_error=postal_code_error,
+        city_error=city_error,
+        country_code_error=country_code_error
+    )
 
 @clients_bp.route('/add', methods=['GET', 'POST'])
 def add():
@@ -78,9 +127,6 @@ def add():
             
         # Créer le nouveau client avec la relation
         new_client = Client(name=name, postal_code_id=postal_code.id)
-        
-        # Générer un slug pour le client
-        new_client.generate_slug()  # Assurez-vous que cette méthode existe
         
         db.session.add(new_client)
         db.session.commit()
