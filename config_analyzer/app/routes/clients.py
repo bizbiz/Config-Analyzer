@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models import Client, PostalCode, RobotClient, Software, ClientConfigurationFile, AdditionalParametersConfig, EntityType, AdditionalParameter
 from app.extensions import db
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.utils.param_helpers import get_applicable_params_configs, get_unconfigured_params
@@ -20,15 +20,19 @@ def view(slug):
         joinedload(Client.configurations).joinedload(ClientConfigurationFile.software_base_configuration)
     ).first_or_404()
 
-    applicable_configs = get_applicable_params_configs('client', client.id)
+    applicable_configs = client.applicable_parameters_configs.all()  # Récupération via la propriété
+    
+    # Calcul des paramètres configurés/non configurés
+    configured_params = [c for c in applicable_configs if c.active_parameter]
+    unconfigured_params = [c for c in applicable_configs if not c.active_parameter]
     
     return render_template(
         'view/client.html',
         client=client,
         robots=client.robots,
         configurations=client.configurations,
-        configured_params=[c for c in applicable_configs if c.active_parameter is not None],
-        unconfigured_params=[c for c in applicable_configs if c.active_parameter is None]
+        configured_params=configured_params,
+        unconfigured_params=unconfigured_params
     )
 
 
@@ -185,7 +189,8 @@ def edit(slug):
                     new_param = AdditionalParameter(
                         additional_parameters_config_id=param_id,
                         value=value,
-                        is_active=True
+                        is_active=True,
+                        notes=request.form.get(f'notes_{param_id}', None)  # Récupération des notes
                     )
                     db.session.add(new_param)
         

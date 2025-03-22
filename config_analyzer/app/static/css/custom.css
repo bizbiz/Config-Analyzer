@@ -92,3 +92,39 @@
 .card-parametres {
     border-left: 4px solid #0d6efd;
 }
+
+.expandable-trigger {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.expandable-trigger:hover {
+    opacity: 0.8;
+}
+
+.notes-container {
+    border-top: 2px solid #dee2e6;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.notes-row td {
+    padding: 0 !important;
+}
+
+.notes-container.collapse:not(.show) {
+    display: none;
+}
+
+.notes-row td {
+    border-top: none;
+    background-color: #f8f9fa;
+}
+
+.notes-container textarea {
+    transition: all 0.3s ease;
+}
+
+.notes-container textarea:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 4px rgba(13, 110, 253, 0.25);
+}

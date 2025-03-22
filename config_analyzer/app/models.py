@@ -22,7 +22,9 @@ from sqlalchemy import (
     inspect,
     Column,
     Boolean,
-    CheckConstraint
+    CheckConstraint,
+    or_, 
+    and_
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
@@ -168,6 +170,21 @@ class Client(db.Model):
     def __repr__(self):
         return f'<Client {self.name}>'
 
+    @property
+    def applicable_parameters_configs(self):
+        return AdditionalParametersConfig.query.filter(
+            or_(
+                and_(
+                    AdditionalParametersConfig.target_entity == EntityType.CLIENT,
+                    or_(
+                        AdditionalParametersConfig.applicable_ids.contains([self.id]),
+                        AdditionalParametersConfig.applicable_ids == []
+                    )
+                ),
+                AdditionalParametersConfig.target_entity.is_(None)
+            )
+        )
+
 @event.listens_for(Client, 'before_insert')
 def generate_client_slug_on_insert(mapper, connection, target):
     """Génère automatiquement un slug lors de l'insertion d'un client."""
@@ -197,6 +214,21 @@ class RobotModel(db.Model):
     software = db.relationship("RobotModelSoftware", back_populates="robot_modele")
     clients = db.relationship("RobotClient", back_populates="robot_modele")
 
+    @property
+    def applicable_parameters_configs(self):
+        return AdditionalParametersConfig.query.filter(
+            or_(
+                and_(
+                    AdditionalParametersConfig.target_entity == EntityType.ROBOT_MODEL,
+                    or_(
+                        AdditionalParametersConfig.applicable_ids.contains([self.id]),
+                        AdditionalParametersConfig.applicable_ids == []
+                    )
+                ),
+                AdditionalParametersConfig.target_entity.is_(None)
+            )
+        )
+
 @event.listens_for(RobotModel, 'before_insert')
 def set_robot_model_slug_before_insert(mapper, connection, target):
     """Définit le slug avant l'insertion."""
@@ -221,6 +253,21 @@ class Software(db.Model):
     
     versions = db.relationship("SoftwareVersion", back_populates="software")
     robot_modeles = db.relationship("RobotModelSoftware", back_populates="software")
+
+    @property
+    def applicable_parameters_configs(self):
+        return AdditionalParametersConfig.query.filter(
+            or_(
+                and_(
+                    AdditionalParametersConfig.target_entity == EntityType.SOFTWARE,
+                    or_(
+                        AdditionalParametersConfig.applicable_ids.contains([self.id]),
+                        AdditionalParametersConfig.applicable_ids == []
+                    )
+                ),
+                AdditionalParametersConfig.target_entity.is_(None)
+            )
+        )
 
 @event.listens_for(Software, 'before_insert')
 def generate_software_slug_on_insert(mapper, connection, target):
@@ -268,6 +315,21 @@ class SoftwareVersion(db.Model):
     software = db.relationship("Software", back_populates="versions")
     base_configurations = db.relationship("SoftwareBaseConfigurationFile", back_populates="software_version")
     robots = db.relationship("RobotClientSoftwareVersion", back_populates="software_version")
+
+    @property
+    def applicable_parameters_configs(self):
+        return AdditionalParametersConfig.query.filter(
+            or_(
+                and_(
+                    AdditionalParametersConfig.target_entity == EntityType.SOFTWARE,
+                    or_(
+                        AdditionalParametersConfig.applicable_ids.contains([self.software_id]),
+                        AdditionalParametersConfig.applicable_ids == []
+                    )
+                ),
+                AdditionalParametersConfig.target_entity.is_(None)
+            )
+        )
 
 @event.listens_for(SoftwareVersion, 'before_insert')
 def set_software_version_slug_before_insert(mapper, connection, target):
@@ -545,6 +607,17 @@ class BaseConfigDependence(db.Model):
     base_config_file_parameter = db.relationship("BaseConfigFileParameter", back_populates="dependencies")
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="dependencies")
 
+
+
+# Pour le stockage dans configuration_values :
+# Type Texte : [valeur_par_défaut, regex]
+# Ex: ["Valeur standard", "^[A-Za-z]{3}$"]
+
+# Type Numérique : [valeur_par_défaut, min, max]
+# Ex: ["50", "0", "100"]
+
+# Type Enum : [nom_config, multiple_choice (0/1), valeurs...]
+# Ex: ["Couleur", "1", "Rouge", "Vert", "Bleu"]
 class AdditionalParametersConfig(db.Model):
     __tablename__ = 'additional_parameters_config'
     
@@ -622,7 +695,15 @@ class AdditionalParameter(db.Model):
     value = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True)  # Nouveau champ booléen
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+    notes = db.Column(db.Text, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'additional_parameters_config_id', 
+            'value', 
+            name='uq_config_value'
+        ),
+    )
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
 

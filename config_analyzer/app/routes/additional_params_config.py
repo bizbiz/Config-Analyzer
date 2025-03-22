@@ -75,9 +75,22 @@ def save_config(config, is_new=False):
         return False
 
 def _handle_text_type(config, form_data):
-    """Gère les paramètres texte"""
+    """Gère les paramètres texte avec regex"""
     value = form_data.get('value', '')
-    config.configuration_values = [value] if value else []
+    regex = form_data.get('regex', '')
+    
+    # Structure: [valeur, regex]
+    config.configuration_values = []
+    if value:
+        config.configuration_values.append(value)
+        config.configuration_values.append(regex)
+    
+    # Validation optionnelle du regex
+    if regex:
+        try:
+            re.compile(regex)
+        except re.error as e:
+            raise ValueError(f"Expression régulière invalide : {str(e)}")
 
 def _handle_numeric_type(config, form_data):
     """Gère les paramètres numériques"""

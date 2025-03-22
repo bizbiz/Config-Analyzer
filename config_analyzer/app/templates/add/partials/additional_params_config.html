@@ -38,9 +38,27 @@
         attributes='onchange="showValueField()"',
         help_text="Préférez toujours les choix quand c'est possible"
     ) }}
-    
-    <div id="valueField" class="mb-3" style="display: none;">
-        <!-- Champ générique pour texte et nombre -->
+
+    <!-- Nouvelle section pour le type texte -->
+    <div id="textFields" class="mb-3" style="display: none;">
+        <div class="row g-3">
+            <div class="col-md-6">
+                {{ text_field(
+                    name="value",
+                    label="Valeur par défaut :",
+                    required=true,
+                    placeholder="Texte par défaut"
+                ) }}
+            </div>
+            <div class="col-md-6">
+                {{ text_field(
+                    name="regex",
+                    label="Expression régulière :",
+                    placeholder="Ex: ^[A-Z]{3}$",
+                    help_text="Laissez vide pour désactiver la validation"
+                ) }}
+            </div>
+        </div>
     </div>
     
     <div id="numericRangeFields" class="mb-3" style="display: none;">

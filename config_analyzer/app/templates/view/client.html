@@ -1,7 +1,12 @@
 {# /templates/view/client.html #}
 {% extends "base.html" %}
-{% from "macros/_table_ui.html" import param_table, card_header, alert_empty_list %}
-
+{% from "macros/_table_ui.html" import 
+    param_table, 
+    card_header, 
+    alert_empty_list, 
+    display_param_rules,
+    display_param_value
+%}
 {% block title %}Détails du Client : {{ client.name }}{% endblock %}
 
 {% block content %}
@@ -47,11 +52,14 @@
                             <dd class="col-sm-6">{{ configurations|length }}</dd>
 
                             <dt class="col-sm-6">Paramètres client</dt>
-                            <dd class="col-sm-6">{{ configured_params|length }}/{{ (configured_params + unconfigured_params)|length }}</dd>
+                            <dd class="col-sm-6">
+                                {{ configured_params|length }}/{{ configured_params|length + unconfigured_params|length }}
+                            </dd>
                         </dl>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Section Robots associés -->

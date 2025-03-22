@@ -10,6 +10,10 @@ Dans vos routes d'édition/suppression, gérez le cas 'global' :
 
 Ajouter la possibilité d'ajouter des params à toutes les entités qui ont tel parametre = à ça
 
+il faudrait que sur la page /clients/edit/du-stade
+On ajoute de la validation avant d'envoyer la donnée, en fonction du type (Texte => respecte le regex, nombre est contenu entre le min et max si ils existent, il faut aussi modifier le model AdditionalParam et AdditionalParamConfig pour qu'on puisse mettre un nombre a virgule flotante en valeur, valeur min et valeur max) et enfin si c'est un enum la valeur doit être dans dans la liste des valeurs
+on peut aussi sur la page /additional-params-config/edit/18 et add vérifier que la Valeur par défaut respecte la même validation
+
 Ajouter un login
 Ajouter une traduction
 S'assurer que /software.name/software.version/SoftwareBaseConfigurationFile.file_name est un identifiant unique
@@ -24,6 +28,8 @@ Et donc on viendra finallement modifier templates/add/robot_client.html qui lui 
 Ne jamais supprimer quelque chose mais plutôt le mettre en in_use = 0
 Si in_use = 0 alors on renomme slon slug en d_old_slug pour qu'il gene pas les autres
 Si on essaye de créer un objet qui existe déjà avec un in_use = 0 alors on propose de réactiver à la place
+
+Ajouter un petit module qui génere un regex en fonction de plusieurs exemples pour aider à remplir les regex là ou on les utilises (ajouter et editer un additional params config par exemple)
 
 Reco de Claude :
 

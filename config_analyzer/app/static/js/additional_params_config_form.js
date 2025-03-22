@@ -6,17 +6,16 @@ function showValueField() {
     const config = window.APP_CONFIG?.currentConfig || {};
 
     // Masquer tous les conteneurs
-    document.querySelectorAll('#valueField, #enumContainer, #numericRangeFields, #enumMultipleChoice')
-        .forEach(el => el.style.display = 'none');
+    document.querySelectorAll('#textFields, #numericRangeFields, #enumContainer, #enumMultipleChoice')
+           .forEach(el => el.style.display = 'none');
 
     try {
         if (type === 'text') {
             createTextInput(config);
-            document.getElementById('valueField').style.display = 'block';
-        } 
+            document.getElementById('textFields').style.display = 'block';
+        }
         else if (type === 'numeric') {
             createNumericInputs(config);
-            document.getElementById('valueField').style.display = 'block';
             document.getElementById('numericRangeFields').style.display = 'block';
         }
         else if (type === 'enum') {
@@ -30,15 +29,26 @@ function showValueField() {
 }
 
 function createTextInput(config) {
-    const valueField = document.getElementById('valueField');
     const values = config.configuration_values || [];
-    valueField.innerHTML = `
-        <label for="value" class="form-label">Valeur par défaut :</label>
-        <input type="text" 
-               id="value" 
-               name="value" 
-               class="form-control"
-               value="${values[0] || ''}">
+    document.getElementById('textFields').innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Valeur par défaut :</label>
+                <input type="text" 
+                    name="value" 
+                    class="form-control"
+                    value="${values[0] || ''}"
+                    required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Expression régulière :</label>
+                <input type="text" 
+                    name="regex" 
+                    class="form-control"
+                    value="${values[1] || ''}"
+                    placeholder="^[A-Z]{3}$">
+            </div>
+        </div>
     `;
 }
 

@@ -1,0 +1,12 @@
+{# templates/macros/_expandable_notes.html #}
+{% macro expandable_notes(param_id) %}
+<div class="notes-container collapse" id="notes-{{ param_id }}">
+    <div class="p-3 bg-light mt-2">
+        <textarea class="form-control notes-textarea" 
+                  name="notes_{{ param_id }}"
+                  data-param-id="{{ param_id }}"
+                  placeholder="Explications sur les raisons de la modification (facultatif)"
+                  rows="2"></textarea>
+    </div>
+</div>
+{% endmacro %}
