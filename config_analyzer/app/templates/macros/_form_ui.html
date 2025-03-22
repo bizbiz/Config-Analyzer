@@ -1,11 +1,14 @@
 {# templates/marcros/_form_ui.html #}
 {# Doit contenir les macro Jira utilisé sur les formulaires #}
 
-{% macro text_field(name, label, value="", required=false, placeholder="", help_text="", error=None, pattern=None) %}
+{% macro text_field(name, label, value="", required=false, placeholder="", help_text="", error=None, pattern=None, type="text") %}
 <div class="mb-3">
     <label for="{{ name }}" class="form-label">{{ label }}</label>
-    <input type="text" class="form-control {% if error %}is-invalid{% endif %}" 
-           id="{{ name }}" name="{{ name }}" value="{{ value }}"
+    <input type="{{ type }}"
+           class="form-control {% if error %}is-invalid{% endif %}" 
+           id="{{ name }}" 
+           name="{{ name }}" 
+           value="{{ value }}"
            {% if required %}required{% endif %}
            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
            {% if pattern %}pattern="{{ pattern }}" title="{{ help_text }}"{% endif %}>

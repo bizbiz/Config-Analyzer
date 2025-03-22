@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://postgres_u_config_analyzer:password_ca@config_analyzer_db:5432/config_analyzer_db')
@@ -10,24 +11,19 @@ class Config:
             "options": "-c statement_timeout=60000"
         }
     }
-
-    @classmethod
-    def init_app(cls, app):
-        """Configuration commune à tous les environnements"""
-        pass
+    
+    # Nouvelles configurations de sécurité
+    SESSION_COOKIE_NAME = 'config_analyzer_session'
+    SESSION_REFRESH_EACH_REQUEST = True
 
 class ProdConfig(Config):
     DEBUG = False
+    SESSION_COOKIE_SECURE = True  # HTTPS obligatoire en production
 
 class DevConfig(Config):
     DEBUG = True
-
-    @classmethod
-    def init_app(cls, app):
-        super().init_app(app)
-        with app.app_context():
-            # Ne pas créer les extensions ici (à faire manuellement en base)
-            pass
+    SESSION_COOKIE_SECURE = False  # Autoriser HTTP en développement
+    TEMPLATES_AUTO_RELOAD = True
 
 config = {
     'development': DevConfig,

@@ -1,9 +1,10 @@
+{# /templates/add/partials/additional_params_config.html #}
 {# Fragment sans extends pour inclusion dans d'autres templates #}
-{% if entity_type is defined %}
 {% from 'macros/_form_ui.html' import text_field, textarea_field, select_field with context %}
 
+{% if entity_type is defined %}
 <form action="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}" method="POST">
-    <input type="hidden" name="referer_url" value="{{ referer_url }}">
+    <input type="hidden" name="return_to" value="{{ return_url }}">
 
     {{ text_field(
         name="name",
@@ -27,15 +28,15 @@
         name="type",
         label="Type de paramètre :",
         options=[
-            {"value": "enum", "text": "Énumération"},
+            {"value": "enum", "text": "Choix"},
             {"value": "numeric", "text": "Nombre"},
             {"value": "text", "text": "Texte"}
         ],
         option_value="value",
         option_text="text",
         required=true,
-        attributes="onchange=\"showValueField()\"",
-        help_text="Préférez toujours les énumérations quand c'est possible"
+        attributes='onchange="showValueField()"',
+        help_text="Préférez toujours les choix quand c'est possible"
     ) }}
     
     <div id="valueField" class="mb-3" style="display: none;">
@@ -68,8 +69,12 @@
     </div>
     
     <div id="enumContainer" class="mb-3" style="display: none;">
-        <!-- Les champs d'énumération seront ajoutés ici -->
+        <div id="enumFieldsContainer"></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addEnumField()">
+            <i class="fas fa-plus me-1"></i>Ajouter une valeur
+        </button>
     </div>
+
     
     <div class="d-flex justify-content-between">
         <a href="{{ request.referrer if request.referrer and ('/clients/list' in request.referrer or '/softwares/list' in request.referrer or '/robot_models/list' in request.referrer) else url_for('home.home') }}" class="btn btn-secondary">Annuler</a>
@@ -78,91 +83,12 @@
 </form>
 
 <script>
-function showValueField() {
-    const type = document.getElementById('type').value;
-    const valueField = document.getElementById('valueField');
-    const enumContainer = document.getElementById('enumContainer');
-    const numericRangeFields = document.getElementById('numericRangeFields');
-    const enumMultipleChoice = document.getElementById('enumMultipleChoice');
-    
-    // Réinitialiser les champs
-    valueField.innerHTML = '';
-    enumContainer.innerHTML = '';
-    valueField.style.display = 'none';
-    enumContainer.style.display = 'none';
-    numericRangeFields.style.display = 'none';
-    enumMultipleChoice.style.display = 'none';
-
-    if (type === 'text') {
-        valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur par défaut :</label>
-            <input type="text" id="value" name="value" class="form-control">
-        `;
-        valueField.style.display = 'block';
-    } else if (type === 'numeric') {
-        valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur par défaut :</label>
-            <input type="number" id="value" name="value" class="form-control">
-        `;
-        valueField.style.display = 'block';
-        numericRangeFields.style.display = 'block';
-    } else if (type === 'enum') {
-        // Afficher l'option de choix multiple
-        enumMultipleChoice.style.display = 'block';
-        
-        // Afficher le conteneur d'énumération
-        enumContainer.style.display = 'block';
-        
-        // Ajouter la première valeur d'énumération (commençant à l'index 2, car 0=nom, 1=multiple)
-        const firstField = document.createElement('div');
-        firstField.className = 'enum-value mb-2';
-        firstField.innerHTML = `
-            <label class="form-label">Valeurs d'énumération :</label>
-            <div class="form-text mb-2">Commencez à saisir des valeurs. Un nouveau champ apparaîtra automatiquement.</div>
-            <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
-        `;
-        enumContainer.appendChild(firstField);
-        
-        // Ajouter l'écouteur d'événement au champ
-        const input = firstField.querySelector('input');
-        input.addEventListener('input', checkAndAddField);
-    }
-}
-
-function checkAndAddField(event) {
-    const input = event.target;
-    const enumContainer = document.getElementById('enumContainer');
-    const allFields = enumContainer.querySelectorAll('.enum-value');
-    const lastField = allFields[allFields.length - 1];
-    
-    // Si l'input est dans le dernier champ et contient une valeur
-    if (input.value && input.closest('.enum-value') === lastField) {
-        const newField = document.createElement('div');
-        newField.className = 'enum-value mb-2';
-        newField.innerHTML = `
-            <div class="input-group">
-                <input type="text" name="enum_values[]" class="form-control" placeholder="Saisissez une valeur">
-                <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-        enumContainer.appendChild(newField);
-        
-        // Ajouter l'écouteur d'événement au nouveau champ
-        const newInput = newField.querySelector('input');
-        newInput.addEventListener('input', checkAndAddField);
-    }
-}
-
-function removeEnumField(button) {
-    const fieldDiv = button.closest('.enum-value');
-    fieldDiv.remove();
-}
-
-// Initialiser l'affichage des champs en fonction du type sélectionné
-document.addEventListener('DOMContentLoaded', function() {
-    showValueField();
-});
+    // Initialiser une configuration vide pour les nouveaux ajouts
+    window.APP_CONFIG = window.APP_CONFIG || {};
+    window.APP_CONFIG.currentConfig = {
+        configuration_values: [] // Nécessaire pour éviter les erreurs
+    };
 </script>
+<script src="{{ url_for('static', filename='js/additional_params_config_form.js') }}"></script>
+
 {% endif %}

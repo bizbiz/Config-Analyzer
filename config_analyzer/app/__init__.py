@@ -1,9 +1,9 @@
-from flask import Flask
+from flask import Flask, session
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from sqlalchemy import text
+from app.models import User
 from app.extensions import db
-from app.config import config  # Import modifié
+from app.config import config
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -14,22 +14,31 @@ migrate = Migrate()
 
 @login_manager.user_loader
 def load_user(user_id):
-    from app.models import User
     return User.query.get(int(user_id))
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     
-    # Chargement de la configuration
+    # Configuration globale
     app.config.from_object(config[config_name])
+    
+    # Configuration spécifique aux sessions
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        PERMANENT_SESSION_LIFETIME=3600  # 1 heure
+    )
     
     # Initialisation des extensions
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
 
-    # Configuration spécifique à l'environnement
-    config[config_name].init_app(app)
+    # Middleware pour sessions
+    @app.before_request
+    def make_session_permanent():
+        session.permanent = True
 
     # Enregistrement des blueprints
     register_blueprints(app)

@@ -1,5 +1,8 @@
+# /app/app/models.py
+
 # Imports de la bibliothèque standard Python
 import enum
+from sqlalchemy import Enum as SQLAlchemyEnum
 import re
 import unicodedata
 from datetime import datetime
@@ -122,7 +125,7 @@ def generate_model_slug(model_class, instance, text_field, max_length=25, custom
     return slug
 
 #Listes prédéfinies pour éviter qu'on puisse ajouter des choses innatendue dans les champs
-class ParameterType(enum.Enum):
+class ParameterType(str, enum.Enum):
     TEXT = "text"
     NUMERIC = "numeric"
     ENUM = "enum"
@@ -546,9 +549,9 @@ class AdditionalParametersConfig(db.Model):
     __tablename__ = 'additional_parameters_config'
     
     id = db.Column(db.Integer, primary_key=True)
-    target_entity = db.Column(db.Enum(EntityType), nullable=True)
+    target_entity = db.Column(SQLAlchemyEnum(EntityType), nullable=True)
     applicable_ids = db.Column(ARRAY(db.Integer), default=[], nullable=False)
-    type = db.Column(db.Enum(ParameterType), nullable=False)
+    type = db.Column(SQLAlchemyEnum(ParameterType), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     configuration_values = db.Column(db.ARRAY(db.String(255)), nullable=False)
@@ -560,16 +563,7 @@ class AdditionalParametersConfig(db.Model):
             "(target_entity IS NOT NULL AND applicable_ids != '{}')",
             name='check_application_scope'
         ),
-        db.Index(
-            'idx_target_applicable',
-            target_entity,
-            applicable_ids,
-            postgresql_using='gin',
-            postgresql_ops={
-                'target_entity': 'gin_trgm_ops',  # Opérateur pour le type ENUM
-                'applicable_ids': 'gin__int_ops'  # Opérateur pour integer[]
-            }
-        ),
+        db.Index('idx_target_entity', 'target_entity')
     )
 
     # Relations et timestamps
@@ -583,11 +577,11 @@ class AdditionalParametersConfig(db.Model):
 
     @property
     def value(self):
-        if not self.configuration_values:  # Correction du nom de l'attribut
+        if not self.configuration_values:
             return None
         if self.type == ParameterType.ENUM:
-            return ','.join(self.configuration_values)  # Correction ici
-        return self.configuration_values[0] if self.configuration_values else None  # Et ici
+            return ','.join(self.configuration_values)
+        return self.configuration_values[0] if self.configuration_values else None
 
     @property
     def type_display(self):
@@ -617,8 +611,8 @@ class AdditionalParameter(db.Model):
     __tablename__ = 'additional_parameters'
     id = db.Column(db.Integer, primary_key=True)
     additional_parameters_config_id = db.Column(db.Integer, db.ForeignKey('additional_parameters_config.id'))
-    name = db.Column(db.String(100))
     value = db.Column(db.String(255))
+    is_active = db.Column(db.Boolean, default=True)  # Nouveau champ booléen
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 

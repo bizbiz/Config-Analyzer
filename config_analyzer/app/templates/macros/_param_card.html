@@ -1,0 +1,37 @@
+{# /templates/macros/_param_card.html #}
+{% macro param_card(param, entity_type, entity_slug, is_configured) %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ param.name }}</h5>
+        <span class="badge bg-{{ 'success' if is_configured else 'warning' }}">
+            {{ 'Configuré' if is_configured else 'À configurer' }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Type :</strong> {{ param.type_display }}</p>
+                <p class="mb-1"><strong>Valeur actuelle :</strong> {{ param.value|default('Non défini', true) }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                {% if is_configured %}
+                    <a href="{{ url_for('additional_params.edit', param_id=param.id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}?param_id={{ param.id }}" 
+                       class="btn btn-sm btn-success">
+                        <i class="fas fa-plus"></i> Ajouter
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% if param.description %}
+        <div class="mt-2">
+            <p class="text-muted mb-0"><small>{{ param.description }}</small></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

@@ -1,4 +1,7 @@
-from flask import Blueprint, request, render_template, redirect, url_for, flash, abort
+# /app/routes/additional_params_config.py
+
+from flask import Blueprint, request, render_template, redirect, url_for, flash, abort, session
+from urllib.parse import urlparse
 from app.models import AdditionalParametersConfig, AdditionalParameter, RobotModel, ParameterType, Client, Software, EntityType
 from app.extensions import db
 from sqlalchemy.exc import SQLAlchemyError
@@ -7,6 +10,94 @@ from flask_login import current_user
 from sqlalchemy.dialects.postgresql import ARRAY
 
 additional_params_config_bp = Blueprint('additional_params_config', __name__, url_prefix='/additional-params-config')
+
+def get_redirect_url(entity_type=None, entity_slug=None):
+    """Détermine l'URL de redirection selon le contexte"""
+    # Cas superglobal
+    if not entity_type:
+        return url_for('home.index')
+    
+    # Cas global
+    if not entity_slug:
+        return url_for(f'{entity_type}s.list')
+    
+    # Cas ciblé
+    return url_for(f'{entity_type}s.view', slug=entity_slug)
+
+def get_entity_and_target(entity_type, entity_slug):
+    entity = None
+    target_entity = None
+    applicable_ids = []
+
+    if entity_type:
+        if entity_type == 'robot_model':
+            target_entity = EntityType.ROBOT_MODEL
+            if entity_slug:
+                entity = RobotModel.query.filter_by(slug=entity_slug).first()
+        elif entity_type == 'client':
+            target_entity = EntityType.CLIENT
+            if entity_slug:
+                entity = Client.query.filter_by(slug=entity_slug).first()
+        elif entity_type == 'software':
+            target_entity = EntityType.SOFTWARE
+            if entity_slug:
+                entity = Software.query.filter_by(slug=entity_slug).first()
+        
+        if entity:
+            applicable_ids = [entity.id]
+
+    return entity, target_entity, applicable_ids
+
+
+def handle_config_form(config, form_data):
+    """Gère le traitement commun du formulaire"""
+    config.name = form_data.get('name')
+    config.description = form_data.get('description')
+    config.type = ParameterType(form_data.get('type'))
+    
+    if config.type == ParameterType.ENUM:
+        _handle_enum_type(config, form_data)
+    elif config.type == ParameterType.NUMERIC:
+        _handle_numeric_type(config, form_data)
+    else:
+        _handle_text_type(config, form_data)
+
+def save_config(config, is_new=False):
+    """Sauvegarde commune pour add/edit"""
+    try:
+        if is_new:
+            db.session.add(config)
+        db.session.commit()
+        return True
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        flash(f"Erreur base de données : {str(e)}", "error")
+        return False
+
+def _handle_text_type(config, form_data):
+    """Gère les paramètres texte"""
+    value = form_data.get('value', '')
+    config.configuration_values = [value] if value else []
+
+def _handle_numeric_type(config, form_data):
+    """Gère les paramètres numériques"""
+    value = form_data.get('value', '')
+    min_val = form_data.get('min_value', '')
+    max_val = form_data.get('max_value', '')
+    
+    config.configuration_values = [value]
+    if min_val.strip():
+        config.configuration_values.append(min_val)
+    if max_val.strip():
+        config.configuration_values.append(max_val)
+
+def _handle_enum_type(config, form_data):
+    """Gère les énumérations"""
+    multiple_choice = "1" if form_data.get('multiple_choice') else "0"
+    enum_values = [v.strip() for v in form_data.getlist('enum_values[]') if v.strip()]
+    config.configuration_values = [config.name, multiple_choice] + enum_values
+
+
 
 @additional_params_config_bp.route('/list')
 def list():
@@ -55,256 +146,89 @@ def list():
         offset=(page - 1) * items_per_page
     )
 
-@additional_params_config_bp.route('/add/<string:entity_type>/', defaults={'entity_slug': None}, methods=['GET', 'POST'])
+@additional_params_config_bp.route('/add/', methods=['GET', 'POST'])
+@additional_params_config_bp.route('/add/<string:entity_type>/', methods=['GET', 'POST'])
 @additional_params_config_bp.route('/add/<string:entity_type>/<string:entity_slug>', methods=['GET', 'POST'])
-def add(entity_type, entity_slug):
-    """Ajoute une configuration de paramètres pour une entité ou un type d'entité"""
-    target_entity = None
-    entity_id = None
-    
-    referer_url = request.referrer
-    
-    if entity_type == 'robot_model':
-        target_entity = EntityType.ROBOT_MODEL
-    elif entity_type == 'client':
-        target_entity = EntityType.CLIENT
-    elif entity_type == 'software':
-        target_entity = EntityType.SOFTWARE
-    else:
-        flash(f"Type d'entité non reconnu: {entity_type}", "error")
-        return redirect(url_for('home.index'))
-    
-    if entity_slug:
-        entity = None
-        if target_entity == EntityType.ROBOT_MODEL:
-            entity = RobotModel.query.filter_by(slug=entity_slug).first_or_404()
-        elif target_entity == EntityType.CLIENT:
-            entity = Client.query.filter_by(slug=entity_slug).first_or_404()
-        elif target_entity == EntityType.SOFTWARE:
-            entity = Software.query.filter_by(slug=entity_slug).first_or_404()
-        
-        entity_id = entity.id if entity else None
-    
+def add(entity_type=None, entity_slug=None):
+    entity, target_entity, applicable_ids = get_entity_and_target(entity_type, entity_slug)
+    return_url = get_redirect_url(entity_type, entity_slug)
+
     if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        param_type = request.form.get('type')
+        new_config = AdditionalParametersConfig(
+            target_entity=target_entity,
+            applicable_ids=applicable_ids,
+            created_by_user_id=current_user.id if current_user.is_authenticated else None
+        )
         
-        form_referer = request.form.get('referer_url')
-        if form_referer:
-            referer_url = form_referer
+        handle_config_form(new_config, request.form)
         
-        if not name or not param_type:
-            flash("Le nom et le type sont obligatoires", "error")
+        if save_config(new_config, is_new=True):
+            return redirect(return_url)
+        else:
             return redirect(request.url)
-        
-        try:
-            enum_type = ParameterType(param_type)
-            configuration_values = []
-            
-            if enum_type == ParameterType.ENUM:
-                multiple_choice = "1" if request.form.get('multiple_choice') else "0"
-                enum_values = [v for v in request.form.getlist('enum_values[]') if v.strip()]
-                configuration_values = [name, multiple_choice] + enum_values
-            elif enum_type == ParameterType.NUMERIC:
-                value = request.form.get('value')
-                min_value = request.form.get('min_value')
-                max_value = request.form.get('max_value')
-                
-                configuration_values = [value] if value else ['']
-                if min_value:
-                    configuration_values.append(min_value)
-                elif max_value:
-                    configuration_values.append('')
-                if max_value:
-                    if len(configuration_values) < 2:
-                        configuration_values.append('')
-                    configuration_values.append(max_value)
-            else:
-                value = request.form.get('value')
-                if value:
-                    configuration_values = [value]
-            
-            new_config = AdditionalParametersConfig(
-                target_entity=target_entity,
-                applicable_ids=[entity_id] if entity_id else [],
-                type=enum_type,
-                name=name,
-                configuration_values=configuration_values,
-                created_by_user_id=current_user.id if current_user.is_authenticated else None
-            )
 
-            new_config.description = description
-            
-            db.session.add(new_config)
-            db.session.commit()
-            
-            flash(f"Configuration de paramètre '{name}' ajoutée avec succès", "success")
-            
-            if referer_url and referer_url != request.url:
-                return redirect(referer_url)
-            elif entity_slug:
-                return redirect(url_for(f"{entity_type}s.view", slug=entity_slug))
-            else:
-                return redirect(url_for(f"{entity_type}s.list"))
-            
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            flash(f"Erreur lors de l'ajout de la configuration : {str(e)}", "error")
+    return render_template('add/additional_params_config.html', 
+                         entity_type=entity_type,
+                         entity=entity,
+                         return_url=return_url)
+
+@additional_params_config_bp.route('/edit/<int:config_id>', methods=['GET', 'POST'])
+def edit(config_id):
+    config = AdditionalParametersConfig.query.get_or_404(config_id)
+    entity_type = config.target_entity.name.lower() if config.target_entity else None
+    entity_slug = None
     
-    return render_template(
-        'add/additional_params_config.html',
-        entity_type=entity_type,
-        entity_slug=entity_slug,
-        referer_url=referer_url
-    )
+    if config.applicable_ids:
+        entity = (Client if config.target_entity == EntityType.CLIENT else 
+                 Software if config.target_entity == EntityType.SOFTWARE else 
+                 RobotModel).query.get(config.applicable_ids[0])
+        entity_slug = entity.slug if entity else None
+    
+    return_url = get_redirect_url(entity_type, entity_slug)
+
+    if request.method == 'POST':
+        handle_config_form(config, request.form)
+        
+        if save_config(config):
+            return redirect(return_url)
+        else:
+            return redirect(request.url)
+
+    return render_template('edit/additional_params_config.html',
+                         config=config,
+                         entity_type=entity_type,
+                         return_url=return_url)
 
 
-@additional_params_config_bp.route('/edit/<string:entity_type>/<string:entity_slug>/<int:config_id>', methods=['GET', 'POST'])
-def edit(entity_type, entity_slug, config_id):
-    """Édite une configuration de paramètres existante"""
 
-    # Correction : Définir target_entity avant utilisation
-    try:
-        target_entity = EntityType(entity_type)
-    except ValueError:
-        abort(404)
-
-    # Gestion des configurations globales
-    is_global = (entity_slug == 'global')
-
-    entity = None
-    if not is_global:
-        # Récupération de l'entité seulement si ce n'est pas une config globale
-        if target_entity == EntityType.ROBOT_MODEL:
-            entity = RobotModel.query.filter_by(slug=entity_slug).first_or_404()
-        elif target_entity == EntityType.CLIENT:
-            entity = Client.query.filter_by(slug=entity_slug).first_or_404()
-        elif target_entity == EntityType.SOFTWARE:
-            entity = Software.query.filter_by(slug=entity_slug).first_or_404()
+@additional_params_config_bp.route('/delete/<int:config_id>', methods=['POST'])
+def delete(config_id):
+    """Supprime une configuration de paramètres par son ID"""
 
     config = AdditionalParametersConfig.query.get_or_404(config_id)
     
-    # Vérification de la cohérence de la configuration
-    if not is_global:
-        if config.target_entity != target_entity:
-            abort(404)
-        if entity.id not in config.applicable_ids:
-            abort(404)
-    else:
-        if config.target_entity is not None or config.applicable_ids:
-            abort(404)
-
-    # Récupération des valeurs min/max existantes
-    known_min, known_max = config.get_known_min_max()
+    entity_type = None
+    entity_slug = None
     
-    if request.method == 'POST':
-        # Validation des données
-        new_name = request.form.get('name')
-        if not new_name:
-            flash("Le nom du paramètre est obligatoire", "error")
-            return redirect(request.url)
-            
-        try:
-            new_type = ParameterType(request.form.get('type'))
-        except ValueError:
-            flash("Type de paramètre invalide", "error")
-            return redirect(request.url)
-
-        # Mise à jour des valeurs
-        config.name = new_name
-        config.description = request.form.get('description')
-        config.type = new_type
-        config.updated_by_user_id = current_user.id if current_user.is_authenticated else None
-
-        # Gestion des valeurs selon le type
-        if new_type == ParameterType.ENUM:
-            multiple_choice = "1" if request.form.get('multiple_choice') else "0"
-            enum_values = [v.strip() for v in request.form.getlist('enum_values[]') if v.strip()]
-            if not enum_values:
-                flash("Au moins une valeur d'énumération est requise", "error")
-                return redirect(request.url)
-            config.configuration_values = [new_name, multiple_choice] + enum_values
-            
-        elif new_type == ParameterType.NUMERIC:
-            value = request.form.get('value', '')
-            min_val = request.form.get('min_value', '')
-            max_val = request.form.get('max_value', '')
-            
-            # Validation des valeurs numériques
-            try:
-                if value: float(value)
-                if min_val: float(min_val)
-                if max_val: float(max_val)
-            except ValueError:
-                flash("Valeur numérique invalide", "error")
-                return redirect(request.url)
-            
-            config.configuration_values = [value]
-            if min_val:
-                config.configuration_values.append(min_val)
-            if max_val:
-                config.configuration_values.extend([''] * (2 - len(config.configuration_values)))
-                config.configuration_values.append(max_val)
-                
-        else:  # Texte
-            value = request.form.get('value', '')
-            config.configuration_values = [value] if value else []
-
-        # Sauvegarde
-        try:
-            db.session.commit()
-            flash("Configuration mise à jour avec succès", "success")
-            if is_global:
-                return redirect(url_for('additional_params_config.list'))
-            return redirect(url_for(f'{entity_type}s.view', slug=entity.slug))
-            
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            flash(f"Erreur lors de la mise à jour : {str(e)}", "error")
-
-    return render_template(
-        'edit/additional_params_config.html',
-        entity=entity,
-        entity_type=entity_type,
-        config=config,
-        is_global=is_global,
-        known_min=known_min,
-        known_max=known_max
-    )
-
-
-
-@additional_params_config_bp.route('/delete/<string:entity_type>/<string:entity_slug>/<int:config_id>', methods=['POST'])
-def delete(entity_type, entity_slug, config_id):
-    """Supprime une configuration de paramètres"""
-    # Déterminer le type d'entité
-    target_entity = None
-    entity = None
-    
-    if entity_type == 'robot_model':
-        target_entity = EntityType.ROBOT_MODEL
-        entity = RobotModel.query.filter_by(slug=entity_slug).first_or_404()
-    elif entity_type == 'client':
-        target_entity = EntityType.CLIENT
-        entity = Client.query.filter_by(slug=entity_slug).first_or_404()
-    elif entity_type == 'software':
-        target_entity = EntityType.SOFTWARE
-        entity = Software.query.filter_by(slug=entity_slug).first_or_404()
-    else:
-        abort(404)
-    
-    config = AdditionalParametersConfig.query.get_or_404(config_id)
-    
-    # Vérifier que la configuration appartient bien à cette entité
-    if (config.target_entity != target_entity) or (entity.id not in config.applicable_ids and config.applicable_ids):
-        abort(404)
+    # Déterminer le type d'entité et le slug si applicable
+    if config.applicable_ids:
+        if config.target_entity == EntityType.ROBOT_MODEL:
+            entity = RobotModel.query.get(config.applicable_ids[0])
+            entity_type = 'robot_model'
+        elif config.target_entity == EntityType.CLIENT:
+            entity = Client.query.get(config.applicable_ids[0])
+            entity_type = 'client'
+        elif config.target_entity == EntityType.SOFTWARE:
+            entity = Software.query.get(config.applicable_ids[0])
+            entity_type = 'software'
+        
+        entity_slug = entity.slug if entity else None
     
     try:
-        # Supprimer d'abord tous les paramètres associés
+        # Suppression des paramètres associés
         AdditionalParameter.query.filter_by(additional_parameters_config_id=config.id).delete()
         
-        # Puis supprimer la configuration
+        # Suppression de la configuration
         db.session.delete(config)
         db.session.commit()
         
@@ -313,4 +237,6 @@ def delete(entity_type, entity_slug, config_id):
         db.session.rollback()
         flash(f"Erreur lors de la suppression : {str(e)}", "error")
     
-    return redirect(url_for(f'{entity_type}s.view', slug=entity.slug))
+    # Redirection vers la page d'origine
+    return_url = request.form.get('return_to', url_for('additional_params_config.list'))
+    return redirect(return_url)      

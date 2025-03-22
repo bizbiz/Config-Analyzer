@@ -8,13 +8,7 @@ harmoniser la position des boutons dans partials/add
 
 Dans vos routes d'édition/suppression, gérez le cas 'global' :
 
-python
-@additional_params_config_bp.route('/edit/<string:entity_type>/<string:entity_slug>/<int:config_id>', methods=['GET', 'POST'])
-def edit(entity_type, entity_slug, config_id):
-    if entity_slug == 'global':
-        # Logique pour les paramètres globaux
-    else:
-        # Logique pour les paramètres spécifiques
+Ajouter la possibilité d'ajouter des params à toutes les entités qui ont tel parametre = à ça
 
 Ajouter un login
 Ajouter une traduction

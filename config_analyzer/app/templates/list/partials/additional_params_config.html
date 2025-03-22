@@ -7,10 +7,11 @@
     {% set entity_name = entity.name if entity else "Tous les " + entity_type|title %}
     {{ card_header(
         title=title|default('Configurations pour ' + entity_name),
-        add_url=url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug),
+        add_url=url_for('additional_params_config.add', entity_type=entity_type) if not entity_slug else url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug),
         add_text="Ajouter une option",
         show_button=true
     ) }}
+
     
     <div class="card-body">
         {% if params_configs %}
@@ -41,7 +42,7 @@
                         <tr id="row-{{ config.id }}">
                             <td>{{ config.name }}</td>
                             <td>
-                                {{ display_param_type_badge(config.type.value, config.type_display) }}
+                                {{ display_param_type_badge(config) }}
                             </td>
                             <td>
                                 {{ display_param_values(config) }}
@@ -55,21 +56,13 @@
                                 {% endif %}
                                 
                                 {{ action_buttons(
-                                    edit_url=url_for(
-                                        'additional_params_config.edit', 
-                                        entity_type=entity_type, 
-                                        entity_slug=entity_slug if entity_slug else 'global',
-                                        config_id=config.id
-                                    ),
-                                    delete_url=url_for(
-                                        'additional_params_config.delete', 
-                                        entity_type=entity_type, 
-                                        entity_slug=entity_slug if entity_slug else 'global',
-                                        config_id=config.id
-                                    ),
+                                    edit_url=url_for('additional_params_config.edit', config_id=config.id),
+                                    delete_url=url_for('additional_params_config.delete', config_id=config.id),
                                     delete_message='Êtes-vous sûr de vouloir supprimer cette configuration ?',
-                                    is_td=false
+                                    is_td=false,
+                                    return_to=request.url
                                 ) }}
+
 
 
 

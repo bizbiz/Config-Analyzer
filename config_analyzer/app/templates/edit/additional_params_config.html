@@ -1,4 +1,6 @@
+{# /templates/edit/additional_params_config.html #}
 {% extends "base.html" %}
+{% from 'macros/_form_ui.html' import text_field, select_field, textarea_field %}
 
 {% block title %}Modifier la configuration de paramètre : {{ config.name }}{% endblock %}
 
@@ -6,156 +8,132 @@
 <div class="container py-5">
     <h1 class="text-center mb-4">Modifier la configuration de paramètre</h1>
     <div class="card p-4 shadow-sm">
-        <form action="{{ url_for('additional_params_config.edit', entity_name=robot_model.name, config_id=config.id) }}" method="POST">
-            <div class="mb-3">
-                <label for="name" class="form-label">Nom :</label>
-                <input type="text" id="name" name="name" class="form-control" value="{{ config.name }}" required>
-            </div>
+        <form action="{{ url_for('additional_params_config.edit', config_id=config.id) }}" method="POST">
+            <input type="hidden" name="return_to" value="{{ return_url }}">
+            {{ text_field(
+                name="name",
+                label="Nom du paramètre",
+                value=config.name,
+                required=true
+            ) }}
             
-            <div class="mb-3">
-                <label for="description" class="form-label">Description (facultative) :</label>
-                <textarea id="description" name="description" class="form-control" rows="3" 
-                          placeholder="Description détaillée du paramètre...">{{ config.description }}</textarea>
-            </div>
+            {{ textarea_field(
+                name="description",
+                label="Description (facultative)",
+                value=config.description,
+                placeholder="Description détaillée du paramètre..."
+            ) }}
             
-            <div class="mb-3">
-                <label for="type" class="form-label">Type de paramètre :</label>
-                <select id="type" name="type" class="form-select" required onchange="showValueField()">
-                    <option value="">Sélectionner un type</option>
-                    <option value="text" {% if config.type.value == 'text' %}selected{% endif %}>Texte</option>
-                    <option value="numeric" {% if config.type.value == 'numeric' %}selected{% endif %}>Nombre</option>
-                    <option value="enum" {% if config.type.value == 'enum' %}selected{% endif %}>Énumération</option>
-                </select>
-            </div>
+            {{ select_field(
+                name="type",
+                label="Type de paramètre",
+                options=[
+                    {"value": "text", "text": "Texte"},
+                    {"value": "numeric", "text": "Nombre"},
+                    {"value": "enum", "text": "Énumération"}
+                ],
+                option_value="value",
+                option_text="text",
+                selected=config.type.value,
+                required=true,
+                attributes='onchange="showValueField()"'
+            ) }}
             
             <div id="valueField" class="mb-3" style="display: {% if config.type.value in ['text', 'numeric'] %}block{% else %}none{% endif %};">
-                <label for="value" class="form-label">Valeur par défaut :</label>
-                <input type="{{ 'number' if config.type.value == 'numeric' else 'text' }}" id="value" name="value" class="form-control" value="{{ config.values[0] if config.values and config.values|length > 0 else '' }}">
+                {{ text_field(
+                    name="value",
+                    label="Valeur par défaut",
+                    value=config.configuration_values[0] if config.configuration_values else '',
+                    type='text' if config.type.value == 'text' else 'number'
+                ) }}
             </div>
             
-            <!-- Champs min/max pour les nombres -->
             <div id="numericRangeFields" class="mb-3" style="display: {% if config.type.value == 'numeric' %}block{% else %}none{% endif %};">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="min_value" class="form-label">Valeur minimale (facultative) :</label>
-                        <input type="number" id="min_value" name="min_value" class="form-control" 
-                               value="{{ config.values[1] if config.values and config.values|length > 1 else '' }}">
-                        {% if known_min is defined and known_min is not none %}
-                        <small class="form-text text-muted">Valeur minimale connue: {{ known_min }}</small>
-                        {% endif %}
+                        {{ text_field(
+                            name="min_value",
+                            label="Valeur minimale (facultative)",
+                            value=config.configuration_values[1] if config.configuration_values|length > 1 else '',
+                            type="number",
+                            help_text="Valeur minimale connue: " ~ known_min if known_min is defined and known_min is not none else ""
+                        ) }}
                     </div>
                     <div class="col-md-6">
-                        <label for="max_value" class="form-label">Valeur maximale (facultative) :</label>
-                        <input type="number" id="max_value" name="max_value" class="form-control" 
-                               value="{{ config.values[2] if config.values and config.values|length > 2 else '' }}">
-                        {% if known_max is defined and known_max is not none %}
-                        <small class="form-text text-muted">Valeur maximale connue: {{ known_max }}</small>
-                        {% endif %}
+                        {{ text_field(
+                            name="max_value",
+                            label="Valeur maximale (facultative)",
+                            value=config.configuration_values[2] if config.configuration_values|length > 2 else '',
+                            type="number",
+                            help_text="Valeur maximale connue: " ~ known_max if known_max is defined and known_max is not none else ""
+                        ) }}
                     </div>
                 </div>
             </div>
             
             <div id="enumContainer" class="mb-3" style="display: {% if config.type.value == 'enum' %}block{% else %}none{% endif %};">
                 <label class="form-label">Valeurs d'énumération :</label>
-                {% if config.values and config.values|length > 0 %}
-                    {% for value in config.values %}
-                        <div class="enum-value mb-2">
-                            <div class="input-group">
-                                <input type="text" name="enum_values[]" class="form-control" value="{{ value }}" placeholder="Valeur d'énumération">
-                                {% if not loop.first %}
-                                <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                                {% endif %}
+                <div id="enumFieldsContainer">
+                    {% if config.configuration_values and config.configuration_values|length > 2 %}
+                        {% for value in config.configuration_values[2:] %}
+                            <div class="enum-value mb-2">
+                                <div class="input-group">
+                                    <input type="text" name="enum_values[]" class="form-control" value="{{ value }}" placeholder="Valeur d'énumération">
+                                    {% if not loop.first %}
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="enum-value mb-2">
+                            <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="enum-value mb-2">
-                        <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
                 <div class="mt-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addEnumField()">
                         <i class="fas fa-plus me-1"></i>Ajouter une valeur
                     </button>
                 </div>
             </div>
+
             
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-2"></i> Enregistrer
                 </button>
-                <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}" class="btn btn-secondary">
+                <a href="{{ url_for('additional_params_config.list') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Retour
                 </a>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/additional_params_config_form.js') }}"></script>
 <script>
-function showValueField() {
-    const type = document.getElementById('type').value;
-    const valueField = document.getElementById('valueField');
-    const enumContainer = document.getElementById('enumContainer');
-    const numericRangeFields = document.getElementById('numericRangeFields');
+    window.APP_CONFIG = {
+        currentConfig: {
+            type: "{{ config.type.value }}",
+            configuration_values: {{ config.configuration_values|tojson|safe }},
+            multiple_choice: "{{ config.configuration_values[1] if config.configuration_values|length > 1 else '0' }}"
+        }
+    };
     
-    valueField.style.display = 'none';
-    enumContainer.style.display = 'none';
-    numericRangeFields.style.display = 'none';
-
-    if (type === 'text') {
-        valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur par défaut :</label>
-            <input type="text" id="value" name="value" class="form-control">
-        `;
-        valueField.style.display = 'block';
-    } else if (type === 'numeric') {
-        valueField.innerHTML = `
-            <label for="value" class="form-label">Valeur par défaut :</label>
-            <input type="number" id="value" name="value" class="form-control">
-        `;
-        valueField.style.display = 'block';
-        numericRangeFields.style.display = 'block';
-    } else if (type === 'enum') {
-        // Vider le conteneur d'énumération et ajouter le premier champ
-        enumContainer.innerHTML = `
-            <label class="form-label">Valeurs d'énumération :</label>
-            <div class="enum-value mb-2">
-                <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
-            </div>
-            <div class="mt-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addEnumField()">
-                    <i class="fas fa-plus me-1"></i>Ajouter une valeur
-                </button>
-            </div>
-        `;
-        enumContainer.style.display = 'block';
-    }
-}
-
-function addEnumField() {
-    const enumContainer = document.getElementById('enumContainer');
-    
-    const newField = document.createElement('div');
-    newField.className = 'enum-value mb-2';
-    newField.innerHTML = `
-        <div class="input-group">
-            <input type="text" name="enum_values[]" class="form-control" placeholder="Valeur d'énumération">
-            <button type="button" class="btn btn-outline-danger" onclick="removeEnumField(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    // Insérer avant le bouton "Ajouter une valeur"
-    enumContainer.insertBefore(newField, enumContainer.querySelector('.mt-2'));
-}
-
-function removeEnumField(button) {
-    const fieldDiv = button.closest('.enum-value');
-    fieldDiv.remove();
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        showValueField();
+        if(window.APP_CONFIG.currentConfig.type === 'enum') {
+            const multipleChoice = window.APP_CONFIG.currentConfig.configuration_values[1] === '1';
+            if(document.getElementById('multiple_choice')) {
+                document.getElementById('multiple_choice').checked = multipleChoice;
+            }
+        }
+    });
 </script>
 {% endblock %}

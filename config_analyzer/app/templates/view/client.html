@@ -1,5 +1,9 @@
+{# /templates/view/client.html #}
+
 {% extends "base.html" %}
+{% from "macros/_table_ui.html" import param_table, card_header, alert_empty_list %}
 {% block title %}Détails du Client{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     <div class="card p-4 shadow-sm mb-4">
@@ -78,25 +82,37 @@
             {% else %}
             <p class="text-muted">Aucun fichier de configuration associé à ce client</p>
             {% endif %}
-        </div>
-        
-        <!-- Boutons d'action -->
-        <div class="mt-4">
-            <a href="{{ url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug) }}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i> Ajouter un paramètre spécifique
-            </a>
-            
-            <a href="#" class="btn btn-outline-secondary ms-2">
-                <i class="fas fa-edit me-1"></i> Modifier le client
-            </a>
-        </div>
-    </div>
 
-    <!-- Lien de retour -->
-    <div class="text-center mt-4">
-        <a href="{{ url_for('clients.list') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-1"></i> Retour à la liste des clients
-        </a>
+            <!-- Section Paramètres -->
+            <div class="card p-4 shadow-sm mt-4">
+                {{ card_header("Paramètres spécifiques", 
+                add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
+                add_text="Ajouter un paramètre spécifique au client : " ~ client.name,
+                entity_name="paramètre") }}
+                    
+                {% if configured_params or unconfigured_params %}
+                    {{ param_table(configured_params + unconfigured_params, 'client', client.slug) }}
+                {% else %}
+                    {{ alert_empty_list("Aucun paramètre configuré ou disponible.", 
+                        add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
+                        add_text="Ajouter un premier paramètre") }}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bouton d'édition principal -->
+        <div class="mt-4">
+            <a href="{{ url_for('clients.edit', slug=client.slug) }}" class="btn btn-primary">
+                <i class="fas fa-cog me-1"></i> Éditer la fiche client
+            </a>
+        </div>
+
+        <!-- Lien de retour simplifié -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('clients.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour à la liste
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

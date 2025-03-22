@@ -1,7 +1,61 @@
-{# templates/macros/_action_buttons.html #}
+{# /templates/macros/_table_ui.html #}
 {# Doit contenir les macro Jira utilisé sur les tableaux #}
 
-{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true) %}
+{% macro param_table(params, entity_type, entity_slug) %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Valeurs</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for param in params %}
+            <tr>
+                <td>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold">{{ param.name }}</span>
+                        {% if param.description %}
+                        <small class="text-muted">{{ param.description }}</small>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>{{ display_param_type_badge(param) }}</td>
+                <td>{{ display_param_values(param) }}</td>
+                <td>
+                    {% if param.additional_parameters %}
+                    <span class="badge bg-success">Actif</span>
+                    {% else %}
+                    <span class="badge bg-warning">Non configuré</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if param.additional_parameters %}
+                    <a href="{{ url_for('additional_params.edit', param_id=param.id) }}" 
+                       class="btn btn-sm btn-outline-primary"
+                       title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug, param_id=param.id) }}" 
+                       class="btn btn-sm btn-success"
+                       title="Ajouter">
+                        <i class="fas fa-plus"></i>
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=request.url) %}
     {% if is_td %}<td class="text-center">{% endif %}
     
     {% if view_url %}
@@ -18,6 +72,7 @@
     
     {% if delete_url %}
     <form action="{{ delete_url }}" method="POST" class="d-inline">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
         <button type="submit" class="btn btn-sm btn-danger" 
                 onclick="return confirm('{{ delete_message }}')">
             <i class="fas fa-trash"></i>
@@ -31,6 +86,7 @@
     
     {% if is_td %}</td>{% endif %}
 {% endmacro %}
+
 
 
 
@@ -101,24 +157,28 @@
 {% endmacro %}
 
 
-{% macro display_param_type_badge(type_value, type_display) %}
-{% if type_value == 'text' %}
-    <span class="badge bg-info">{{ type_display }}</span>
-{% elif type_value == 'numeric' %}
-    <span class="badge bg-primary">{{ type_display }}</span>
-{% elif type_value == 'enum' %}
-    <span class="badge bg-success">{{ type_display }}</span>
-{% else %}
-    <span class="badge bg-secondary">{{ type_display }}</span>
-{% endif %}
+{% macro display_param_type_badge(config) %}
+    {% if config.type.value == 'text' %}
+        <span class="badge bg-info">{{ config.type_display }}</span>
+    {% elif config.type.value == 'numeric' %}
+        <span class="badge bg-primary">{{ config.type_display }}</span>
+    {% elif config.type.value == 'enum' %}
+        {% set multiple_choice = config.configuration_values[1] == '1' if config.configuration_values else false %}
+        <span class="badge bg-success">
+            {{ 'Choix multiple' if multiple_choice else 'Choix' }}
+        </span>
+    {% else %}
+        <span class="badge bg-secondary">{{ config.type_display }}</span>
+    {% endif %}
 {% endmacro %}
+
 
 {% macro display_param_values(config) %}
 {% if config.type.value == 'enum' %}
-    {% if config.values %}
-        {% set display_values = ", ".join(config.values[:5]) %}
-        {% if config.values|length > 5 %}
-            {{ display_values[:100] }}... ({{ config.values|length }} valeurs)
+    {% if config.configuration_values and config.configuration_values|length > 1 %}
+        {% set display_values = ", ".join(config.configuration_values[2:]) %}
+        {% if config.configuration_values|length > 7 %}
+            {{ display_values[:100] }}... ({{ config.configuration_values|length - 2 }} valeurs)
         {% else %}
             {{ display_values[:100] }}
             {% if display_values|length > 100 %}...{% endif %}
@@ -127,9 +187,9 @@
         <span class="text-muted">Aucune valeur</span>
     {% endif %}
 {% elif config.type.value == 'numeric' %}
-    {% set default_value = config.values[0] if config.values and config.values|length > 0 and config.values[0]|trim else 'N/A' %}
-    {% set min_value = config.values[1] if config.values|length > 1 and config.values[1]|trim else none %}
-    {% set max_value = config.values[2] if config.values|length > 2 and config.values[2]|trim else none %}
+    {% set default_value = config.configuration_values[0] if config.configuration_values and config.configuration_values|length > 0 else 'N/A' %}
+    {% set min_value = config.configuration_values[1] if config.configuration_values|length > 1 else none %}
+    {% set max_value = config.configuration_values[2] if config.configuration_values|length > 2 else none %}
     
     <span class="numeric-values">
         Défaut : {{ default_value }}
@@ -142,6 +202,7 @@
         {% endif %}
     </span>
 {% else %}
-    {{ config.values[0] if config.values and config.values|length > 0 else '' }}
+    {{ config.configuration_values[0] if config.configuration_values and config.configuration_values|length > 0 else '' }}
 {% endif %}
 {% endmacro %}
+
