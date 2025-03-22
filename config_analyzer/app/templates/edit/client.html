@@ -8,9 +8,9 @@
 <div class="container py-5">
     <h1 class="text-center mb-4">Modifier le Client : {{ client.name }}</h1>
 
-    <div class="card p-4 shadow-sm mb-4">
-        <h2 class="mb-3">Informations du Client</h2>
-        <form action="{{ url_for('clients.edit', slug=client.slug) }}" method="POST">
+    <form action="{{ url_for('clients.edit', slug=client.slug) }}" method="POST">
+        <div class="card p-4 shadow-sm mb-4">
+            <h2 class="mb-3">Informations du Client</h2>
             {{ text_field(
                 name="name",
                 label="Nom :",
@@ -38,30 +38,30 @@
                 value=client.postal_code_relation.country_code,
                 required=true
             ) }}
-            
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-2"></i>Enregistrer
-                </button>
-                <a href="{{ url_for('clients.view', slug=client.slug) }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Retour à la vue détaillée
-                </a>
-            </div>
-        </form>
-    </div>
+        </div>
 
-    <!-- Section Paramètres -->
-    <div class="card p-4 shadow-sm mt-4">
-        {{ card_header("Paramètres spécifiques", 
-            add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
-            add_text="Ajouter un paramètre spécifique au client : " ~ client.name,
-            entity_name="paramètre") }}
-            
-        {% if configured_params or unconfigured_params %}
-            {{ param_table(configured_params + unconfigured_params, 'client', client.slug, editable=true) }}
-        {% else %}
-            <p class="text-muted">Aucun paramètre configuré ou disponible.</p>
-        {% endif %}
-    </div>
+        <!-- Section Paramètres -->
+        <div class="card p-4 shadow-sm mt-4">
+            {{ card_header("Paramètres spécifiques", 
+                add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
+                add_text="Ajouter un paramètre spécifique au client : " ~ client.name,
+                entity_name="paramètre") }}
+                
+            {% if configured_params or unconfigured_params %}
+                {{ param_table(configured_params + unconfigured_params, 'client', client.slug, editable=true) }}
+            {% else %}
+                <p class="text-muted">Aucun paramètre configuré ou disponible.</p>
+            {% endif %}
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Enregistrer
+            </button>
+            <a href="{{ url_for('clients.view', slug=client.slug) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la vue détaillée
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}

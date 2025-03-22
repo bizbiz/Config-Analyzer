@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, PostalCode, RobotClient, Software, ClientConfigurationFile, AdditionalParametersConfig, EntityType
+from app.models import Client, PostalCode, RobotClient, Software, ClientConfigurationFile, AdditionalParametersConfig, EntityType, AdditionalParameter
 from app.extensions import db
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.utils.param_helpers import get_applicable_params_configs, get_unconfigured_params
 import re
@@ -13,26 +14,23 @@ clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 
 @clients_bp.route('/view/<string:slug>')
 def view(slug):
-    client = Client.query.filter_by(slug=slug).first_or_404()
-    
-    # Données associées
-    robots = RobotClient.query.filter_by(client_id=client.id).all()
-    configurations = ClientConfigurationFile.query.filter_by(client_id=client.id).all()
-    
-    # Configurations de paramètres
+    client = Client.query.filter_by(slug=slug).options(
+        joinedload(Client.postal_code_relation),
+        joinedload(Client.robots).joinedload(RobotClient.robot_modele),
+        joinedload(Client.configurations).joinedload(ClientConfigurationFile.software_base_configuration)
+    ).first_or_404()
+
     applicable_configs = get_applicable_params_configs('client', client.id)
-    unconfigured_params = get_unconfigured_params(client.id, applicable_configs)
-    configured_params = [c for c in applicable_configs if c not in unconfigured_params]
     
     return render_template(
         'view/client.html',
         client=client,
-        robots=robots,
-        configurations=configurations,
-        applicable_configs=applicable_configs,
-        unconfigured_params=unconfigured_params,
-        configured_params=configured_params
+        robots=client.robots,
+        configurations=client.configurations,
+        configured_params=[c for c in applicable_configs if c.active_parameter is not None],
+        unconfigured_params=[c for c in applicable_configs if c.active_parameter is None]
     )
+
 
 @clients_bp.route('/list')
 def list():
@@ -167,25 +165,39 @@ def edit(slug):
         client.postal_code_relation = postal_code
 
         # Mise à jour des paramètres additionnels
-        for param_id, value in request.form.items():
-            if param_id.startswith('param_'):
-                param_id = int(param_id.split('_')[1])
-                param = AdditionalParameter.query.get(param_id)
-                if param:
-                    param.value = value
+        for key, value in request.form.items():
+            if key.startswith('param_'):
+                param_id = int(key.split('_')[1])
+                config = AdditionalParametersConfig.query.get(param_id)
+                value = value.strip()  # Nettoyer les espaces
 
-        # Regénérer le slug après les modifications
-        client.generate_slug()
+                # Récupérer le paramètre actif existant
+                active_param = next((p for p in config.additional_parameters if p.is_active), None)
+
+                # Vérifier si la valeur a changé
+                if active_param:
+                    if active_param.value == value:
+                        continue  # Aucun changement, on passe au suivant
+                    active_param.is_active = False
+
+                # Créer un nouveau paramètre seulement si valeur non vide
+                if value:
+                    new_param = AdditionalParameter(
+                        additional_parameters_config_id=param_id,
+                        value=value,
+                        is_active=True
+                    )
+                    db.session.add(new_param)
         
         db.session.commit()
-        flash("Client et paramètres modifiés avec succès !", "success")
+        flash("Modifications enregistrées avec succès !", "success")
         return redirect(url_for('clients.view', slug=client.slug))
 
     # Récupération des paramètres pour l'affichage
     applicable_configs = get_applicable_params_configs('client', client.id)
     unconfigured_params = get_unconfigured_params(client.id, applicable_configs)
     configured_params = [p for p in applicable_configs if p not in unconfigured_params]
-    
+
     return render_template('edit/client.html', 
                            client=client, 
                            configured_params=configured_params,

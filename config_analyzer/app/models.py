@@ -593,6 +593,14 @@ class AdditionalParametersConfig(db.Model):
             return "Énumération"
         return str(self.type)
 
+    @property
+    def active_parameter(self):
+        """Retourne le paramètre actuellement actif"""
+        return next(
+            (p for p in self.additional_parameters if p.is_active), 
+            None
+        )
+
     def get_known_min_max(self):
         if self.type != ParameterType.NUMERIC:
             return None, None
@@ -617,6 +625,11 @@ class AdditionalParameter(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
     additional_parameters_config = db.relationship("AdditionalParametersConfig", back_populates="additional_parameters")
+
+    @property
+    def active_parameter(self):
+        return next((p for p in self.additional_parameters if p.is_active), None)
+
 
 # Modèle de groupe d'utilisateurs
 class UserGroup(db.Model):

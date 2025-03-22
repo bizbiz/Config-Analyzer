@@ -1,9 +1,12 @@
+#/app/__init__.py
+
 from flask import Flask, session
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from app.models import User
 from app.extensions import db
 from app.config import config
+from datetime import datetime
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -34,6 +37,13 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+
+    @app.template_filter('datetimeformat')
+    def datetimeformat(value, format='%d/%m/%Y'):
+        """Filtre personnalisé pour formater les dates"""
+        if value is None:
+            return ""
+        return value.strftime(format)
 
     # Middleware pour sessions
     @app.before_request

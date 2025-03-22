@@ -1,16 +1,14 @@
 {# /templates/macros/_table_ui.html #}
-{# Doit contenir les macro Jira utilisé sur les tableaux #}
-
-{% macro param_table(params, entity_type, entity_slug) %}
+{% macro param_table(params, entity_type, entity_slug, editable=false) %}
 <div class="table-responsive">
     <table class="table table-hover align-middle">
         <thead class="table-light">
             <tr>
                 <th>Nom</th>
                 <th>Type</th>
-                <th>Valeurs</th>
-                <th>Statut</th>
-                <th class="text-end">Actions</th>
+                <th>Règles</th>
+                <th>Valeur</th>
+                <th class="text-end" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -25,27 +23,33 @@
                     </div>
                 </td>
                 <td>{{ display_param_type_badge(param) }}</td>
-                <td>{{ display_param_values(param) }}</td>
+                <td>{{ display_param_rules(param) }}</td>
                 <td>
-                    {% if param.additional_parameters %}
-                    <span class="badge bg-success">Actif</span>
+                    {% if editable %}
+                        {{ display_editable_value(param) }}
                     {% else %}
-                    <span class="badge bg-warning">Non configuré</span>
+                        {% if param.active_parameter %}
+                            {{ param.active_parameter.value }}
+                            <small class="text-muted">(depuis {{ param.active_parameter.created_at|datetimeformat }})</small>
+                        {% else %}
+                            Non configuré
+                        {% endif %}
                     {% endif %}
                 </td>
                 <td class="text-end">
-                    {% if param.additional_parameters %}
-                    <a href="{{ url_for('additional_params.edit', param_id=param.id) }}" 
-                       class="btn btn-sm btn-outline-primary"
-                       title="Modifier">
-                        <i class="fas fa-edit"></i>
-                    </a>
+                    {% if editable %}
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="tooltip" title="Réinitialiser"
+                                onclick="this.previousElementSibling.value = ''">
+                            <i class="fas fa-undo"></i>
+                        </button>
                     {% else %}
-                    <a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug, param_id=param.id) }}" 
-                       class="btn btn-sm btn-success"
-                       title="Ajouter">
-                        <i class="fas fa-plus"></i>
-                    </a>
+                        {{ action_buttons(
+                            edit_url=url_for('additional_params_config.edit', config_id=param.id),
+                            delete_url=url_for('additional_params_config.delete', config_id=param.id),
+                            delete_message="Supprimer ce paramètre ?",
+                            is_td=false
+                        ) }}
                     {% endif %}
                 </td>
             </tr>
@@ -53,6 +57,49 @@
         </tbody>
     </table>
 </div>
+{% endmacro %}
+
+
+{% macro display_param_rules(param) %}
+    {% if param.type.value == 'enum' %}
+        {{ ', '.join(param.configuration_values[2:]) }}
+    {% elif param.type.value == 'numeric' %}
+        Défaut : {{ param.configuration_values[0] }}
+        {% if param.configuration_values|length > 1 %}
+            (Min: {{ param.configuration_values[1] }},
+            Max: {{ param.configuration_values[2] }})
+        {% endif %}
+    {% else %}
+        {{ param.configuration_values[0] if param.configuration_values else 'Non défini' }}
+    {% endif %}
+{% endmacro %}
+
+{% macro display_param_value(param) %}
+    {% if param.active_parameter %}
+        {{ param.active_parameter.value }}
+        <small class="text-muted">(mis à jour le {{ param.active_parameter.updated_at|datetimeformat }})</small>
+    {% else %}
+        <span class="text-danger">Non configuré</span>
+    {% endif %}
+{% endmacro %}
+
+
+{% macro display_editable_value(param) %}
+    {% if param.type.value == 'enum' %}
+        <select class="form-select form-select-sm" name="param_{{ param.id }}">
+            {% for value in param.configuration_values[2:] %}
+            <option value="{{ value }}" 
+                {{ 'selected' if param.additional_parameters and value == param.additional_parameters[0].value }}>
+                {{ value }}
+            </option>
+            {% endfor %}
+        </select>
+    {% else %}
+        <input type="{{ 'number' if param.type.value == 'numeric' else 'text' }}" 
+               class="form-control form-control-sm" 
+               name="param_{{ param.id }}" 
+               value="{{ param.additional_parameters[0].value if param.additional_parameters else '' }}">
+    {% endif %}
 {% endmacro %}
 
 {% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=request.url) %}

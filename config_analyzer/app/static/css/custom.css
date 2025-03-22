@@ -83,3 +83,12 @@
     font-size: 0.85em;
     line-height: 1.2;
 }
+
+.text-muted small {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+.card-parametres {
+    border-left: 4px solid #0d6efd;
+}
