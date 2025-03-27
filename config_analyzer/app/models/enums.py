@@ -10,3 +10,4 @@ class EntityType(str, Enum):
     ROLE = "role"
     ROBOT_INSTANCE = "robot_instance"
     SOFTWARE_VERSION = "software_version"
+    ENTITY = "entity"

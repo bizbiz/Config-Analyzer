@@ -4,11 +4,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.associationproxy import association_proxy
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 from app.models.associations.robot_model_software import RobotModelSoftware
 
 @configure_slug_generation
-class RobotModel(Entity):
+class RobotModel(SpecificEntity):
     """Modèle de robot avec gestion polymorphique étendue"""
     __mapper_args__ = {'polymorphic_identity': EntityType.ROBOT_MODEL}
     

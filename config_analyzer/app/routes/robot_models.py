@@ -11,7 +11,7 @@ from app.utils.param_helpers import get_applicable_params_configs, get_unconfigu
 robot_models_bp = Blueprint('robot_models', __name__, url_prefix='/robot-models')
 
 @robot_models_bp.route('/list')
-def list_models():
+def list():
     robot_models = RobotModel.query.options(
         db.joinedload(RobotModel.software)
     ).all()

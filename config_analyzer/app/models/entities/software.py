@@ -3,10 +3,10 @@ from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 
 @configure_slug_generation
-class Software(Entity):
+class Software(SpecificEntity):
     """Logiciel avec gestion polymorphique"""
     __mapper_args__ = {'polymorphic_identity': EntityType.SOFTWARE}
     

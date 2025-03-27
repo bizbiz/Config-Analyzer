@@ -8,7 +8,7 @@ from app.extensions import db
 robot_instances_bp = Blueprint('robot_instances', __name__, url_prefix='/robot-instances')
 
 @robot_instances_bp.route('/list')
-def list_instances():
+def list():
     robots = RobotInstance.query.options(
         db.joinedload(RobotInstance.client),
         db.joinedload(RobotInstance.model)
@@ -20,7 +20,7 @@ def list_instances():
                          robot_models=RobotModel.query.all())
 
 @robot_instances_bp.route('/add', methods=['GET', 'POST'])
-def add_instance():
+def add():
     if request.method == 'POST':
         try:
             new_robot = RobotInstance(
@@ -48,7 +48,7 @@ def add_instance():
                          preselected_model_id=request.args.get('robot_model_id'))
 
 @robot_instances_bp.route('/edit/<string:serial_number>', methods=['GET', 'POST'])
-def edit_instance(serial_number):
+def edit(serial_number):
     robot = RobotInstance.query.filter_by(serial_number=serial_number).first_or_404()
     
     if request.method == 'POST':
@@ -75,7 +75,7 @@ def edit_instance(serial_number):
                          robot_models=RobotModel.query.all())
 
 @robot_instances_bp.route('/delete/<string:serial_number>', methods=['POST'])
-def delete_instance(serial_number):
+def delete(serial_number):
     robot = RobotInstance.query.filter_by(serial_number=serial_number).first_or_404()
     
     try:
@@ -89,7 +89,7 @@ def delete_instance(serial_number):
     return redirect(url_for('robot_instances.list_instances'))
 
 @robot_instances_bp.route('/view/<string:serial_number>')
-def view_instance(serial_number):
+def view(serial_number):
     robot = RobotInstance.query.options(
         db.joinedload(RobotInstance.client),
         db.joinedload(RobotInstance.model)

@@ -10,19 +10,19 @@ class GroupMember(db.Model):
     
     user_id = db.Column(
         db.Integer, 
-        ForeignKey('users.id', ondelete='CASCADE'), 
+        ForeignKey('user.id', ondelete='CASCADE'), 
         primary_key=True,
         comment="ID de l'utilisateur"
     )
     group_id = db.Column(
         db.Integer, 
-        ForeignKey('groups.id', ondelete='CASCADE'), 
+        ForeignKey('group.id', ondelete='CASCADE'), 
         primary_key=True,
         comment="ID du groupe"
     )
     role_id = db.Column(
         db.Integer, 
-        ForeignKey('roles.id', ondelete='SET NULL'),
+        ForeignKey('role.id', ondelete='SET NULL'),
         index=True,
         comment="ID du rôle"
     )

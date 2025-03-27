@@ -2,10 +2,10 @@
 from sqlalchemy import Column, String, JSON
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 
 @configure_slug_generation
-class Role(Entity):
+class Role(SpecificEntity):
     """Rôle applicatif avec gestion polymorphique"""
     __mapper_args__ = {'polymorphic_identity': EntityType.ROLE}
     

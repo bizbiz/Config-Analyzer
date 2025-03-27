@@ -3,10 +3,10 @@ from sqlalchemy import ForeignKey, Index
 from sqlalchemy.orm import validates, relationship
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 
 @configure_slug_generation
-class RobotInstance(Entity):
+class RobotInstance(SpecificEntity):
     """Instance concrète d'un robot chez un client"""
     __mapper_args__ = {'polymorphic_identity': EntityType.ROBOT_INSTANCE}
     
@@ -31,7 +31,6 @@ class RobotInstance(Entity):
     )
 
     __table_args__ = (
-        Index('ix_robot_instance_slug', 'slug', unique=True),
         Index('ix_robot_serial_client', 'serial_number', 'client_id'),
     )
 

@@ -44,7 +44,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('robot-instances.list') }}">
+                                <a class="dropdown-item" href="{{ url_for('robot_instances.list') }}">
                                     <i class="fas fa-list me-2"></i>Robots Client
                                 </a>
                             </li>
@@ -69,7 +69,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('software_base_configurations.list') }}">
+                                <a class="dropdown-item" href="{{ url_for('configurations.list') }}">
                                     <i class="fas fa-list me-2"></i>Fichiers configuration
                                 </a>
                             </li>
@@ -78,7 +78,7 @@
                     
                     <!-- Bouton Fichier Configuration (maintenant à gauche) -->
                     <li class="nav-item">
-                        <a class="nav-link btn-add-config" href="{{ url_for('software_base_configurations.add') }}">
+                        <a class="nav-link btn-add-config" href="{{ url_for('configurations.add') }}">
                             <i class="fas fa-upload me-2"></i>Fichier Configuration
                         </a>
                     </li>

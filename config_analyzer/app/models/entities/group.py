@@ -3,10 +3,10 @@ from sqlalchemy import event
 from sqlalchemy.orm import validates
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 
 @configure_slug_generation
-class Group(Entity):
+class Group(SpecificEntity):
     """Groupe d'utilisateurs avec capacités polymorphiques"""
     __tablename__ = 'groups'
     __mapper_args__ = {'polymorphic_identity': EntityType.GROUP}
@@ -44,11 +44,6 @@ class Group(Entity):
         cascade='all, delete-orphan',
         order_by='GroupMember.start_date.desc()',
         lazy='dynamic'
-    )
-
-    __table_args__ = (
-        db.UniqueConstraint('name', 'owner_id', name='uq_group_name_owner'),
-        db.Index('idx_group_slug', 'slug', unique=True),
     )
 
     @validates('name')

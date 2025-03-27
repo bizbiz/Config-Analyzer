@@ -3,10 +3,10 @@ from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 
 @configure_slug_generation
-class SoftwareVersion(Entity):
+class SoftwareVersion(SpecificEntity):
     """Version spécifique d'un logiciel"""
     __mapper_args__ = {'polymorphic_identity': EntityType.SOFTWARE_VERSION}
 

@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 softwares_bp = Blueprint('softwares', __name__, url_prefix='/softwares')
 
 @softwares_bp.route('/list')
-def list_softwares():
+def list():
     softwares = Software.query.all()
     robot_models = RobotModel.query.all()
     return render_template('list/softwares.html', 
@@ -20,7 +20,7 @@ def list_softwares():
                            robot_models=robot_models)
 
 @softwares_bp.route('/add', methods=['GET', 'POST'])
-def add_software():
+def add():
     if request.method == 'POST':
         try:
             new_software = Software(
@@ -45,7 +45,7 @@ def add_software():
     return render_template('add/software.html', robot_models=robot_models)
 
 @softwares_bp.route('/edit/<string:slug>', methods=['GET', 'POST'])
-def edit_software(slug):
+def edit(slug):
     software = Software.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
@@ -72,7 +72,7 @@ def edit_software(slug):
                            robot_models=robot_models)
 
 @softwares_bp.route('/delete/<string:slug>', methods=['POST'])
-def delete_software(slug):
+def delete(slug):
     software = Software.query.filter_by(slug=slug).first_or_404()
     try:
         db.session.delete(software)

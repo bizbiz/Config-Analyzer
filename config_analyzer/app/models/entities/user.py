@@ -4,11 +4,12 @@ from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
+from app.models.associations.group_member import GroupMember
 
 
 @configure_slug_generation
-class User(Entity):
+class User(SpecificEntity):
     """Utilisateur du système avec gestion polymorphique étendue"""
     __mapper_args__ = {'polymorphic_identity': EntityType.USER}
     
@@ -22,7 +23,12 @@ class User(Entity):
     access_level = Column(Integer, default=0)
     
     # Relations
-    groups = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan")
+    groups = db.relationship(
+        "Group",
+        secondary="group_members",  # Nom de la table d'association
+        back_populates="users",
+        viewonly=True
+    )
     owned_groups = relationship("Group", back_populates="owner", lazy='dynamic')
     
     @property

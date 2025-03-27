@@ -5,6 +5,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 from app.extensions import db
 from .enums import EntityType
+import inflection
 import re
 
 def camel_to_snake(name):
@@ -17,10 +18,6 @@ def camel_to_snake(name):
 
 class EntityMixin:
     """Mixin de base pour toutes les entités polymorphiques"""
-    
-    @declared_attr
-    def id(cls):
-        return Column(Integer, primary_key=True)
     
     @declared_attr
     def name(cls):
@@ -37,11 +34,57 @@ class EntityMixin:
     @declared_attr
     def updated_at(cls):
         return Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class QueryMixin:
+    """Mixin dynamique pour les requêtes polymorphes"""
+    
+    @classmethod
+    def get_polymorphic_class(cls, entity_type: EntityType):
+        # Conversion du snake_case au CamelCase
+        class_name = inflection.camelize(entity_type.value)
+        return getattr(db.Model, class_name)
+
+# Supprimez __abstract__ = True pour créer une vraie table
+class Entity(db.Model, EntityMixin, QueryMixin):
+    """Classe de base polymorphique concrète"""
+    __tablename__ = 'entities'
+    
+    id = Column(Integer, primary_key=True)
+    entity_type = Column(Enum(EntityType), nullable=False)
+    
+    __mapper_args__ = {
+        'polymorphic_on': entity_type,
+        'polymorphic_identity': None  # Base class n'a pas d'identité
+    }
+
+    __table_args__ = (
+        db.Index('idx_entity_name', 'name'),  # Nouvel index global
+        db.Index('idx_entity_slug', 'slug', unique=True),
+    )
     
     @declared_attr
-    def entity_type(cls):
-        return Column(Enum(EntityType), nullable=False)
+    def configurations(cls):
+        enum_name = camel_to_snake(cls.__name__)  # Utiliser la fonction de conversion
+        return relationship(
+            'ConfigurationEntityLink',
+            primaryjoin=(
+                f"and_(ConfigurationEntityLink.entity_type == '{EntityType[enum_name].value}', "
+                f"ConfigurationEntityLink.entity_id == {cls.__name__}.id)"
+            ),
+            backref=backref('entity', lazy='joined'),
+            cascade='all, delete-orphan',
+            passive_deletes=True
+        )
 
+# Classe pour les entités spécifiques
+class SpecificEntity(Entity):
+    """Classe de base pour les entités spécifiques"""
+    __abstract__ = True
+    
+    @declared_attr
+    def id(cls):
+        return Column(Integer, ForeignKey('entities.id'), primary_key=True)
+    
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
@@ -57,36 +100,6 @@ class EntityMixin:
                 'inherit_condition': (getattr(cls, 'id') == Entity.id)
             }
         return {}
-
-class QueryMixin:
-    """Mixin pour les requêtes polymorphes"""
-    
-    @classmethod
-    def get_polymorphic_class(cls, entity_type):
-        registry = {
-            EntityType.ROBOT_MODEL: 'RobotModel',
-            EntityType.SOFTWARE: 'Software',
-            EntityType.CLIENT: 'Client'
-        }
-        return getattr(db.Model, registry.get(entity_type))
-
-class Entity(db.Model, EntityMixin, QueryMixin):
-    """Classe de base polymorphique abstraite"""
-    __abstract__ = True
-
-    @declared_attr
-    def configurations(cls):
-        enum_name = camel_to_snake(cls.__name__)  # Utiliser la fonction de conversion
-        return relationship(
-            'ConfigurationEntityLink',
-            primaryjoin=(
-                f"and_(ConfigurationEntityLink.entity_type == '{EntityType[enum_name].value}', "
-                f"ConfigurationEntityLink.entity_id == {cls.__name__}.id)"
-            ),
-            backref=backref('entity', lazy='joined'),
-            cascade='all, delete-orphan',
-            passive_deletes=True
-        )
 
 def configure_slug_generation(cls):
     @event.listens_for(cls, 'before_insert')

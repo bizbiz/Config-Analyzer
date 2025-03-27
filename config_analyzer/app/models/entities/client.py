@@ -3,11 +3,11 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from app.extensions import db
 from app.models.enums import EntityType
-from app.models.base import Entity, configure_slug_generation
+from app.models.base import SpecificEntity, configure_slug_generation
 from app.models.basic.postal_code import PostalCode
 
 @configure_slug_generation
-class Client(Entity):
+class Client(SpecificEntity):
     """Modèle Client héritant de la base polymorphique Entity"""
     __mapper_args__ = {'polymorphic_identity': EntityType.CLIENT}
     
@@ -39,9 +39,4 @@ class Client(Entity):
         order_by='RobotInstance.created_at.desc()',
         lazy='dynamic',
         passive_deletes=True
-    )
-
-    __table_args__ = (
-        db.Index('idx_client_slug', 'slug', unique=True),
-        db.Index('idx_client_postal', 'postal_code_id', 'name'),
     )

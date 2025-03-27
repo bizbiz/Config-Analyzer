@@ -10,12 +10,12 @@ from sqlalchemy.exc import SQLAlchemyError
 configurations_bp = Blueprint('configurations', __name__, url_prefix='/configurations')
 
 @configurations_bp.route('/list')
-def list_configurations():
+def list():
     configurations = ConfigurationInstance.query.all()
     return render_template('list/configurations.html', configurations=configurations)
 
 @configurations_bp.route('/add', methods=['GET', 'POST'])
-def add_configuration():
+def add():
     if request.method == 'POST':
         try:
             file = request.files['config_file']
@@ -64,12 +64,12 @@ def add_configuration():
     return render_template('add/configuration.html', entities=entities)
 
 @configurations_bp.route('/view/<int:config_id>')
-def view_configuration(config_id):
+def view(config_id):
     config = ConfigurationInstance.query.get_or_404(config_id)
     return render_template('view/configuration.html', config=config)
 
 @configurations_bp.route('/edit/<int:config_id>', methods=['GET', 'POST'])
-def edit_configuration(config_id):
+def edit(config_id):
     config = ConfigurationInstance.query.get_or_404(config_id)
     if request.method == 'POST':
         try:
@@ -90,7 +90,7 @@ def edit_configuration(config_id):
     return render_template('edit/configuration.html', config=config)
 
 @configurations_bp.route('/delete/<int:config_id>', methods=['POST'])
-def delete_configuration(config_id):
+def delete(config_id):
     config = ConfigurationInstance.query.get_or_404(config_id)
     try:
         db.session.delete(config)
