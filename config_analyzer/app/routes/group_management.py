@@ -1,9 +1,13 @@
+# app/routes/group_management.py
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import UserGroup
+from app.models.entities.group import Group
+from app.models.entities.user import User
+from app.models.associations.group_member import GroupMember
 from app.auth import super_admin_required, group_admin_required
 
 # Création du Blueprint pour les groupes
@@ -14,10 +18,10 @@ group_management_bp = Blueprint('group_management', __name__, url_prefix='/admin
 @group_admin_required
 def list_groups():
     """Liste des groupes (tous pour super admin, uniquement le sien pour admin)"""
-    if current_user.access_level >= 4:  # Super admin
-        groups = UserGroup.query.all()
+    if current_user.is_super_admin():  # Super admin
+        groups = Group.query.all()
     else:  # Group admin
-        groups = [current_user.group]
+        groups = [gm.group for gm in current_user.groups]
     
     return render_template('group_management/group_list.html', groups=groups)
 
@@ -26,13 +30,15 @@ def list_groups():
 @group_admin_required
 def view_group(slug):
     """Afficher les détails d'un groupe"""
-    group = UserGroup.query.filter_by(slug=slug).first_or_404()
+    group = Group.query.filter_by(slug=slug).first_or_404()
     
     # Vérifier que l'utilisateur courant a le droit de voir ce groupe
-    if current_user.access_level < 4 and group.id != current_user.group_id:
+    if not current_user.is_super_admin() and not any(gm.group_id == group.id for gm in current_user.groups):
         abort(403)  # Forbidden
     
-    return render_template('group_management/group_view.html', group=group)
+    group_members = GroupMember.query.filter_by(group_id=group.id).all()
+    
+    return render_template('group_management/group_view.html', group=group, members=group_members)
 
 @group_management_bp.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -41,17 +47,25 @@ def add_group():
     """Ajouter un nouveau groupe (réservé aux super admins)"""
     if request.method == 'POST':
         name = request.form.get('name')
-        identifier = request.form.get('identifier')
         description = request.form.get('description', '')
         
         try:
-            group = UserGroup(
+            group = Group(
                 name=name,
-                identifier=identifier,
-                description=description
+                description=description,
+                owner_id=current_user.id
             )
             
             db.session.add(group)
+            db.session.commit()
+            
+            # Ajouter automatiquement le créateur comme membre du groupe
+            member = GroupMember(
+                user_id=current_user.id,
+                group_id=group.id,
+                is_admin=True
+            )
+            db.session.add(member)
             db.session.commit()
             
             flash("Groupe créé avec succès.", "success")
@@ -59,7 +73,7 @@ def add_group():
             
         except IntegrityError:
             db.session.rollback()
-            flash("Un groupe avec ce nom ou cet identifiant existe déjà.", "error")
+            flash("Un groupe avec ce nom existe déjà.", "error")
     
     return render_template('group_management/group_add.html')
 
@@ -68,11 +82,10 @@ def add_group():
 @super_admin_required
 def edit_group(slug):
     """Modifier un groupe existant (réservé aux super admins)"""
-    group = UserGroup.query.filter_by(slug=slug).first_or_404()
+    group = Group.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
         group.name = request.form.get('name')
-        group.identifier = request.form.get('identifier')
         group.description = request.form.get('description', '')
         
         try:
@@ -81,7 +94,7 @@ def edit_group(slug):
             return redirect(url_for('group_management.list_groups'))
         except IntegrityError:
             db.session.rollback()
-            flash("Un groupe avec ce nom ou cet identifiant existe déjà.", "error")
+            flash("Un groupe avec ce nom existe déjà.", "error")
     
     return render_template('group_management/group_edit.html', group=group)
 
@@ -90,10 +103,10 @@ def edit_group(slug):
 @super_admin_required
 def delete_group(slug):
     """Supprimer un groupe (réservé aux super admins)"""
-    group = UserGroup.query.filter_by(slug=slug).first_or_404()
+    group = Group.query.filter_by(slug=slug).first_or_404()
     
-    # Vérifier si le groupe a des utilisateurs
-    if group.users and len(group.users) > 0:
+    # Vérifier si le groupe a des membres
+    if GroupMember.query.filter_by(group_id=group.id).count() > 0:
         flash("Ce groupe contient des utilisateurs et ne peut pas être supprimé.", "error")
         return redirect(url_for('group_management.list_groups'))
     

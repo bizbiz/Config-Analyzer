@@ -15,7 +15,7 @@
     </h1>
     
     {% with items=configs, show_add_button=false, software=software, software_version=software_version %}
-        {% include 'list/partials/software_base_configurations.html' %}
+        {% include 'list/partials/instance_configurations.html' %}
     {% endwith %}
     
     {% if software_version %}
@@ -30,7 +30,7 @@
             path_error=path_error,
             content_error=content_error
         %}
-            {% include 'add/partials/software_base_configuration_for_version.html' %}
+            {% include 'add/partials/instance_configuration_for_version.html' %}
         {% endwith %}
     </div>
     {% else %}
@@ -45,7 +45,7 @@
             path_error=path_error,
             content_error=content_error
         %}
-            {% include 'add/partials/software_base_configuration.html' %}
+            {% include 'add/partials/instance_configuration.html' %}
         {% endwith %}
     </div>
     {% endif %}

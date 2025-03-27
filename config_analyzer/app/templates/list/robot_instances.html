@@ -6,8 +6,8 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Robots Clients</h1>
     
-    {% with items=robot_clients, show_add_button=false %}
-        {% include 'list/partials/robot_clients.html' %}
+    {% with items=robot_instances, show_add_button=false %}
+        {% include 'list/partials/robot_instances.html' %}
     {% endwith %}
     
     <div class="card p-4 shadow-sm mt-4">
@@ -22,7 +22,7 @@
             length_error=length_error,
             height_error=height_error
         %}
-            {% include 'add/partials/robot_client.html' %}
+            {% include 'add/partials/robot_instance.html' %}
         {% endwith %}
     </div>
 </div>

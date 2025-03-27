@@ -11,7 +11,7 @@
     {% endif %}
 {% endwith %}
 
-<form id="addConfigForm" action="{{ url_for('software_base_configurations.add') }}" method="POST">
+<form id="addConfigForm" action="{{ url_for('instance_configurations.add') }}" method="POST">
     {{ select_field(
         name="software",
         label="Logiciel :",
@@ -57,7 +57,7 @@
     
     <div class="mt-4">
         <button type="submit" class="btn btn-success">Ajouter</button>
-        <a href="{{ url_for('software_base_configurations.list') }}" class="btn btn-secondary ms-2">Retour à la liste</a>
+        <a href="{{ url_for('instance_configurations.list') }}" class="btn btn-secondary ms-2">Retour à la liste</a>
     </div>
 </form>
 

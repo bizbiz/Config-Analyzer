@@ -61,8 +61,8 @@
                             <td>{{ version.version }}</td>
                             <td>{{ version.software.name }}</td>
                             <td>
-                                {% for robot_client in version.robots %}
-                                    <div>{{ robot_client.robot_client.client.name }} - {{ robot_client.robot_client.serial_number }}</div>
+                                {% for robot_instance in version.robots %}
+                                    <div>{{ robot_instance.robot_instance.client.name }} - {{ robot_instance.robot_instance.serial_number }}</div>
                                 {% else %}
                                     <span class="text-muted">Aucun client</span>
                                 {% endfor %}

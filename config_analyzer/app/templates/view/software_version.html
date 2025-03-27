@@ -24,7 +24,7 @@
             <ul class="list-group">
                 {% for robot in software_version.robots %}
                 <li class="list-group-item">
-                    {{ robot.robot_client.client.name }} - [{{ robot.robot_client.robot_modele.name }}] - <a href="{{ url_for('robot_clients.view', serial_number=robot.robot_client.serial_number) }}">{{ robot.robot_client.serial_number }}</a>
+                    {{ robot.rorobot-instance.client.name }} - [{{ robot.robot-instance.robot_modele.name }}] - <a href="{{ url_for('rorobot-instances.view', serial_number=robot.rorobot-instance.serial_number) }}">{{ robot.robot-instance.serial_number }}</a>
                 </li>
                 {% endfor %}
             </ul>

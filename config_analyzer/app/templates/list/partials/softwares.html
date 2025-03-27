@@ -1,19 +1,21 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
+{# templates/list/partials/softwares.html #}
 {% if items is defined %}
 {% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
 {% from 'macros/_common_ui.html' import badge with context %}
 
-<div class="card mt-4">
-    {{ card_header(
-        title=title|default('Logiciels'),
-        add_url=url_for('softwares.add'),
-        add_text="Ajouter un logiciel",
-        show_button=show_add_button|default(true)
-    ) }}
+<div class="card {% if not is_embedded|default(false) %}mt-4{% endif %}">
+    {% if not is_embedded|default(false) %}
+        {{ card_header(
+            title=title|default('Logiciels'),
+            add_url=url_for('softwares.add'),
+            add_text="Ajouter un logiciel",
+            show_button=show_add_button|default(true)
+        ) }}
+    {% endif %}
     
     <div class="card-body">
         {% if items %}
-            {% if show_search|default(true) %}
+            {% if show_search|default(true) and not is_embedded|default(false) %}
             <div class="mb-3">
                 <input type="text" id="softwaresSearchInput" class="form-control" 
                        placeholder="Rechercher un logiciel...">
@@ -21,20 +23,29 @@
             {% endif %}
             
             <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
+                <table class="table table-striped {% if not is_embedded|default(false) %}table-bordered{% endif %} align-middle" 
                        id="softwareTable"
                        data-list-filter="true"
                        data-filter-input="softwaresSearchInput" 
-                       data-filter-columns="3">
+                       data-filter-columns="{% if is_embedded|default(false) %}2{% else %}3{% endif %}">
                     <thead class="table-light">
                         <tr>
-                            <th scope="col">Nom</th>
+                            <th scope="col">
+                                Logiciel {% if is_embedded|default(false) %}utilisé par {{ entity_name }}{% endif %}
+                                {% if is_embedded|default(false) %}
+                                <a href="#" class="sort-link" onclick="sortTable()">
+                                    <span id="sort-arrow" class="ms-1">&#9650;</span>
+                                </a>
+                                {% endif %}
+                            </th>
+                            <th scope="col">Versions {% if is_embedded|default(false) %}utilisées par {{ entity_name }}{% endif %}</th>
+                            {% if not is_embedded|default(false) %}
                             <th scope="col">Modèles de Robot Associés</th>
-                            <th scope="col">Versions</th>
                             <th scope="col">Actions</th>
+                            {% endif %}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="software-table-body">
                         {% for software in items %}
                         <tr>
                             <td>
@@ -43,24 +54,26 @@
                                 </a>
                             </td>
                             <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for version in software.versions %}
+                                    <li>
+                                        <a href="{{ url_for('software_versions.view', 
+                                                  software_name=software.name, 
+                                                  version=version.version) }}" 
+                                           class="badge bg-info text-dark">
+                                            {{ version.version }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            {% if not is_embedded|default(false) %}
+                            <td>
                                 {% for relation in software.robot_modeles %}
                                     <span class="badge bg-secondary">{{ relation.robot_modele.name }}</span>
                                     {% if not loop.last %} {% endif %}
                                 {% else %}
                                     <span class="text-muted">Aucun modèle associé</span>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for version in software.versions %}
-                                    <a href="{{ url_for('software_versions.view', 
-                                              software_name=software.name, 
-                                              version=version.version) }}" 
-                                       class="badge bg-info text-dark">
-                                        {{ version.version }}
-                                    </a>
-                                    {% if not loop.last %} {% endif %}
-                                {% else %}
-                                    <span class="text-muted">Aucune version</span>
                                 {% endfor %}
                             </td>
                             {{ action_buttons(
@@ -72,6 +85,7 @@
                                     '<a href="' + url_for('software_versions.list_by_software', software_name=software.name) + '" class="btn btn-sm btn-info"><i class="fas fa-list"></i></a>'
                                 ]
                             ) }}
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -87,32 +101,34 @@
     </div>
 </div>
 
+{% if not is_embedded|default(false) %}
 {{ init_search('softwareTable', 'softwaresSearchInput') }}
-
-{# Afficher le formulaire d'ajout si demandé #}
-{% if show_add_form|default(false) %}
-    {% include 'add/software.html' %}
-    
-    <script>
-        function addRobotModelSelect() {
-            const container = document.getElementById('robot-model-container');
-            const newSelectDiv = document.createElement('div');
-            newSelectDiv.className = 'input-group mb-2';
-            newSelectDiv.innerHTML = `
-                <select class="form-select" name="robot_model_ids">
-                    <option value="">Sélectionner un modèle de robot</option>
-                    {% for robot_model in robot_models %}
-                    <option value="{{ robot_model.id }}">{{ robot_model.name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="button" class="btn btn-danger" onclick="removeRobotModelSelect(this)">×</button>
-            `;
-            container.appendChild(newSelectDiv);
-        }
-
-        function removeRobotModelSelect(button) {
-            button.parentElement.remove();
-        }
-    </script>
 {% endif %}
+
+{% if is_embedded|default(false) %}
+<script>
+    let sortDirection = true;
+
+    function sortTable() {
+        const tableBody = document.getElementById('software-table-body');
+        const rows = Array.from(tableBody.rows);
+        const arrow = document.getElementById('sort-arrow');
+
+        rows.sort((a, b) => {
+            const cellA = a.cells[0].innerText.toLowerCase();
+            const cellB = b.cells[0].innerText.toLowerCase();
+            
+            if (cellA < cellB) return sortDirection ? -1 : 1;
+            if (cellA > cellB) return sortDirection ? 1 : -1;
+            return 0;
+        });
+
+        sortDirection = !sortDirection;
+        arrow.innerHTML = sortDirection ? '&#9650;' : '&#9660;';
+
+        tableBody.append(...rows);
+    }
+</script>
+{% endif %}
+
 {% endif %}

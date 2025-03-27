@@ -1,7 +1,7 @@
 {# Fragment sans extends pour inclusion depuis une version spécifique #}
 {% from 'macros/_form_ui.html' import text_field, textarea_field with context %}
 
-<form action="{{ url_for('software_base_configurations.add_for_version', version_id=software_version.id) }}" method="POST">
+<form action="{{ url_for('instance_configurations.add_for_version', version_id=software_version.id) }}" method="POST">
     {{ text_field(
         name="file_name",
         label="Nom du Fichier :",

@@ -17,10 +17,10 @@
 {% set add_url = None %}
 {% if show_add_button|default(true) %}
     {% if software_version %}
-        {% set add_url = url_for('software_base_configurations.add_for_version', version_id=software_version.id) %}
+        {% set add_url = url_for('instance_configurations.add_for_version', version_id=software_version.id) %}
         {% set add_text_specific = 'Ajouter une configuration pour ' + software_version.software.name + ' v' + software_version.version %}
     {% else %}
-        {% set add_url = url_for('software_base_configurations.add') %}
+        {% set add_url = url_for('instance_configurations.add') %}
         {% set add_text_specific = 'Ajouter une configuration' %}
     {% endif %}
 {% endif %}
@@ -61,7 +61,7 @@
                         {% for config in items %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('software_base_configurations.view', 
+                                <a href="{{ url_for('instance_configurations.view', 
                                           software_name=config.software_version.software.name, 
                                           version=config.software_version.version,
                                           file_name=config.file_name) }}">
@@ -76,7 +76,7 @@
                                           software_name=config.software_version.software.name, 
                                           software_version=config.software_version.version, 
                                           file_name=config.file_name),
-                                delete_url=url_for('software_base_configurations.delete', 
+                                delete_url=url_for('instance_configurations.delete', 
                                           software_name=config.software_version.software.name, 
                                           version=config.software_version.version,
                                           file_name=config.file_name),

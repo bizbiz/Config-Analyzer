@@ -1,120 +1,94 @@
+# app/routes/softwares.py
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Software, RobotModel
+from app.models.entities.software import Software
+from app.models.entities.robot_model import RobotModel
+from app.models.parameters.definitions import ParameterDefinition
+from app.models.parameters.values import ParameterValue
+from app.models.enums import EntityType
 from app.extensions import db
-from app.routes.additional_params import get_additional_params_data
+from sqlalchemy.exc import IntegrityError
 
 softwares_bp = Blueprint('softwares', __name__, url_prefix='/softwares')
 
-# Ajoutez cette fonction pour rendre get_additional_params_data disponible dans les templates
-@softwares_bp.app_template_global()
-def get_template_additional_params_data(table_name, table_id):
-    return get_additional_params_data(table_name, table_id)
-
 @softwares_bp.route('/list')
-def list():
+def list_softwares():
     softwares = Software.query.all()
-    robot_models = RobotModel.query.all()  # Pour le formulaire d'ajout
-    
-    # Variables pour le formulaire
-    form_data = {}
-    name_error = None
-    
+    robot_models = RobotModel.query.all()
     return render_template('list/softwares.html', 
-                          softwares=softwares,
-                          robot_models=robot_models,
-                          form_data=form_data,
-                          name_error=name_error)
-
+                           softwares=softwares,
+                           robot_models=robot_models)
 
 @softwares_bp.route('/add', methods=['GET', 'POST'])
-def add():
-    """Ajoute un nouveau logiciel"""
+def add_software():
     if request.method == 'POST':
-        name = request.form.get('name')
-        robot_model_ids = request.form.getlist('robot_model_ids')
-        
-        if not name:
-            flash("Le nom du logiciel est obligatoire.", "error")
-            return redirect(url_for('softwares.add'))
-        
-        # Vérifier si le logiciel existe déjà
-        existing = Software.query.filter_by(name=name).first()
-        if existing:
-            flash("Un logiciel avec ce nom existe déjà.", "error")
-            return redirect(url_for('softwares.add'))
-        
-        new_software = Software(name=name)
-        db.session.add(new_software)
-        db.session.commit()
-
-        # Associer les modèles de robots
-        for robot_model_id in robot_model_ids:
-            if robot_model_id:  # Vérifier que l'ID n'est pas vide
+        try:
+            new_software = Software(
+                name=request.form['name'],
+                description=request.form.get('description', '')
+            )
+            db.session.add(new_software)
+            
+            for robot_model_id in request.form.getlist('robot_model_ids'):
                 robot_model = RobotModel.query.get(robot_model_id)
                 if robot_model:
                     new_software.robot_models.append(robot_model)
-        
-        db.session.commit()
-        
-        flash("Logiciel ajouté avec succès !", "success")
-        return redirect(url_for('softwares.list'))
+            
+            db.session.commit()
+            flash("Logiciel ajouté avec succès", "success")
+            return redirect(url_for('softwares.list_softwares'))
+        except IntegrityError:
+            db.session.rollback()
+            flash("Un logiciel avec ce nom existe déjà", "error")
     
     robot_models = RobotModel.query.all()
     return render_template('add/software.html', robot_models=robot_models)
 
-@softwares_bp.route('/edit/<string:name>', methods=['GET', 'POST'])
-def edit(name):
-    """Édite un logiciel existant"""
-    software = Software.query.filter_by(name=name).first_or_404()
+@softwares_bp.route('/edit/<string:slug>', methods=['GET', 'POST'])
+def edit_software(slug):
+    software = Software.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
-        new_name = request.form['name']
-        robot_model_ids = request.form.getlist('robot_model_ids')
-
-        # Vérifier si le nouveau nom existe déjà (si différent de l'ancien)
-        if new_name != name:
-            existing = Software.query.filter_by(name=new_name).first()
-            if existing:
-                flash("Un logiciel avec ce nom existe déjà.", "error")
-                return redirect(url_for('softwares.edit', name=name))
-
-        software.name = new_name
-        
-        # Mettre à jour les associations avec les modèles de robots
-        software.robot_models.clear()
-        for robot_model_id in robot_model_ids:
-            if robot_model_id:  # Vérifier que l'ID n'est pas vide
+        try:
+            software.name = request.form['name']
+            software.description = request.form.get('description', '')
+            
+            software.robot_models = []
+            for robot_model_id in request.form.getlist('robot_model_ids'):
                 robot_model = RobotModel.query.get(robot_model_id)
                 if robot_model:
                     software.robot_models.append(robot_model)
-        
-        db.session.commit()
-        flash("Logiciel modifié avec succès !", "success")
-        return redirect(url_for('softwares.list'))
+            
+            db.session.commit()
+            flash("Logiciel mis à jour avec succès", "success")
+            return redirect(url_for('softwares.list_softwares'))
+        except IntegrityError:
+            db.session.rollback()
+            flash("Un logiciel avec ce nom existe déjà", "error")
     
     robot_models = RobotModel.query.all()
     return render_template('edit/software.html', 
-                          software=software, 
-                          robot_models=robot_models)
+                           software=software, 
+                           robot_models=robot_models)
 
-@softwares_bp.route('/delete/<string:name>', methods=['GET', 'POST'])
-def delete(name):
-    """Supprime un logiciel"""
-    software = Software.query.filter_by(name=name).first_or_404()
-    
-    if request.method == 'POST':
+@softwares_bp.route('/delete/<string:slug>', methods=['POST'])
+def delete_software(slug):
+    software = Software.query.filter_by(slug=slug).first_or_404()
+    try:
         db.session.delete(software)
         db.session.commit()
-        flash("Logiciel supprimé avec succès !", "success")
-        return redirect(url_for('softwares.list'))
-    
-    # Pour une requête GET, demander confirmation
-    return render_template('delete/software.html', software=software)
+        flash("Logiciel supprimé avec succès", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de la suppression : {str(e)}", "error")
+    return redirect(url_for('softwares.list_softwares'))
 
-@softwares_bp.route('/view/<string:name>', methods=['GET'])
-def view(name):
-    """Affiche les détails d'un logiciel"""
-    software = Software.query.filter_by(name=name).first_or_404()
+@softwares_bp.route('/view/<string:slug>')
+def view_software(slug):
+    software = Software.query.filter_by(slug=slug).first_or_404()
+    parameter_definitions = ParameterDefinition.query.filter_by(target_entity=EntityType.SOFTWARE).all()
+    parameter_values = ParameterValue.query.filter_by(entity_id=software.id, entity_type=EntityType.SOFTWARE).all()
     return render_template('view/software.html', 
-                          software=software, 
-                          get_additional_params_data=get_additional_params_data)
+                           software=software,
+                           parameter_definitions=parameter_definitions,
+                           parameter_values=parameter_values)

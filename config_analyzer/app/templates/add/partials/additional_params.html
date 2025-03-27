@@ -49,8 +49,8 @@
             <a href="{{ url_for('softwares.view', name=entity_name) }}" class="btn btn-secondary ms-2">Annuler</a>
         {% elif model_type == 'clients' %}
             <a href="{{ url_for('clients.view', client_id=entity_id) }}" class="btn btn-secondary ms-2">Annuler</a>
-        {% elif model_type == 'robot_clients' %}
-            <a href="{{ url_for('robot_clients.view', serial_number=entity_name) }}" class="btn btn-secondary ms-2">Annuler</a>
+        {% elif model_type == 'robot_instances' %}
+            <a href="{{ url_for('robot_instances.view', serial_number=entity_name) }}" class="btn btn-secondary ms-2">Annuler</a>
         {% else %}
             <a href="{{ url_for('home.home') }}" class="btn btn-secondary ms-2">Annuler</a>
         {% endif %}

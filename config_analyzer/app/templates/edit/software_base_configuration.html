@@ -6,7 +6,7 @@
 
     <div class="card p-4 shadow-sm">
         <h2 class="mb-3">Modifier les informations de la Configuration de Base</h2>
-        <form action="{{ url_for('software_base_configurations.edit_software_base_configuration', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}" method="POST">
+        <form action="{{ url_for('instance_configurations.edit_instance_configuration', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version, file_name=base_configuration.file_name) }}" method="POST">
             <div class="mb-3">
                 <label class="form-label">Logiciel :</label>
                 <p class="form-control-static">{{ base_configuration.software_version.software.name }}</p>
@@ -28,8 +28,8 @@
                 <textarea id="content" name="content" class="form-control" rows="5" required>{{ base_configuration.content }}</textarea>
             </div>
             <button type="submit" class="btn btn-primary">Enregistrer</button>
-            <a href="{{ url_for('software_base_configurations.view_parsed_content', base_configuration_id=base_configuration.id) }}" class="btn btn-secondary">Parse Content</a>
-            <a href="{{ url_for('software_base_configurations.list_software_base_configurations_by_version', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version) }}" class="btn btn-secondary">Retour à la liste</a>
+            <a href="{{ url_for('instance_configurations.view_parsed_content', base_configuration_id=base_configuration.id) }}" class="btn btn-secondary">Parse Content</a>
+            <a href="{{ url_for('instance_configurations.list_instance_configurations_by_version', software_name=base_configuration.software_version.software.name, software_version=base_configuration.software_version.version) }}" class="btn btn-secondary">Retour à la liste</a>
         </form>
     </div>
 </div>

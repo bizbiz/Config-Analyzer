@@ -26,10 +26,10 @@
             </tr>
         </thead>
         <tbody>
-            {% for robot_client in software_version.robots %}
+            {% for robot_instance in software_version.robots %}
             <tr>
-                <td>{{ robot_client.client.name }}</td>
-                <td>{{ robot_client.robot_modele.name }}</td>
+                <td>{{ robot_instance.client.name }}</td>
+                <td>{{ robot_instance.robot_modele.name }}</td>
             </tr>
             {% endfor %}
         </tbody>

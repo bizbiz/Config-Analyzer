@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Modifier le Client Robot{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Modifier le Client Robot</h1>
+    <form method="post">
+        <div class="mb-3">
+            <label for="client_name" class="form-label">Client</label>
+            <input type="text" class="form-control" id="client_name" name="client_name" value="{{ robot_instance.client.name }}" disabled>
+            <input type="hidden" name="client_id" value="{{ robot_instance.client.id }}">
+        </div>
+        <div class="mb-3">
+            <label for="robot_modele_name" class="form-label">Modèle de Robot</label>
+            <input type="text" class="form-control" id="robot_modele_name" name="robot_modele_name" value="{{ robot_instance.robot_modele.name }}" disabled>
+            <input type="hidden" name="robot_modele_id" value="{{ robot_instance.robot_modele.id }}">
+        </div>
+        <div class="mb-3">
+            <label for="serial_number" class="form-label">Numéro de Série</label>
+            <input type="text" class="form-control {% if serial_number_error %}is-invalid{% endif %}" id="serial_number" name="serial_number" value="{{ form_data.serial_number or robot_instance.serial_number }}" required>
+            {% if serial_number_error %}
+            <div class="invalid-feedback">Le numéro de série existe déjà.</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="length" class="form-label">Longueur (m)</label>
+            <input type="text" class="form-control {% if length_error %}is-invalid{% endif %}" id="length" name="length" value="{{ form_data.length or robot_instance.length }}" pattern="\d+(\.\d{1,2})?" title="Veuillez entrer un nombre valide avec jusqu'à deux décimales.">
+            {% if length_error %}
+            <div class="invalid-feedback">La longueur doit être un nombre à virgule.</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="height" class="form-label">Hauteur (m)</label>
+            <input type="text" class="form-control {% if height_error %}is-invalid{% endif %}" id="height" name="height" value="{{ form_data.height or robot_instance.height }}" pattern="\d+(\.\d{1,2})?" title="Veuillez entrer un nombre valide avec jusqu'à deux décimales.">
+            {% if height_error %}
+            <div class="invalid-feedback">La hauteur doit être un nombre à virgule.</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Modifier</button>
+        <a href="{{ url_for('robot_instances.list_robot_instances') }}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+{% endblock %}

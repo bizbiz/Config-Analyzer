@@ -14,9 +14,9 @@
     {% elif table_name == 'robot_models' %}
         {% set add_url = url_for('additional_params.add_additional_param', model_type='robot_models', entity_name=robot_model.name) %}
         {% set entity_display_name = robot_model.name %}
-    {% elif table_name == 'robot_clients' %}
-        {% set add_url = url_for('additional_params.add_additional_param', model_type='robot_clients', entity_name=robot_client.serial_number) %}
-        {% set entity_display_name = robot_client.serial_number %}
+    {% elif table_name == 'robot_instances' %}
+        {% set add_url = url_for('additional_params.add_additional_param', model_type='robot_instances', entity_name=robot_instance.serial_number) %}
+        {% set entity_display_name = robot_instance.serial_number %}
     {% endif %}
 {% endif %}
 

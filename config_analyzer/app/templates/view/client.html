@@ -73,7 +73,7 @@
                 {% if robots %}
                 <div class="list-group">
                     {% for robot in robots %}
-                    <a href="{{ url_for('robot_clients.view', serial_number=robot.serial_number) }}" 
+                    <a href="{{ url_for('robot_instances.view', serial_number=robot.serial_number) }}" 
                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">{{ robot.serial_number }}</h6>
@@ -111,8 +111,8 @@
                                     {{ config.snapshot_date.strftime('%d/%m/%Y') }}
                                 </h6>
                                 <h5 class="card-title">
-                                    {% if config.software_base_configuration %}
-                                        {{ config.software_base_configuration.file_name }}
+                                    {% if config.instance_configuration %}
+                                        {{ config.instance_configuration.file_name }}
                                     {% else %}
                                         Configuration #{{ config.id }}
                                     {% endif %}

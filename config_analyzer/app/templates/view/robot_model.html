@@ -1,91 +1,105 @@
+{# templates/view/robot_model.html #}
+
 {% extends "base.html" %}
 
 {% block title %}Détails du robot : {{ robot_model.name }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h2 class="mb-3">Détails du robot : {{ robot_model.name }}</h2>
-    <div class="card p-4 shadow-sm">
-        
-        
-        <div class="mb-3">
-            <label for="company" class="form-label">Fabricant :</label>
-            <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" autocomplete="off" disabled>
-        </div>
-        
-        <div class="mb-3">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th scope="col">Logiciel utilisé par {{ robot_model.name }}
-                                <a href="#" class="sort-link" onclick="sortTable()">
-                                    <span id="sort-arrow" class="ms-1">&#9650;</span>
-                                </a>
-                            </th>
-                            <th scope="col">Versions utilisées par {{ robot_model.name }}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="software-table-body">
-                        {% for software_association in robot_model.software %}
-                        <tr>
-                            <td>
-                                <a href="{{ url_for('software_versions.view', 
-                                             software_name=software_association.software.name, 
-                                             version=software_association.software.versions[0].version) }}">
-                                    {{ software_association.software.name }}
-                                </a>
-                            </td>
-                            <td>
-                                <ul>
-                                    {% for version in software_association.software.versions %}
-                                    <li>{{ version.version }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- En-tête avec boutons d'action -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Détails du robot : {{ robot_model.name }}</h1>
+        <div class="btn-group">
+            <a hre #f="{{ url_for('robot_models.edit', slug=robot_model.slug) }}" 
+               class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+            <a href="{{ url_for('additional_params_config.add', entity_type='robot_model', entity_slug=robot_model.slug) }}" 
+               class="btn btn-outline-success">
+                <i class="fas fa-cog"></i> Ajouter configuration
+            </a>
         </div>
     </div>
 
-    {# Inclure la liste des clients utilisant ce robot #}
-    {% with items=robot_clients, hide_model=true, title="Clients utilisant le " + robot_model.name %}
-    {% include 'list/partials/robot_clients.html' %}
+    <div class="card p-4 shadow-sm">
+        <!-- Indicateurs clés -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-primary h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Clients associés</h5>
+                        <p class="display-4">{{ robot_model.clients|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-info h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Logiciels</h5>
+                        <p class="display-4">{{ robot_model.software|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-success h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Configurations actives</h5>
+                        <p class="display-4">{{ robot_model.applicable_parameters_configs.count() }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section informations de base -->
+        <div class="mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="company" class="form-label">Fabricant :</label>
+                    <input type="text" id="company" name="company" class="form-control" 
+                           value="{{ robot_model.company }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Dates clés :</label>
+                    <ul class="list-unstyled">
+                        <li>Créé le : {{ robot_model.created_at.strftime('%d/%m/%Y %H:%M') }}</li>
+                        <li>Dernière mise à jour : {{ robot_model.updated_at.strftime('%d/%m/%Y %H:%M') }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau des logiciels -->
+        <div class="mb-4">
+            {% with 
+                items=robot_model.software|map(attribute='software'),
+                is_embedded=true,
+                entity_name=robot_model.name,
+                show_search=false,
+                show_add_button=false
+            %}
+                {% include 'list/partials/softwares.html' %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <!-- Sections incluses -->
+    {% with items=rorobot-instances, hide_model=true, title="Clients utilisant le " + robot_model.name %}
+        {% include 'list/partials/robot-instances.html' %}
     {% endwith %}
 
-    {# Inclure le partiel des configurations de paramètres #}
-    {% include 'list/partials/additional_params_config.html' %}
+    {% with title="Configurations paramétriques actives", 
+            entity_type='robot_model',
+            entity_slug=robot_model.slug,
+            show_search=false %}
+        {% include 'list/partials/additional_params_config.html' %}
+    {% endwith %}
 
-    <!-- Lien de retour -->
+    <!-- Bouton de retour -->
     <div class="text-center mt-4">
-        <a href="{{ url_for('robot_models.list') }}" class="btn btn-secondary">Retour à la liste des modèles de robot</a>
+        <a href="{{ url_for('robot_models.list') }}" class="btn btn-secondary">
+            Retour à la liste des modèles
+        </a>
     </div>
 </div>
 
-<script>
-    let sortDirection = true;
-
-    function sortTable() {
-        const tableBody = document.getElementById('software-table-body');
-        const rows = Array.from(tableBody.rows);
-        const arrow = document.getElementById('sort-arrow');
-
-        rows.sort((a, b) => {
-            const cellA = a.cells[0].innerText.toLowerCase();
-            const cellB = b.cells[0].innerText.toLowerCase();
-            
-            if (cellA < cellB) return sortDirection ? -1 : 1;
-            if (cellA > cellB) return sortDirection ? 1 : -1;
-            return 0;
-        });
-
-        sortDirection = !sortDirection;
-        arrow.innerHTML = sortDirection ? '&#9650;' : '&#9660;';
-
-        tableBody.append(...rows);
-    }
-</script>
 {% endblock %}

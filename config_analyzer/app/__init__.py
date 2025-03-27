@@ -3,7 +3,7 @@
 from flask import Flask, session
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from app.models import User
+from app.models.entities.user import User
 from app.extensions import db
 from app.config import config
 from datetime import datetime
@@ -61,8 +61,8 @@ def register_blueprints(app):
     from app.routes.softwares import softwares_bp
     from app.routes.home import home_bp
     from app.routes.software_versions import software_versions_bp
-    from app.routes.software_base_configurations import software_base_configurations_bp
-    from app.routes.robot_clients import robot_clients_bp
+    from app.routes.configurations import configurations_bp
+    from app.routes.robot_instances import robot_instances_bp
     from app.routes.parsed_files import parsed_files_bp
     from app.routes.additional_params import additional_params_bp
     from app.routes.additional_params_config import additional_params_config_bp
@@ -74,8 +74,8 @@ def register_blueprints(app):
     app.register_blueprint(softwares_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(software_versions_bp)
-    app.register_blueprint(software_base_configurations_bp)
-    app.register_blueprint(robot_clients_bp)
+    app.register_blueprint(configurations_bp)
+    app.register_blueprint(robot_instances_bp)
     app.register_blueprint(parsed_files_bp)
     app.register_blueprint(additional_params_bp)
     app.register_blueprint(additional_params_config_bp)

@@ -1,16 +1,23 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
+{# list/partials/robot_instances.html #}
 {% if items is defined %}
 {% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{% from 'macros/_indicateurs.html' import indicateurs with context %}
 
 <div class="card mt-4">
     {{ card_header(
         title=title|default('Robots Clients'),
-        add_url=url_for('robot_clients.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
+        add_url=url_for('robot_instances.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
         add_text="Ajouter un robot client",
         show_button=show_add_button|default(true)
     ) }}
     
     <div class="card-body">
+        <div class="row mb-4">
+            {{ indicateurs(items=items, title='Clients Robot', color='primary') }}
+            {{ indicateurs(items=items|selectattr('softwares')|list, title='Avec Logiciels', color='success') }}
+            {{ indicateurs(items=items|selectattr('client')|list, title='Clients Actifs', color='info') }}
+        </div>
+
         {% if items %}
             {% if show_search|default(true) %}
             <div class="mb-3">
@@ -39,24 +46,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for robot_client in items %}
+                        {% for robot_instance in items %}
                        <tr>
-                            <td>{{ robot_client.serial_number }}</td>
+                            <td>{{ robot_instance.serial_number }}</td>
                             {% if not hide_client|default(false) %}
-                            <td>{{ robot_client.client.name }}</td>
+                            <td>{{ robot_instance.client.name }}</td>
                             {% endif %}
                             {% if not hide_model|default(false) %}
-                            <td>{{ robot_client.robot_modele.name }}</td>
+                            <td>{{ robot_instance.robot_modele.name }}</td>
                             {% endif %}
                             <td>
-                                {% for software in robot_client.softwares %}
+                                {% for software in robot_instance.softwares %}
                                 <span class="badge bg-info">{{ software.software.name }} ({{ software.software_version.version }})</span>
                                 {% endfor %}
                             </td>
                             {{ action_buttons(
-                                view_url=url_for('robot_clients.view', serial_number=robot_client.serial_number),
-                                edit_url=url_for('robot_clients.edit', serial_number=robot_client.serial_number),
-                                delete_url=url_for('robot_clients.delete', serial_number=robot_client.serial_number),
+                                view_url=url_for('robot_instances.view', serial_number=robot_instance.serial_number),
+                                edit_url=url_for('robot_instances.edit', serial_number=robot_instance.serial_number),
+                                delete_url=url_for('robot_instances.delete', serial_number=robot_instance.serial_number),
                                 delete_message='Êtes-vous sûr de vouloir supprimer ce robot client ?',
                                 is_td=true
                             ) }}
@@ -66,7 +73,7 @@
                 </table>
             </div>
         {% else %}
-            {% set add_url = url_for('robot_clients.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') if show_add_button|default(true) else None %}
+            {% set add_url = url_for('robot_instances.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') if show_add_button|default(true) else None %}
             {{ alert_empty_list(
                 message="Aucun robot client trouvé.",
                 add_url=add_url,

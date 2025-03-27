@@ -39,7 +39,7 @@
             </div>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{{ url_for('software_base_configurations.view_software_base_configuration', 
+            <a href="{{ url_for('instance_configurations.view_instance_configuration', 
                 software_name=base_config.software_version.software.name,
                 software_version=base_config.software_version.version,
                 file_name=base_config.file_name) }}" 
@@ -211,7 +211,7 @@
         </div>
 
         <!-- Bouton Retour -->
-        <a href="{{ url_for('software_base_configurations.list_all_software_base_configurations') }}" 
+        <a href="{{ url_for('instance_configurations.list_all_instance_configurations') }}" 
            class="btn btn-secondary mt-3">
             Retour à la liste
         </a>

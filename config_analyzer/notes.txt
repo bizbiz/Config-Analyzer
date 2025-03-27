@@ -1,4 +1,8 @@
 TODO :
+
+Ok le probleme est avec ces tables :
+
+
 Pas sur que edit version soit nécessaire à supprimer peut être
 Refonte de software base config en le générant à partir des config client
 Est-ce que si on créé un software base config file avec le même nom qu'un qui existe déjà mais qui est rattaché à un logiciel ou une version différente, ca ne pose pas de probleme ?
@@ -30,6 +34,14 @@ Si in_use = 0 alors on renomme slon slug en d_old_slug pour qu'il gene pas les a
 Si on essaye de créer un objet qui existe déjà avec un in_use = 0 alors on propose de réactiver à la place
 
 Ajouter un petit module qui génere un regex en fonction de plusieurs exemples pour aider à remplir les regex là ou on les utilises (ajouter et editer un additional params config par exemple)
+
+Ajouter la gestion d'alertes
+
+Ajouter un petit programme python qui viens envoyer les fichiers configuration automatiquement via une api
+
+Ajouter un générateur de documentation grace aux notes sur les parametres
+
+Ajouters des Validators en modele ? kesako
 
 Reco de Claude :
 
@@ -93,8 +105,8 @@ Ex: client.py, machine_client.py
 Classes : PascalCase au singulier
 Ex: class Client, class MachineClient
 
-Tables : __tablename__ en snake_case pluriel
-Ex: __tablename__ = 'clients'
+Tables : __tablename__ en snake_case singulier (plus facile à gérer mais moins logique)
+Ex: __tablename__ = 'client'
 
 3. Règles pour les relations Many-to-Many
 
@@ -126,3 +138,65 @@ One-to-Many: client.machines (pluriel)
 Many-to-One: machine.client (singulier)
 
 
+Ancien nom Model    Nouveau nom Model   Ancien nom table    Nouveau nom table
+
+SoftwareBaseConfigurationFile   ConfigurationTemplate   software_base_configuration_files   configuration_templates
+
+ClientConfigurationFile ConfigurationInstance   client_configuration_files  configuration_instances
+BaseConfigFileParameter ConfigurationParameterDefinition    base_config_file_parameters configuration_parameter_definitions
+BaseConfigDependence    ConfigurationParameterDependency    base_config_dependances configuration_parameter_dependencies
+AdditionalParametersConfig  CustomParameterDefinition   additional_parameters_config    custom_parameter_definitions
+AdditionalParameter CustomParameterValue    additional_parameters   custom_parameter_values
+
+UserGroup   UserGroup   user_groups user_groups
+User    User    users   users
+Role    Role    roles   roles
+UserRoles   UserRole    user_roles  user_roles
+
+Prompt pour CustomParameter :
+Ok maintenant qu'on a fait ca je voudrais qu'on aborde un autre sujet, c'est les parametres customisables des entités
+Je voudrais que l'utilisateur puisse stocker des parametres supplémentaires sur ses entity
+Par exemple il peut rajouter un champ : Logiciel de Gestion de Pharmacie à tous ses clients et pour chaque client chosira parmi une liste d'enum qu'il aura lui même définit
+
+Certains des parametres qu'on va extraire des ConfigurationInstance (=fichier de configuration) seront dépendant de ces parametres
+Ou bien autre exemple : robot_option2=True qui va dépendre d'un parametre additionnel "Options" que l'utilisateur aura lui même configuré (choix multiple dans ce cas) qui sera disponible pour tous les Robot_Instance avec Robot_model = toto
+etc
+
+Donc je veux que le client puisse ajouter des parametres additionnels (de type : enum, string et float) à tous mes Entity, 
+Je souhaite que ces parametres additionnels puissent être précisé avec min max pour les float, une liste pour enum et un regex pour les string.
+
+Il y aura aussi des parametres qui seront importés de fichiers configuration (on s'occupera d'extraire les données plus tard, il faut juste savoir que certains parametres seront importés semi automatiquement)
+
+Je souhaite que tous les parametres soient historisable c'est à dire que quand on change la valeur ou supprime un parametre, on ne le supprime pas vraiment on ne fait que le désactiver, marquer la date et l'heure avec on_update.
+
+Ensuite je souhaite que l'utilisateur puisse définir des dépendances entre ses parametres (dépendances possible : Ifs thens, =, >, comparaisons de string, etc), pour l'instant on laisse de côté l'implémentation, mais on souhaite faire une architecture qui le permette
+
+Pour ca je compte faire plusieurs Classes :
+CustomParameterDefinition (qui stock la définition d'un parametre : name et défaut pour tous, date_creat, date_update, min, max pour un float ou regex pour un string ou un array enumvalues pour un enum
+Peut être qu'il vaut mieux faire trois table différentes, une pour chaque type de parametres, avec une Class polymorphique ParameterDefinition pour éviter les répétitions pour les méthodes et attributs en commun ?
+
+Ensuite je voudrais faire une class ParameterValue
+Qui stockerai :
+    id
+    parameter_config_id
+    value
+    is_active
+    created_at
+    updated_at
+    notes
+
+Je pense qu'on peut aussi faire du polymorphisme la seul chose qui change c'est value qui va changer de type
+
+Ensuite une table : ParameterDependency qui s'occuperait de stocker les liaisons complexes entre un ou plusieurs parametre et un ou plusieurs parametre 
+
+Et enfin une table ConfigurationInstance qui va stocker des fichiers configuration brutes pour qu'on puisse les rattacher à un client, il faudra qu'il y ai un lien one to many avec ParameterValue qu'on viendra remplir grace à ConfigurationInstance
+Les ConfigurationInstance seront rattaché à une Entity : SoftwareVersion, RobotInstance
+Il y aura une relation one Entity to many ConfigurationInstance
+
+Donc un ParameterValue est soit lié à un CustomParameterDefinition soit à un ConfigurationInstance
+
+Comment penses tu qu'on peut créer une structure intélligente avec du polymorphisme qui évite un maximum les répétitions de code tout en permettant au systeme d'évoluer si on décide de rajouter une nouvelle source de parametre par exemple, ou si on rajoute des entity
+
+Tu peux prendre ton temps pour répondre, c'est important qu'on prenne la meilleur décision maintenant pour éviter d'avoir à refactorer tous le code qui est déjà bien avancé
+
+Si il y a des choses que tu ne comprends pas n'hésite pas à me demander de te donner des exemples ou des explications, ne fais pas de guess si tu n'es pas sur, demande moi

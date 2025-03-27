@@ -1,13 +1,20 @@
+# app/routes/clients.py
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import Client, PostalCode, RobotClient, Software, ClientConfigurationFile, AdditionalParametersConfig, EntityType, AdditionalParameter
+from app.models.entities.client import Client
+from app.models.basic.postal_code import PostalCode
+from app.models.entities.robot_instance import RobotInstance
+from app.models.entities.software import Software
+from app.models.configuration import ConfigurationInstance
+from app.models.parameters.definitions import ParameterDefinition
+from app.models.parameters.values import ParameterValue
+from app.models.enums import EntityType
 from app.extensions import db
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.utils.param_helpers import get_applicable_params_configs, get_unconfigured_params
 import re
-
-# app/routes/clients.py
 
 # Définition du blueprint avec un préfixe explicite
 clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
@@ -16,15 +23,20 @@ clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 def view(slug):
     client = Client.query.filter_by(slug=slug).options(
         joinedload(Client.postal_code_relation),
-        joinedload(Client.robots).joinedload(RobotClient.robot_modele),
-        joinedload(Client.configurations).joinedload(ClientConfigurationFile.software_base_configuration)
+        joinedload(Client.robots).joinedload(RobotInstance.model),
+        joinedload(Client.configurations)
     ).first_or_404()
 
-    applicable_configs = client.applicable_parameters_configs.all()  # Récupération via la propriété
+    applicable_configs = ParameterDefinition.query.filter(
+        ParameterDefinition.target_entity == EntityType.CLIENT
+    ).all()
     
-    # Calcul des paramètres configurés/non configurés
-    configured_params = [c for c in applicable_configs if c.active_parameter]
-    unconfigured_params = [c for c in applicable_configs if not c.active_parameter]
+    configured_params = ParameterValue.query.filter(
+        ParameterValue.entity_id == client.id,
+        ParameterValue.entity_type == EntityType.CLIENT
+    ).all()
+    
+    unconfigured_params = [c for c in applicable_configs if c.id not in [p.parameter_definition_id for p in configured_params]]
     
     return render_template(
         'view/client.html',
@@ -137,26 +149,21 @@ def add():
 
 @clients_bp.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit(slug):
-    """Modifie un client existant."""
     client = Client.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
-        # Mettre à jour le nom du client
         client.name = request.form['name']
         
-        # Vérifier si les informations postales ont changé
         code = request.form['postal_code']
         city = request.form['city']
         country_code = request.form['country_code']
         
-        # Chercher si ce code postal existe déjà
         postal_code = PostalCode.query.filter_by(
             code=code, 
             city=city, 
             country_code=country_code
         ).first()
         
-        # S'il n'existe pas, créer un nouveau code postal
         if not postal_code:
             postal_code = PostalCode(
                 code=code,
@@ -165,32 +172,27 @@ def edit(slug):
             )
             db.session.add(postal_code)
             
-        # Associer le code postal au client
         client.postal_code_relation = postal_code
 
-        # Mise à jour des paramètres additionnels
         for key, value in request.form.items():
             if key.startswith('param_'):
                 param_id = int(key.split('_')[1])
                 config = AdditionalParametersConfig.query.get(param_id)
-                value = value.strip()  # Nettoyer les espaces
+                value = value.strip()
 
-                # Récupérer le paramètre actif existant
                 active_param = next((p for p in config.additional_parameters if p.is_active), None)
 
-                # Vérifier si la valeur a changé
                 if active_param:
                     if active_param.value == value:
-                        continue  # Aucun changement, on passe au suivant
+                        continue
                     active_param.is_active = False
 
-                # Créer un nouveau paramètre seulement si valeur non vide
                 if value:
                     new_param = AdditionalParameter(
                         additional_parameters_config_id=param_id,
                         value=value,
                         is_active=True,
-                        notes=request.form.get(f'notes_{param_id}', None)  # Récupération des notes
+                        notes=request.form.get(f'notes_{param_id}', None)
                     )
                     db.session.add(new_param)
         
@@ -198,7 +200,6 @@ def edit(slug):
         flash("Modifications enregistrées avec succès !", "success")
         return redirect(url_for('clients.view', slug=client.slug))
 
-    # Récupération des paramètres pour l'affichage
     applicable_configs = get_applicable_params_configs('client', client.id)
     unconfigured_params = get_unconfigured_params(client.id, applicable_configs)
     configured_params = [p for p in applicable_configs if p not in unconfigured_params]
@@ -207,6 +208,7 @@ def edit(slug):
                            client=client, 
                            configured_params=configured_params,
                            unconfigured_params=unconfigured_params)
+
 
 
 @clients_bp.route('/delete/<slug>', methods=['POST'])
