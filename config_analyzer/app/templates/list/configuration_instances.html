@@ -1,4 +1,4 @@
-{# config_analyzer/app/templates/list/configuration_instances.html}
+{# templates/list/configuration_instances.html #}
 {% extends "base.html" %}
 
 {% block title %}Liste des Configurations{% endblock %}
@@ -8,9 +8,11 @@
     <h1 class="mb-4">Liste des Configurations</h1>
     
     {% with 
-        items=configurations,
-        show_add_button=true,
-        add_url=url_for('configurations.add')
+        items=configurations, 
+        show_add_button=true, 
+        quick_stats=true,
+        total_softwares=total_softwares,
+        total_clients=total_clients
     %}
         {% include 'list/partials/configuration_instances.html' %}
     {% endwith %}

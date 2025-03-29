@@ -1,99 +1,68 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
-{% if items is defined %}
-{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{# templates/list/partials/software_versions.html #}
+{% extends 'list/partials/_base_list_partial.html' %}
+{% from 'macros/_statistics.html' import stats_cards with context %}
 
-{# Détermination du titre et de l'URL d'ajout #}
-{% set display_title = title %}
-{% if not display_title %}
-    {% if software %}
-        {% set display_title = 'Versions du logiciel ' + software.name %}
-    {% else %}
-        {% set display_title = 'Versions de Logiciels' %}
-    {% endif %}
+{% block default_title %}{{ software ? 'Versions du logiciel ' + software.name : 'Versions de Logiciels' }}{% endblock %}
+
+{% block add_url %}{{ software ? url_for('software_versions.add_for_software', software_name=software.name) : url_for('software_versions.add') }}{% endblock %}
+{% block add_text %}Ajouter une version{% endblock %}
+
+{% block search_input_id %}versionsSearchInput{% endblock %}
+{% block filter_input_id %}versionsSearchInput{% endblock %}
+{% block table_id %}versionsTable{% endblock %}
+{% block table_id_js %}versionsTable{% endblock %}
+{% block table_id_js2 %}versionsTable{% endblock %}
+{% block search_placeholder %}Rechercher une version...{% endblock %}
+{% block filter_columns %}3{% endblock %}
+
+{% block tbody_id %}versions-table-body{% endblock %}
+{% block tbody_id_js %}versions-table-body{% endblock %}
+
+{% block empty_message %}Aucune version de logiciel trouvée.{% endblock %}
+
+{% block quick_stats %}
+{% if quick_stats|default(false) and not is_embedded|default(false) %}
+    {{ stats_cards([
+        {'title': 'Versions', 'value': items|length, 'color': 'primary', 'icon': 'code-branch'},
+        {'title': 'Robots Utilisateurs', 'value': total_robots|default(0), 'color': 'success', 'icon': 'robot', 'subtitle': 'en fonction'},
+        {'title': 'Configurations', 'value': total_configs|default(0), 'color': 'info', 'icon': 'cogs', 'subtitle': 'associées'}
+    ]) }}
 {% endif %}
+{% endblock %}
 
-{% set add_url = None %}
-{% set add_text_specific = None %}
-{% if show_add_button|default(true) %}
-    {% if software %}
-        {% set add_url = url_for('software_versions.add_for_software', software_name=software.name) %}
-        {% set add_text_specific = 'Ajouter une version pour ' + software.name %}
-    {% else %}
-        {% set add_url = url_for('software_versions.add') %}
-        {% set add_text_specific = 'Ajouter une version' %}
-    {% endif %}
+{% block table_headers %}
+<th scope="col">Version</th>
+<th scope="col">Logiciel</th>
+<th scope="col">Utilisée par</th>
+{% if not is_embedded|default(false) %}
+<th scope="col" class="no-sort">Actions</th>
 {% endif %}
+{% endblock %}
 
-<div class="card mt-4">
-    {{ card_header(
-        title=display_title,
-        add_url=add_url,
-        add_text="Ajouter une version",
-        show_button=show_add_button|default(true)
-    ) }}
-    
-    <div class="card-body">
-        {% if items %}
-            {% if show_search|default(true) %}
-            <div class="mb-3">
-                <input type="text" id="softwareVersionsSearchInput" class="form-control" 
-                       placeholder="Rechercher une version...">
-            </div>
-            {% endif %}
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
-                       id="softwareVersionsTable"
-                       data-list-filter="true"
-                       data-filter-input="softwareVersionsSearchInput" 
-                       data-filter-columns="3">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">Version</th>
-                            <th scope="col">Logiciel</th>
-                            <th scope="col">Utilisée par</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for version in items %}
-                        <tr>
-                            <td>{{ version.version }}</td>
-                            <td>{{ version.software.name }}</td>
-                            <td>
-                                {% for robot_instance in version.robots %}
-                                    <div>{{ robot_instance.robot_instance.client.name }} - {{ robot_instance.robot_instance.serial_number }}</div>
-                                {% else %}
-                                    <span class="text-muted">Aucun client</span>
-                                {% endfor %}
-                            </td>
-                            {{ action_buttons(
-                                view_url=url_for('software_versions.view', software_name=version.software.name, version=version.version),
-                                edit_url=url_for('software_versions.edit', software_name=version.software.name, version=version.version),
-                                delete_url=url_for('software_versions.delete', software_name=version.software.name, version=version.version),
-                                delete_message='Êtes-vous sûr de vouloir supprimer cette version?'
-                            ) }}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+{% block table_rows %}
+{% for version in items %}
+<tr>
+    <td>
+        <a href="{{ url_for('software_versions.view', software_name=version.software.name, version=version.version) }}">
+            {{ version.version }}
+        </a>
+    </td>
+    <td>{{ version.software.name }}</td>
+    <td>
+        {% for robot_instance in version.robots %}
+            <div>{{ robot_instance.robot_instance.client.name }} - {{ robot_instance.robot_instance.serial_number }}</div>
         {% else %}
-            {{ alert_empty_list(
-                message="Aucune version de logiciel trouvée.",
-                add_url=add_url,
-                add_text=add_text_specific
-            ) }}
-        {% endif %}
-    </div>
-</div>
-
-{{ init_search('softwareVersionsTable', 'softwareVersionsSearchInput') }}
-
-{# Afficher le formulaire d'ajout si demandé #}
-{% if show_add_form|default(false) %}
-    <div class="mt-4">
-        {% include 'add/software_version.html' with context %}
-    </div>
-{% endif %}
-{% endif %}
+            <span class="text-muted">Aucun client</span>
+        {% endfor %}
+    </td>
+    {% if not is_embedded|default(false) %}
+    {{ action_buttons(
+        view_url=url_for('software_versions.view', software_name=version.software.name, version=version.version),
+        edit_url=url_for('software_versions.edit', software_name=version.software.name, version=version.version),
+        delete_url=url_for('software_versions.delete', software_name=version.software.name, version=version.version),
+        delete_message='Êtes-vous sûr de vouloir supprimer cette version?'
+    ) }}
+    {% endif %}
+</tr>
+{% endfor %}
+{% endblock %}

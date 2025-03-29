@@ -1,103 +1,76 @@
-{# app/templates/list/partials/robot_instances.html #}
-{% if items is defined %}
-{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
-{% from 'macros/_indicateurs.html' import indicateurs with context %}
+{# templates/list/partials/robot_instances.html #}
+{% extends 'list/partials/_base_list_partial.html' %}
+{% from 'macros/_statistics.html' import stats_cards with context %}
 
-<div class="card mb-4">
-    {% set add_url = url_for('robot_instances.add') + 
-                    (('?client_id=' + client.id|string) if client is defined and client else '') + 
-                    (('&robot_model_id=' + robot_model.id|string) if robot_model is defined and robot_model else '') %}
-                    
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="fas fa-robot me-2"></i>{{ title|default('Robots Clients') }}
-            {% if show_badge|default(true) %}
-            <span class="badge bg-primary ms-2">{{ items|length }}</span>
-            {% endif %}
-        </h5>
-        {% if (show_add_button|default(true)) and (items|length > 0 or not hide_add_when_empty|default(true)) %}
-            <a href="{{ add_url }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>{{ add_text|default('Ajouter un robot client') }}
-            </a>
-        {% endif %}
-    </div>
-    
-    <div class="card-body">
-        {% if is_list_view|default(false) %}
-        <div class="row mb-4">
-            {{ indicateurs(items=items, title='Clients Robot', color='primary') }}
-            {{ indicateurs(items=items|selectattr('software_versions')|list, title='Avec Logiciels', color='success') }}
-            {{ indicateurs(items=items|selectattr('client')|list, title='Clients Actifs', color='info') }}
-        </div>
-        {% elif not no_summary|default(false) and items|length > 0 %}
-        <div class="row mb-4">
-            {{ indicateurs(items=items|selectattr('software_versions')|list, title='Avec Logiciels', color='success') }}
-        </div>
-        {% endif %}
+{% block default_title %}Robots Clients{% endblock %}
 
-        {% if items|length > 0 %}
-            {% if show_search|default(true) %}
-            <div class="mb-3">
-                <input type="text" id="clientSearchInput" class="form-control" 
-                       placeholder="Rechercher un robot client...">
-            </div>
-            {% endif %}
-            
-             <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
-                       id="robotClientTable"
-                       data-list-filter="true"
-                       data-filter-input="clientSearchInput"
-                       data-filter-columns="{% if hide_client|default(false) and hide_model|default(false) %}2{% elif hide_client|default(false) or hide_model|default(false) %}3{% else %}4{% endif %}">
-                    <thead class="table-light">
-                        <tr>
-                            <th>N° Série</th>
-                            {% if not hide_client|default(false) %}
-                            <th>Client</th>
-                            {% endif %}
-                            {% if not hide_model|default(false) %}
-                            <th>Modèle</th>
-                            {% endif %}
-                            <th>Logiciels</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for robot_instance in items %}
-                       <tr>
-                            <td>{{ robot_instance.serial_number }}</td>
-                            {% if not hide_client|default(false) %}
-                            <td>{{ robot_instance.client.name }}</td>
-                            {% endif %}
-                            {% if not hide_model|default(false) %}
-                            <td>{{ robot_instance.robot_modele.name }}</td>
-                            {% endif %}
-                            <td>
-                                {% for software in robot_instance.software_versions %}
-                                <span class="badge bg-info">{{ software.software_version.software.name }} ({{ software.software_version.version }})</span>
-                                {% endfor %}
-                            </td>
-                            {{ action_buttons(
-                                view_url=url_for('robot_instances.view', serial_number=robot_instance.serial_number),
-                                edit_url=url_for('robot_instances.edit', serial_number=robot_instance.serial_number),
-                                delete_url=url_for('robot_instances.delete', serial_number=robot_instance.serial_number),
-                                delete_message='Êtes-vous sûr de vouloir supprimer ce robot client ?',
-                                is_td=true
-                            ) }}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            {{ alert_empty_list(
-                message="Aucun robot client trouvé.",
-                add_url=add_url,
-                add_text="Ajouter un robot client"
-            ) }}
-        {% endif %}
-    </div>
-</div>
+{% block add_url %}{{ url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') }}{% endblock %}
+{% block add_text %}Ajouter un robot client{% endblock %}
 
-{{ init_search('robotClientTable', 'clientSearchInput') }}
+{% block search_input_id %}robotInstancesSearchInput{% endblock %}
+{% block filter_input_id %}robotInstancesSearchInput{% endblock %}
+{% block table_id %}robotInstancesTable{% endblock %}
+{% block table_id_js %}robotInstancesTable{% endblock %}
+{% block table_id_js2 %}robotInstancesTable{% endblock %}
+{% block search_placeholder %}Rechercher un robot client...{% endblock %}
+{% block filter_columns %}{% if hide_client|default(false) and hide_model|default(false) %}2{% elif hide_client|default(false) or hide_model|default(false) %}3{% else %}4{% endif %}{% endblock %}
+
+{% block tbody_id %}robot-instances-table-body{% endblock %}
+{% block tbody_id_js %}robot-instances-table-body{% endblock %}
+
+{% block empty_message %}Aucun robot client trouvé.{% endblock %}
+
+{% block quick_stats %}
+{% if quick_stats|default(false) and not is_embedded|default(false) %}
+    {{ stats_cards([
+        {'title': 'Robots Clients', 'value': items|length, 'color': 'primary', 'icon': 'robot'},
+        {'title': 'Avec Logiciels', 'value': robots_with_software|default(0), 'color': 'success', 'icon': 'code', 'subtitle': 'installés'},
+        {'title': 'Clients Uniques', 'value': unique_clients|default(0), 'color': 'info', 'icon': 'building', 'subtitle': 'possédant des robots'}
+    ]) }}
 {% endif %}
+{% endblock %}
+
+{% block table_headers %}
+<th scope="col">N° Série</th>
+{% if not hide_client|default(false) %}
+<th scope="col">Client</th>
+{% endif %}
+{% if not hide_model|default(false) %}
+<th scope="col">Modèle</th>
+{% endif %}
+<th scope="col">Logiciels</th>
+{% if not is_embedded|default(false) %}
+<th scope="col" class="no-sort">Actions</th>
+{% endif %}
+{% endblock %}
+
+{% block table_rows %}
+{% for robot_instance in items %}
+<tr>
+    <td>
+        <a href="{{ url_for('robot_instances.view', serial_number=robot_instance.serial_number) }}">
+            {{ robot_instance.serial_number }}
+        </a>
+    </td>
+    {% if not hide_client|default(false) %}
+    <td>{{ robot_instance.client.name }}</td>
+    {% endif %}
+    {% if not hide_model|default(false) %}
+    <td>{{ robot_instance.robot_modele.name }}</td>
+    {% endif %}
+    <td>
+        {% for software in robot_instance.softwares %}
+        <span class="badge bg-info">{{ software.software.name }} ({{ software.software_version.version }})</span>
+        {% endfor %}
+    </td>
+    {% if not is_embedded|default(false) %}
+    {{ action_buttons(
+        view_url=url_for('robot_instances.view', serial_number=robot_instance.serial_number),
+        edit_url=url_for('robot_instances.edit', serial_number=robot_instance.serial_number),
+        delete_url=url_for('robot_instances.delete', serial_number=robot_instance.serial_number),
+        delete_message='Êtes-vous sûr de vouloir supprimer ce robot client ?'
+    ) }}
+    {% endif %}
+</tr>
+{% endfor %}
+{% endblock %}

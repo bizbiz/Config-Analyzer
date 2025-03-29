@@ -12,7 +12,27 @@ configurations_bp = Blueprint('configurations', __name__, url_prefix='/configura
 @configurations_bp.route('/list')
 def list():
     configurations = ConfigurationInstance.query.all()
-    return render_template('list/configurations.html', configurations=configurations)
+    
+    # Calcul des statistiques
+    
+    # Nombre de logiciels concernés
+    # Nous comptons les logiciels distincts liés aux versions de logiciels utilisées
+    # dans les configurations
+    total_softwares = db.session.query(func.count(distinct(Software.id)))\
+        .join(SoftwareVersion, SoftwareVersion.software_id == Software.id)\
+        .join(ConfigurationInstance, ConfigurationInstance.software_version_id == SoftwareVersion.id)\
+        .scalar()
+    
+    # Nombre de clients utilisant ces configurations
+    total_clients = db.session.query(func.count(distinct(Client.id)))\
+        .join(ClientConfiguration, ClientConfiguration.client_id == Client.id)\
+        .join(ConfigurationInstance, ConfigurationInstance.id == ClientConfiguration.config_id)\
+        .scalar()
+    
+    return render_template('list/configuration_instances.html', 
+                          configurations=configurations,
+                          total_softwares=total_softwares,
+                          total_clients=total_clients)
 
 @configurations_bp.route('/add', methods=['GET', 'POST'])
 def add():

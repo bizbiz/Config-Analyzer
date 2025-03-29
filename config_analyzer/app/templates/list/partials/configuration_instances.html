@@ -1,73 +1,80 @@
-{# list/partials/configuration_instances.html #}
-{% if items is defined %}
-{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{# templates/list/partials/configuration_instances.html #}
+{% extends 'list/partials/_base_list_partial.html' %}
+{% from 'macros/_statistics.html' import stats_cards with context %}
 
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="card-title mb-4">
-            <i class="fas fa-file-code me-2"></i>{{ title|default('Fichiers de configuration') }}
-            <span class="badge bg-primary ms-2">{{ items|length }}</span>
-            {% if show_add_button|default(true) and items|length > 0 %}
-                <a href="{{ add_url|default(url_for('configurations.add', entity_type='client', entity_id=client.id)) }}" class="btn btn-sm btn-primary float-end">
-                    <i class="fas fa-plus me-1"></i>{{ add_text|default('Ajouter une configuration') }}
-                </a>
-            {% endif %}
-        </h5>
-        
-        {% if items %}
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
-                       id="configInstancesTable"
-                       data-list-filter="true"
-                       data-filter-input="configInstancesSearchInput" 
-                       data-filter-columns="3">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nom du fichier</th>
-                            <th>Date</th>
-                            <th>Logiciel</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for config in items %}
-                        <tr>
-                            <td>
-                                {% if config.file_name %}
-                                    {{ config.file_name }}
-                                {% else %}
-                                    Configuration #{{ config.id }}
-                                {% endif %}
-                            </td>
-                            <td>{{ config.snapshot_date|datetimeformat('%d/%m/%Y') }}</td>
-                            <td>
-                                {% if config.software_version %}
-                                    {{ config.software_version.software.name }} {{ config.software_version.version }}
-                                {% else %}
-                                    Non spécifié
-                                {% endif %}
-                            </td>
-                            {{ action_buttons(
-                                view_url=url_for('parsed_files.view', config_id=config.id),
-                                edit_url=url_for('configurations.edit', config_id=config.id),
-                                delete_url=url_for('configurations.delete', config_id=config.id),
-                                delete_message='Êtes-vous sûr de vouloir supprimer cette configuration ?'
-                            ) }}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="alert alert-info mb-0">
-                <i class="fas fa-info-circle me-2"></i>Aucune configuration enregistrée
-                <a href="{{ add_url|default(url_for('configurations.add', entity_type='client', entity_id=client.id)) }}" class="alert-link">
-                    {{ add_text|default('Ajouter une première configuration') }}
-                </a>
-            </div>
-        {% endif %}
-    </div>
-</div>
+{% block default_title %}Configurations{% endblock %}
 
-{{ init_search('configInstancesTable', 'configInstancesSearchInput') }}
+{% block add_url %}{{ url_for('configurations.add') }}{% endblock %}
+{% block add_text %}Ajouter une configuration{% endblock %}
+
+{% block search_input_id %}configsSearchInput{% endblock %}
+{% block filter_input_id %}configsSearchInput{% endblock %}
+{% block table_id %}configsTable{% endblock %}
+{% block table_id_js %}configsTable{% endblock %}
+{% block table_id_js2 %}configsTable{% endblock %}
+{% block search_placeholder %}Rechercher une configuration...{% endblock %}
+{% block filter_columns %}3{% endblock %}
+
+{% block tbody_id %}configs-table-body{% endblock %}
+{% block tbody_id_js %}configs-table-body{% endblock %}
+
+{% block empty_message %}Aucune configuration trouvée.{% endblock %}
+
+{% block quick_stats %}
+{% if quick_stats|default(false) and not is_embedded|default(false) %}
+    {{ stats_cards([
+        {'title': 'Configurations', 'value': items|length, 'color': 'primary', 'icon': 'file-code'},
+        {'title': 'Logiciels Concernés', 'value': total_softwares|default(0), 'color': 'success', 'icon': 'code', 'subtitle': 'couverts'},
+        {'title': 'Clients Utilisateurs', 'value': total_clients|default(0), 'color': 'info', 'icon': 'users', 'subtitle': 'actifs'}
+    ]) }}
 {% endif %}
+{% endblock %}
+
+{% block table_headers %}
+<th scope="col">Nom du fichier</th>
+<th scope="col">Logiciel</th>
+<th scope="col">Version</th>
+{% if not is_embedded|default(false) %}
+<th scope="col" class="no-sort">Actions</th>
+{% endif %}
+{% endblock %}
+
+{% block table_rows %}
+{% for config in items %}
+<tr>
+    <td>
+        {% if config.file_name %}
+            <a href="{{ url_for('configurations.view', config_id=config.id) }}">
+                {{ config.file_name }}
+            </a>
+        {% else %}
+            <a href="{{ url_for('configurations.view', config_id=config.id) }}">
+                Configuration #{{ config.id }}
+            </a>
+        {% endif %}
+    </td>
+    <td>
+        {% if config.software_version %}
+            {{ config.software_version.software.name }}
+        {% else %}
+            <span class="text-muted">Non spécifié</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if config.software_version %}
+            {{ config.software_version.version }}
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    {% if not is_embedded|default(false) %}
+    {{ action_buttons(
+        view_url=url_for('configurations.view', config_id=config.id),
+        edit_url=url_for('configurations.edit', config_id=config.id),
+        delete_url=url_for('configurations.delete', config_id=config.id),
+        delete_message='Êtes-vous sûr de vouloir supprimer cette configuration ?'
+    ) }}
+    {% endif %}
+</tr>
+{% endfor %}
+{% endblock %}
