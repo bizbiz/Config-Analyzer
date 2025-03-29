@@ -8,23 +8,25 @@
         title=title|default('Robots Clients'),
         add_url=url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
         add_text="Ajouter un robot client",
-        show_button=show_add_button|default(true)
+        show_button=(show_add_button|default(true)) and (items|length > 0 or not hide_add_when_empty|default(true)),
+        show_badge=show_badge|default(false),
+        badge_count=items|length
     ) }}
     
     <div class="card-body">
         {% if is_list_view|default(false) %}
         <div class="row mb-4">
             {{ indicateurs(items=items, title='Clients Robot', color='primary') }}
-            {{ indicateurs(items=items|selectattr('softwares')|list, title='Avec Logiciels', color='success') }}
+            {{ indicateurs(items=items|selectattr('software_versions')|list, title='Avec Logiciels', color='success') }}
             {{ indicateurs(items=items|selectattr('client')|list, title='Clients Actifs', color='info') }}
         </div>
-        {% elif not no_summary|default(false) %}
+        {% elif not no_summary|default(false) and items|length > 0 %}
         <div class="row mb-4">
-            {{ indicateurs(items=items|selectattr('softwares')|list, title='Avec Logiciels', color='success') }}
+            {{ indicateurs(items=items|selectattr('software_versions')|list, title='Avec Logiciels', color='success') }}
         </div>
         {% endif %}
 
-        {% if items %}
+        {% if items|length > 0 %}
             {% if show_search|default(true) %}
             <div class="mb-3">
                 <input type="text" id="clientSearchInput" class="form-control" 
@@ -62,8 +64,8 @@
                             <td>{{ robot_instance.robot_modele.name }}</td>
                             {% endif %}
                             <td>
-                                {% for software in robot_instance.softwares %}
-                                <span class="badge bg-info">{{ software.software.name }} ({{ software.software_version.version }})</span>
+                                {% for software in robot_instance.software_versions %}
+                                <span class="badge bg-info">{{ software.software_version.software.name }} ({{ software.software_version.version }})</span>
                                 {% endfor %}
                             </td>
                             {{ action_buttons(

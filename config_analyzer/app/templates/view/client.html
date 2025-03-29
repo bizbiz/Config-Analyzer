@@ -66,23 +66,26 @@
         {% with 
             items=robots,
             title="Robots associés",
-            add_url=url_for('robot_instances.add') + "?client_id=" + client.id|string,
-            add_text="Ajouter un robot",
             show_add_button=true,
+            hide_add_when_empty=true,
+            hide_model=false,
             hide_client=true,
             client=client,
-            is_list_view=false
+            is_list_view=false,
+            show_badge=true
         %}
             {% include 'list/partials/robot_instances.html' %}
         {% endwith %}
 
-        <!-- Section Fichiers de configuration -->
+        {# Extrait pour fichiers de configuration #}
         {% with 
             items=configurations,
             title="Fichiers de configuration",
             add_url=url_for('configurations.add', entity_type='client', entity_id=client.id),
             add_text="Ajouter une configuration",
-            show_add_button=true
+            show_add_button=true,
+            hide_add_when_empty=true,
+            show_badge=true
         %}
             {% include 'list/partials/configuration_instances.html' %}
         {% endwith %}
