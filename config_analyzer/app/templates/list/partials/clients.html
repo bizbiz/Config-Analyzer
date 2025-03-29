@@ -1,5 +1,6 @@
 {# templates/list/partials/clients.html #}
 {% extends 'list/partials/_base_list_partial.html' %}
+{% from 'macros/_statistics.html' import stats_cards with context %}
 
 {% block default_title %}Clients{% endblock %}
 
@@ -10,6 +11,7 @@
 {% block filter_input_id %}clientsSearchInput{% endblock %}
 {% block table_id %}clientsTable{% endblock %}
 {% block table_id_js %}clientsTable{% endblock %}
+{% block table_id_js2 %}clientsTable{% endblock %}
 {% block search_placeholder %}Rechercher un client...{% endblock %}
 {% block filter_columns %}4{% endblock %}
 
@@ -17,6 +19,16 @@
 {% block tbody_id_js %}clients-table-body{% endblock %}
 
 {% block empty_message %}Aucun client trouvé.{% endblock %}
+
+{% block quick_stats %}
+{% if quick_stats|default(false) and not is_embedded|default(false) %}
+    {{ stats_cards([
+        {'title': 'Total Clients', 'value': items|length, 'color': 'primary', 'icon': 'building'},
+        {'title': 'Clients Actifs', 'value': active_clients|default(0), 'color': 'success', 'icon': 'check-circle', 'subtitle': 'avec projets en cours'},
+        {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
+    ]) }}
+{% endif %}
+{% endblock %}
 
 {% block table_headers %}
 <th scope="col">Nom</th>

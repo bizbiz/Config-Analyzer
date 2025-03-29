@@ -1,4 +1,4 @@
-{# /templates/list/clients.html #}
+{# templates/list/clients.html #}
 {% extends "base.html" %}
 
 {% block title %}Liste des Clients{% endblock %}
@@ -7,19 +7,8 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Clients</h1>
     
-    {% with items=clients, show_add_button=false %}
+    {% with items=clients, show_add_button=false, quick_stats=true %}
         {% include 'list/partials/clients.html' %}
-    {% endwith %}
-    
-    <!-- Section pour afficher les paramètres additionnels -->
-    {% with 
-        params=additional_params,
-        entity_name="tous les clients",
-        entity_type="client",
-        entity_slug=None,
-        show_add_button=false
-    %}
-        {% include 'list/partials/additional_params_config.html' %}
     {% endwith %}
     
     <div class="card p-4 shadow-sm mt-4">
@@ -30,24 +19,22 @@
             name_error=name_error,
             postal_code_error=postal_code_error,
             city_error=city_error,
-            country_code_error=country_code_error
+            country_code_error=country_code_error,
+            countries=countries
         %}
             {% include 'add/partials/client.html' %}
         {% endwith %}
     </div>
     
-    <div class="card p-4 shadow-sm mt-4">
-        <h2 class="mb-3">Ajouter des paramètres personnalisés à <strong>tous</strong> vos clients</h2>
-        
-        {% with entity_type='client', entity_slug=None, entity=None %}
-            {% include 'add/partials/additional_params_config.html' %}
-        {% endwith %}
-
-    </div>
-    <script>
-        window.APP_CONFIG = {
-            additionalParamsConfigs: {{ configs_json|tojson|safe }}
-        };
-    </script>
+    <!-- Section pour afficher les paramètres additionnels -->
+    {% with 
+        params_configs=configs_json|default([]),
+        entity_name="tous les clients",
+        entity_type="client",
+        entity_slug=None,
+        show_add_button=false
+    %}
+        {% include 'list/partials/additional_params_config.html' %}
+    {% endwith %}
 </div>
 {% endblock %}

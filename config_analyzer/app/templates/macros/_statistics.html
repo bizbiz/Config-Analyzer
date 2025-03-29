@@ -1,0 +1,20 @@
+{# templates/macros/_statistics.html #}
+{% macro stats_cards(stats_items) %}
+<div class="row mb-4">
+    {% for item in stats_items %}
+    <div class="col-md-{{ 12 / stats_items|length }}">
+        <div class="card border-{{ item.color|default('primary') }} h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title text-{{ item.color|default('primary') }} mb-3">
+                    <i class="fas fa-{{ item.icon|default('chart-bar') }} me-2"></i>{{ item.title }}
+                </h5>
+                <div class="display-4 fw-bold text-muted">
+                    {{ item.value }}
+                </div>
+                <small class="text-muted">{{ item.subtitle|default('') }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}

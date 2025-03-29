@@ -149,3 +149,18 @@
 .data-table th:not(.no-sort):hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
+
+/* Style pour les actions groupées */
+.table-batch-actions {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.selected-count {
+    font-size: 0.85rem;
+    color: #6c757d;
+}

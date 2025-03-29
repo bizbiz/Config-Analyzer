@@ -1,5 +1,4 @@
 /**
- * static/js/table_sorter.js
  * Système de tri de tableau avancé
  * - Toutes les colonnes sont triables (sauf celles marquées no-sort)
  * - Affiche une flèche uniquement sur la colonne active
@@ -123,14 +122,11 @@ function initSortableTable(tableId, tbodyId) {
     });
 }
 
-// Initialiser tous les tableaux triables au chargement de la page
-document.addEventListener('DOMContentLoaded', () => {
-    const sortableTables = document.querySelectorAll('table[data-sortable]');
-    
-    sortableTables.forEach(table => {
-        const tableId = table.id;
-        const tbodyId = table.querySelector('tbody').id || `${tableId}-body`;
-        
-        initSortableTable(tableId, tbodyId);
+// Fonction pour effacer les filtres
+function clearFilters() {
+    const searchInputs = document.querySelectorAll('input[id$="SearchInput"]');
+    searchInputs.forEach(input => {
+        input.value = '';
+        input.dispatchEvent(new Event('keyup'));
     });
-});
+}

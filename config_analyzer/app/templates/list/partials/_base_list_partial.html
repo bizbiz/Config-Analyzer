@@ -7,14 +7,16 @@
 <div class="card {% if not is_embedded|default(false) %}mt-4{% endif %}">
     {% if not is_embedded|default(false) %}
         {{ card_header(
-            title=title|default(block('default_title')),
-            add_url=block('add_url'),
-            add_text=block('add_text')|default("Ajouter"),
+            title=title|default(self.default_title()),
+            add_url=self.add_url(),
+            add_text=self.add_text()|default("Ajouter"),
             show_button=show_add_button|default(true)
         ) }}
     {% endif %}
     
     <div class="card-body">
+        {% block quick_stats %}{% endblock %}
+        
         {% block pre_table_content %}{% endblock %}
 
         {% if items %}
@@ -24,6 +26,8 @@
                        placeholder="{% block search_placeholder %}Rechercher...{% endblock %}">
             </div>
             {% endif %}
+            
+            {% block table_actions %}{% endblock %}
             
             <div class="table-responsive">
                 <table class="table table-striped {% if not is_embedded|default(false) %}table-bordered{% endif %} align-middle data-table" 
@@ -46,25 +50,33 @@
                     </tbody>
                 </table>
             </div>
+            
+            {% block pagination %}{% endblock %}
+            
         {% else %}
-            {{ alert_empty_list(
-                message=block('empty_message')|default("Aucun élément trouvé."),
-                add_url=block('add_url'),
-                add_text=block('add_text')|default("Ajouter")
-            ) }}
+            {% block empty_state %}
+                {{ alert_empty_list(
+                    message=self.empty_message()|default("Aucun élément trouvé."),
+                    add_url=self.add_url(),
+                    add_text=self.add_text()|default("Ajouter")
+                ) }}
+            {% endblock %}
         {% endif %}
     </div>
 </div>
 
 {% if not is_embedded|default(false) %}
-{{ init_search(block('table_id'), block('search_input_id')) }}
+{{ init_search(self.table_id(), self.search_input_id()) }}
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/table_sorter.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialiser le tri pour ce tableau
-    initSortableTable('{% block table_id_js %}entityTable{% endblock %}', '{% block tbody_id_js %}entity-table-body{% endblock %}');
+    const tableElement = document.getElementById('{% block table_id_js %}entityTable{% endblock %}');
+    if (tableElement) {
+        initSortableTable('{% block table_id_js2 %}entityTable{% endblock %}', '{% block tbody_id_js %}entity-table-body{% endblock %}');
+    }
 });
 </script>
 
