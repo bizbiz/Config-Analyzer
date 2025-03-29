@@ -230,3 +230,59 @@ On peut rajouter des parametres à n'importe quel entité (robot, client, softwa
 Le polymorphisme je l'utilise pour gérer mes entités (robot, software, etc)
 Et pour gérer mes parametres : FloatParameter, EnumParameter, StringParameter, etc
 
+=======================
+
+
+1. Composants réutilisables pour les sections spécifiques à chaque entité
+
+Cartes d'indicateurs communes
+
+La section d'indicateurs dans robot_instances.html pourrait être extraite dans une macro réutilisable
+Créer une macro {% macro stats_cards(items, stats_config) %} qui accepte une configuration d'indicateurs
+
+
+Système de filtres avancés
+
+Ajouter un bloc standard pour les filtres avancés (date, statut, etc.)
+Permettre aux listes spécifiques d'injecter leurs propres filtres
+
+
+
+2. Fonctionnalités d'amélioration de l'interface utilisateur
+
+Ajout de pagination standardisée
+Sélection et actions groupées
+
+Ajouter une case à cocher en en-tête de colonne et sur chaque ligne
+Barre d'action contextuelle qui apparaît lors de la sélection
+
+Options d'affichage (vue tableau/cartes)
+
+Message "Pas de résultats" contextuel
+
+Détecter si des filtres sont actifs et afficher un message approprié
+Offrir des actions suggérées en fonction du contexte
+
+
+
+3. Optimisation et performances
+
+Chargement paresseux (lazy loading)
+
+Pour les longues listes, charger seulement les premières lignes
+Ajouter un défilement infini ou "Charger plus" pour de meilleures performances
+
+
+Sauvegarde de l'état des filtres et tris
+4. Harmonisation des modèles
+
+Actions standardisées
+
+Les colonnes d'action devraient avoir un comportement cohérent
+Harmoniser les icônes et les messages de confirmation
+
+
+Colonnes communes
+
+Certaines colonnes (date de création, dernière modification) pourraient être standardisées
+Formatage cohérent pour les différents types de données

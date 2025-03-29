@@ -59,6 +59,19 @@ def list():
     form_data = {}
     name_error = postal_code_error = city_error = country_code_error = None
     
+    # Calcul des statistiques
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    
+    # Date du début du mois courant
+    current_month_start = datetime(datetime.now().year, datetime.now().month, 1)
+    
+    # Nouveaux clients ce mois-ci
+    new_clients = Client.query.filter(Client.created_at >= current_month_start).count()
+    
+    # Total des robots pour tous les clients
+    total_robots = db.session.query(func.count(RobotInstance.id)).scalar()
+    
     # Obtenir la liste des pays pour le formulaire d'ajout rapide
     countries = get_countries_list()
 
@@ -87,7 +100,10 @@ def list():
         name_error=name_error,
         postal_code_error=postal_code_error,
         city_error=city_error,
-        country_code_error=country_code_error
+        country_code_error=country_code_error,
+        # Ajout des statistiques
+        new_clients=new_clients,
+        total_robots=total_robots
     )
 
 @clients_bp.route('/add', methods=['GET', 'POST'])

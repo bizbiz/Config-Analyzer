@@ -24,7 +24,7 @@
 {% if quick_stats|default(false) and not is_embedded|default(false) %}
     {{ stats_cards([
         {'title': 'Total Clients', 'value': items|length, 'color': 'primary', 'icon': 'building'},
-        {'title': 'Clients Actifs', 'value': active_clients|default(0), 'color': 'success', 'icon': 'check-circle', 'subtitle': 'avec projets en cours'},
+        {'title': 'Nombre de Robots', 'value': total_robots|default(0), 'color': 'success', 'icon': 'robot', 'subtitle': 'associés aux clients'},
         {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
     ]) }}
 {% endif %}
