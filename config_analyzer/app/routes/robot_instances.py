@@ -10,15 +10,48 @@ robot_instances_bp = Blueprint('robot_instances', __name__, url_prefix='/robot-i
 
 @robot_instances_bp.route('/list')
 def list():
-    robots = RobotInstance.query.options(
+    # Récupérer tous les robots
+    robot_instances = RobotInstance.query.options(
         db.joinedload(RobotInstance.client),
-        db.joinedload(RobotInstance.model)
+        db.joinedload(RobotInstance.model),
+        db.joinedload(RobotInstance.software_versions)
     ).all()
     
+    # Calculer les statistiques
+    robots_with_software = sum(1 for ri in robot_instances if ri.software_versions)
+    
+    # Obtenir le nombre de clients uniques
+    client_ids = set(ri.client_id for ri in robot_instances)
+    unique_clients = len(client_ids)
+    
+    # Récupérer les configurations de paramètres pour les robots
+    from app.models.parameters.definitions import ParameterDefinition
+    from app.models.enums import EntityType
+    
+    params_configs = ParameterDefinition.query.filter(
+        ParameterDefinition.target_entity == EntityType.ROBOT_INSTANCE
+    ).all()
+    
+    # Sérialiser pour JavaScript
+    configs_json = [{
+        'id': config.id,
+        'name': config.name,
+        'description': config.description,
+        'type': config.definition_type
+    } for config in params_configs]
+    
     return render_template('list/robot_instances.html', 
-                         robots=robots,
-                         clients=Client.query.all(),
-                         robot_models=RobotModel.query.all())
+                          robot_instances=robot_instances,
+                          robots_with_software=robots_with_software,
+                          unique_clients=unique_clients,
+                          configs_json=configs_json,
+                          clients=Client.query.all(),
+                          robot_models=RobotModel.query.all(),
+                          form_data={},
+                          preselected_model_id=None,
+                          serial_number_error=None,
+                          length_error=None,
+                          height_error=None)
 
 @robot_instances_bp.route('/add', methods=['GET', 'POST'])
 def add():
@@ -27,7 +60,6 @@ def add():
             # Récupération et validation des données du formulaire
             serial_number = request.form.get('serial_number')
             client_id = request.form.get('client_id')
-            # Vérifier les deux noms possibles pour le champ
             robot_model_id = request.form.get('robot_model_id')
             if not robot_model_id:
                 robot_model_id = request.form.get('robot_modele_id')
@@ -40,12 +72,33 @@ def add():
                                     robot_models=RobotModel.query.all(),
                                     form_data=request.form)
             
-            # Création du robot (sans length et height pour l'instant)
+            # Obtenir les données du client et du modèle pour créer un nom
+            client = Client.query.get(client_id)
+            robot_model = RobotModel.query.get(robot_model_id)
+            
+            if not client or not robot_model:
+                flash("Client ou modèle de robot invalide", "error")
+                return render_template('add/robot_instance.html',
+                                      clients=Client.query.all(),
+                                      robot_models=RobotModel.query.all(),
+                                      form_data=request.form)
+            
+            # Créer un nom pour l'entité (obligatoire)
+            name = f"{client.name} - {robot_model.name} - {serial_number}"
+            
+            # Création du robot avec le nom
             new_robot = RobotInstance(
+                name=name,  # Ajout du nom obligatoire
                 serial_number=serial_number,
                 client_id=int(client_id),
                 robot_model_id=int(robot_model_id)
             )
+            
+            # Ajout des attributs facultatifs
+            if request.form.get('length'):
+                setattr(new_robot, 'length', float(request.form.get('length')))
+            if request.form.get('height'):
+                setattr(new_robot, 'height', float(request.form.get('height')))
                 
             db.session.add(new_robot)
             db.session.commit()
