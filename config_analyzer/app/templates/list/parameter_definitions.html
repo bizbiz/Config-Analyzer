@@ -1,0 +1,25 @@
+{# config_analyzer/app/templates/list/parameter_definitions.html}
+{% extends "base.html" %}
+
+{% block title %}Liste des Paramètres{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Paramètres</h1>
+    
+    {% with 
+        items=parameters,
+        show_add_button=true,
+        entity_type=None,
+        entity_slug=None,
+        add_url=url_for('additional_params_config.add')
+    %}
+        {% include 'list/partials/parameter_definitions.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+    </div>
+</div>
+{% endblock %}

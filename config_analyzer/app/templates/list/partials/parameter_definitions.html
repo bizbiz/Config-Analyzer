@@ -1,0 +1,66 @@
+{# list/partials/parameter_definitions.html #}
+{% if items is defined %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list, display_param_type_badge with context %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-4">
+            <i class="fas fa-cog me-2"></i>{{ title|default('Paramètres spécifiques') }}
+            <span class="badge bg-primary ms-2">{{ items|length }}</span>
+            {% if show_add_button|default(true) and items|length > 0 %}
+                <a href="{{ add_url|default(url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug)) }}" class="btn btn-sm btn-primary float-end">
+                    <i class="fas fa-plus me-1"></i>{{ add_text|default('Ajouter un paramètre') }}
+                </a>
+            {% endif %}
+        </h5>
+        
+        {% if items %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle" 
+                       id="paramDefTable"
+                       data-list-filter="true"
+                       data-filter-input="paramDefSearchInput" 
+                       data-filter-columns="3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Type</th>
+                            <th>Valeur</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param in items %}
+                        <tr>
+                            <td>{{ param.name }}</td>
+                            <td>{{ display_param_type_badge(param) }}</td>
+                            <td>
+                                {% if param.active_parameter %}
+                                    {{ param.active_parameter.value }}
+                                {% else %}
+                                    <span class="text-danger">Non configuré</span>
+                                {% endif %}
+                            </td>
+                            {{ action_buttons(
+                                edit_url=url_for('additional_params_config.edit', config_id=param.id),
+                                delete_url=url_for('additional_params_config.delete', config_id=param.id),
+                                delete_message='Êtes-vous sûr de vouloir supprimer ce paramètre ?'
+                            ) }}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>Aucun paramètre configuré
+                <a href="{{ add_url|default(url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug)) }}" class="alert-link">
+                    {{ add_text|default('Ajouter un premier paramètre') }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{{ init_search('paramDefTable', 'paramDefSearchInput') }}
+{% endif %}

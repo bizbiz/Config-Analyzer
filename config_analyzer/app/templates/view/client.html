@@ -63,99 +63,40 @@
         </div>
 
         <!-- Section Robots associés -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-4">
-                    <i class="fas fa-robot me-2"></i>Robots associés
-                    <span class="badge bg-primary ms-2">{{ robots|length }}</span>
-                </h5>
-                
-                {% if robots %}
-                <div class="list-group">
-                    {% for robot in robots %}
-                    <a href="{{ url_for('robot_instances.view', serial_number=robot.serial_number) }}" 
-                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1">{{ robot.serial_number }}</h6>
-                            <small class="text-muted">{{ robot.robot_modele.name }}</small>
-                        </div>
-                        <span class="badge bg-primary rounded-pill">
-                            {{ robot.software_versions|length }} versions logicielles
-                        </span>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="alert alert-info mb-0">
-                    <i class="fas fa-info-circle me-2"></i>Aucun robot associé à ce client
-                </div>
-                {% endif %}
-            </div>
-        </div>
+        {% with 
+            items=robots,
+            title="Robots associés",
+            add_url=url_for('robot_instances.add') + "?client_id=" + client.id|string,
+            add_text="Ajouter un robot",
+            show_add_button=true,
+            hide_client=true
+        %}
+            {% include 'list/partials/robot_instances.html' %}
+        {% endwith %}
 
-        <!-- Section Configurations -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-4">
-                    <i class="fas fa-file-code me-2"></i>Fichiers de configuration
-                    <span class="badge bg-primary ms-2">{{ configurations|length }}</span>
-                </h5>
-                
-                {% if configurations %}
-                <div class="row g-4">
-                    {% for config in configurations %}
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-muted">
-                                    {{ config.snapshot_date.strftime('%d/%m/%Y') }}
-                                </h6>
-                                <h5 class="card-title">
-                                    {% if config.instance_configuration %}
-                                        {{ config.instance_configuration.file_name }}
-                                    {% else %}
-                                        Configuration #{{ config.id }}
-                                    {% endif %}
-                                </h5>
-                                <a href="{{ url_for('parsed_files.view', config_id=config.id) }}" 
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-search me-2"></i>Inspecter
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="alert alert-info mb-0">
-                    <i class="fas fa-info-circle me-2"></i>Aucune configuration enregistrée
-                </div>
-                {% endif %}
-            </div>
-        </div>
+        <!-- Section Fichiers de configuration -->
+        {% with 
+            items=configurations,
+            title="Fichiers de configuration",
+            add_url=url_for('configurations.add', entity_type='client', entity_id=client.id),
+            add_text="Ajouter une configuration",
+            show_add_button=true
+        %}
+            {% include 'list/partials/configuration_instances.html' %}
+        {% endwith %}
 
         <!-- Section Paramètres -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-4">
-                    <i class="fas fa-cog me-2"></i>Paramètres spécifiques
-                    <span class="badge bg-primary ms-2">{{ (configured_params|length + unconfigured_params|length) }}</span>
-                </h5>
-                
-                {% if configured_params or unconfigured_params %}
-                    {{ param_table(
-                        configured_params + unconfigured_params, 
-                        'client', 
-                        client.slug
-                    ) }}
-                {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Aucun paramètre configuré
-                        <a href="{{ url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug) }}" class="alert-link">Ajouter un premier paramètre</a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+        {% with 
+            items=configured_params + unconfigured_params,
+            title="Paramètres spécifiques",
+            entity_type='client',
+            entity_slug=client.slug,
+            add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
+            add_text="Ajouter un paramètre",
+            show_add_button=true
+        %}
+            {% include 'list/partials/parameter_definitions.html' %}
+        {% endwith %}
 
     <!-- Actions globales -->
     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
