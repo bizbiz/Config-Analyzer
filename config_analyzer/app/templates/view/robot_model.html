@@ -1,140 +1,88 @@
 {# /app/templates/view/robot_model.html #}
-{% extends "base.html" %}
-{% from "macros/_table_ui.html" import 
-    param_table, 
-    card_header, 
-    alert_empty_list, 
-    display_param_rules,
-    display_param_value
-%}
-{% block title %}Détails du robot : {{ robot_model.name }}{% endblock %}
+{% extends "view/entity_detail_base.html" %}
+{% from "macros/_entity_sections.html" import parameters_section %}
+{% from "macros/_common_ui.html" import spaced_section %}
 
-{% block content %}
-<div class="container py-5">
-    <!-- En-tête avec boutons d'action -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Détails du robot : {{ robot_model.name }}</h1>
-        <div class="btn-group">
-            <a href="{{ url_for('robot_models.edit', slug=robot_model.slug) }}" 
-               class="btn btn-outline-primary">
-                <i class="fas fa-edit"></i> Modifier
-            </a>
-            <a href="{{ url_for('additional_params_config.add', entity_type='robot_model', entity_slug=robot_model.slug) }}" 
-               class="btn btn-outline-success">
-                <i class="fas fa-cog"></i> Ajouter un paramètre
-            </a>
-        </div>
-    </div>
+{% block entity_title %}Détails du robot : {{ robot_model.name }}{% endblock %}
+{% block entity_header %}Détails du robot : {{ robot_model.name }}{% endblock %}
 
-    <div class="card p-4 shadow-sm mb-4">
-        <!-- Informations générales et statistiques -->
-        <div class="row mb-4">
-            <!-- Informations de base -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Informations générales</h5>
-                        <dl class="row">
-                            <dt class="col-sm-4">Nom</dt>
-                            <dd class="col-sm-8">{{ robot_model.name }}</dd>
-                            
-                            <dt class="col-sm-4">Fabricant</dt>
-                            <dd class="col-sm-8">{{ robot_model.company }}</dd>
-                            
-                            <dt class="col-sm-4">Créé le</dt>
-                            <dd class="col-sm-8">{{ robot_model.created_at.strftime('%d/%m/%Y %H:%M') }}</dd>
-                            
-                            <dt class="col-sm-4">Mise à jour le</dt>
-                            <dd class="col-sm-8">{{ robot_model.updated_at.strftime('%d/%m/%Y %H:%M') }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Statistiques -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Statistiques</h5>
-                        <dl class="row">
-                            <dt class="col-sm-6">Clients associés</dt>
-                            <dd class="col-sm-6">{{ instances|length }}</dd>
-                            
-                            <dt class="col-sm-6">Logiciels compatibles</dt>
-                            <dd class="col-sm-6">{{ robot_model.software_associations|length }}</dd>
-                            
-                            <dt class="col-sm-6">Paramètres</dt>
-                            <dd class="col-sm-6">{{ configured_params|length + unconfigured_params|length }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section Logiciels utilisés -->
-        {% with 
-            items=robot_model.software_associations|map(attribute='software')|list,
-            title="Logiciels utilisés",
-            is_embedded=true,
-            entity_name=robot_model.name,
-            show_search=false,
-            show_add_button=true,
-            hide_add_when_empty=true,
-            add_url=url_for('robot_models.edit', slug=robot_model.slug),
-            add_text="Ajouter un logiciel",
-            show_badge=true,
-            show_sort=true
-        %}
-            {% include 'list/partials/softwares.html' %}
-        {% endwith %}
-
-        <!-- Section Clients utilisant ce robot -->
-        {% with 
-            items=instances, 
-            robot_model=robot_model,
-            hide_model=true, 
-            title="Clients utilisant ce robot",
-            show_add_button=true,
-            hide_add_when_empty=true,
-            no_summary=false,
-            show_badge=true
-        %}
-            {% include 'list/partials/robot_instances.html' %}
-        {% endwith %}
-
-        <!-- Section Paramètres -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-cogs me-2"></i>Paramètres 
-                    <span class="badge bg-primary ms-2">{{ configured_params|length + unconfigured_params|length }}</span>
-                </h5>
-                {% if (configured_params|length + unconfigured_params|length) > 0 %}
-                <a href="{{ url_for('additional_params_config.add', entity_type='robot_model', entity_slug=robot_model.slug) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-1"></i>Ajouter un paramètre
-                </a>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if (configured_params|length + unconfigured_params|length) > 0 %}
-                    {{ param_table(configured_params + unconfigured_params, 'robot_model', robot_model.slug, editable=true) }}
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>Aucun paramètre défini.
-                    <a href="{{ url_for('additional_params_config.add', entity_type='robot_model', entity_slug=robot_model.slug) }}" class="alert-link">
-                        Ajouter un paramètre
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Bouton de retour -->
-    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-        <a href="{{ url_for('robot_models.list') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Retour à la liste des modèles
-        </a>
-    </div>
-</div>
+{% block action_buttons %}
+<a href="{{ url_for('robot_models.edit', slug=robot_model.slug) }}" 
+   class="btn btn-outline-primary">
+    <i class="fas fa-edit"></i> Modifier
+</a>
+<a href="{{ url_for('additional_params_config.add', entity_type='robot_model', entity_slug=robot_model.slug) }}" 
+   class="btn btn-outline-success">
+    <i class="fas fa-cog"></i> Ajouter un paramètre
+</a>
 {% endblock %}
+
+{% block info_content %}
+<dt class="col-sm-4">Nom</dt>
+<dd class="col-sm-8">{{ robot_model.name }}</dd>
+
+<dt class="col-sm-4">Fabricant</dt>
+<dd class="col-sm-8">{{ robot_model.company }}</dd>
+
+<dt class="col-sm-4">Créé le</dt>
+<dd class="col-sm-8">{{ robot_model.created_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+
+<dt class="col-sm-4">Mise à jour le</dt>
+<dd class="col-sm-8">{{ robot_model.updated_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+{% endblock %}
+
+{% block stats_content %}
+<dt class="col-sm-6">Clients associés</dt>
+<dd class="col-sm-6">{{ instances|length }}</dd>
+
+<dt class="col-sm-6">Logiciels compatibles</dt>
+<dd class="col-sm-6">{{ robot_model.software_associations|length }}</dd>
+
+<dt class="col-sm-6">Paramètres</dt>
+<dd class="col-sm-6">{{ configured_params|length + unconfigured_params|length }}</dd>
+{% endblock %}
+
+{% block entity_sections %}
+<!-- Section Logiciels utilisés -->
+<div class="mb-5">
+    {% with 
+        items=robot_model.software_associations|map(attribute='software')|list,
+        title="Logiciels utilisés",
+        is_embedded=true,
+        entity_name=robot_model.name,
+        show_search=false,
+        show_add_button=true,
+        hide_add_when_empty=true,
+        add_url=url_for('robot_models.edit', slug=robot_model.slug),
+        add_text="Ajouter un logiciel",
+        show_badge=true,
+        show_sort=true,
+        robot_model=robot_model
+    %}
+        {% include 'list/partials/softwares.html' %}
+    {% endwith %}
+</div>
+
+<!-- Section Clients utilisant ce robot -->
+<div class="mb-5">
+    {% with 
+        items=instances, 
+        robot_model=robot_model,
+        hide_model=true, 
+        title="Clients utilisant ce robot",
+        show_add_button=true,
+        hide_add_when_empty=true,
+        no_summary=false,
+        show_badge=true,
+        add_text="Ajouter un robot client"
+    %}
+        {% include 'list/partials/robot_instances.html' %}
+    {% endwith %}
+</div>
+
+<!-- Section Paramètres -->
+{{ parameters_section(configured_params, unconfigured_params, 'robot_model', robot_model.slug) }}
+{% endblock %}
+
+{% block back_url %}{{ url_for('robot_models.list') }}{% endblock %}
+{% block back_text %}Retour à la liste des modèles{% endblock %}

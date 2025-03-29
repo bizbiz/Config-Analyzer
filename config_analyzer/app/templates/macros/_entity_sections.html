@@ -1,70 +1,36 @@
-{# /app/templates/view/client.html #}
-{% extends "view/entity_detail_base.html" %}
-{% from "macros/_entity_sections.html" import parameters_section, configurations_section %}
+{# /app/templates/macros/_entity_sections.html #}
+{% from "macros/_table_ui.html" import param_table, alert_empty_list %}
 
-{% block entity_title %}Détails du Client : {{ client.name }}{% endblock %}
-{% block entity_header %}Détails du Client : {{ client.name }}{% endblock %}
-
-{% block action_buttons %}
-<a href="{{ url_for('clients.edit', slug=client.slug) }}" 
-   class="btn btn-outline-primary">
-    <i class="fas fa-edit"></i> Modifier
-</a>
-<a href="{{ url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug) }}" 
-   class="btn btn-outline-success">
-    <i class="fas fa-cog"></i> Ajouter un paramètre
-</a>
-{% endblock %}
-
-{% block info_content %}
-<dt class="col-sm-4">Nom</dt>
-<dd class="col-sm-8">{{ client.name }}</dd>
-
-<dt class="col-sm-4">Localisation</dt>
-<dd class="col-sm-8">
-    {% if client.postal_code_relation %}
-        {{ client.postal_code_relation.code }} 
-        {{ client.postal_code_relation.city }}, 
-        {{ client.postal_code_relation.country_code }}
-    {% else %}
-        <span class="text-muted">Non renseignée</span>
-    {% endif %}
-</dd>
-{% endblock %}
-
-{% block stats_content %}
-<dt class="col-sm-6">Robots associés</dt>
-<dd class="col-sm-6">{{ robots|length }}</dd>
-
-<dt class="col-sm-6">Fichiers configurations</dt>
-<dd class="col-sm-6">{{ configurations|length }}</dd>
-
-<dt class="col-sm-6">Paramètres client</dt>
-<dd class="col-sm-6">
-    {{ configured_params|length }}/{{ configured_params|length + unconfigured_params|length }}
-</dd>
-{% endblock %}
-
-{% block entity_sections %}
-<!-- Section Robots associés -->
-<div class="mb-5">
-    {% with 
-        items=robots,
-        title="Robots associés",
-        show_add_button=true,
-        hide_add_when_empty=true,
-        hide_model=false,
-        hide_client=true,
-        client=client,
-        is_list_view=false,
-        show_badge=true,
-        add_text="Ajouter un robot"
-    %}
-        {% include 'list/partials/robot_instances.html' %}
-    {% endwith %}
+{% macro parameters_section(configured_params, unconfigured_params, entity_type, entity_slug) %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>Paramètres 
+            <span class="badge bg-primary ms-2">{{ configured_params|length + unconfigured_params|length }}</span>
+        </h5>
+        {% if (configured_params|length + unconfigured_params|length) > 0 %}
+        <a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>Ajouter un paramètre
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if (configured_params|length + unconfigured_params|length) > 0 %}
+            {{ param_table(configured_params + unconfigured_params, entity_type, entity_slug, editable=true) }}
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>Aucun paramètre défini.
+            <a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}" class="alert-link">
+                Ajouter un paramètre
+            </a>
+        </div>
+        {% endif %}
+    </div>
 </div>
+{% endmacro %}
 
-<!-- Section Fichiers de configuration -->
+
+{% macro configurations_section(configurations, entity_type, entity_id) %}
 <div class="card mb-5">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
@@ -72,7 +38,7 @@
             <span class="badge bg-primary ms-2">{{ configurations|length }}</span>
         </h5>
         {% if configurations|length > 0 %}
-        <a href="{{ url_for('configurations.add', entity_type='client', entity_id=client.id) }}" class="btn btn-sm btn-primary">
+        <a href="{{ url_for('configurations.add', entity_type=entity_type, entity_id=entity_id) }}" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i>Ajouter une configuration
         </a>
         {% endif %}
@@ -123,17 +89,11 @@
         {% else %}
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>Aucune configuration enregistrée.
-            <a href="{{ url_for('configurations.add', entity_type='client', entity_id=client.id) }}" class="alert-link">
+            <a href="{{ url_for('configurations.add', entity_type=entity_type, entity_id=entity_id) }}" class="alert-link">
                 Ajouter une configuration
             </a>
         </div>
         {% endif %}
     </div>
 </div>
-
-<!-- Section Paramètres -->
-{{ parameters_section(configured_params, unconfigured_params, 'client', client.slug) }}
-{% endblock %}
-
-{% block back_url %}{{ url_for('clients.list') }}{% endblock %}
-{% block back_text %}Retour à la liste{% endblock %}
+{% endmacro %}

@@ -1,0 +1,66 @@
+{# /app/templates/view/entity_detail_base.html #}
+{% extends "base.html" %}
+{% from "macros/_table_ui.html" import param_table, card_header, alert_empty_list, display_param_rules, display_param_value %}
+
+{% block title %}{% block entity_title %}Détails de l'entité{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- En-tête avec boutons d'action -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">{% block entity_header %}Détails de l'entité{% endblock %}</h1>
+        <div class="btn-group">
+            {% block action_buttons %}
+            <a href="#" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+            {% endblock %}
+        </div>
+    </div>
+
+    <div class="card p-4 shadow-sm mb-4">
+        <!-- Informations générales et statistiques -->
+        <div class="row mb-4">
+            <!-- Informations de base -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Informations générales</h5>
+                        <dl class="row">
+                            {% block info_content %}
+                            <!-- À surcharger dans les templates enfants -->
+                            {% endblock %}
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistiques -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Statistiques</h5>
+                        <dl class="row">
+                            {% block stats_content %}
+                            <!-- À surcharger dans les templates enfants -->
+                            {% endblock %}
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sections spécifiques à l'entité -->
+        {% block entity_sections %}
+        <!-- À surcharger dans les templates enfants -->
+        {% endblock %}
+    </div>
+
+    <!-- Bouton de retour -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+        <a href="{% block back_url %}#{% endblock %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>{% block back_text %}Retour{% endblock %}
+        </a>
+    </div>
+</div>
+{% endblock %}

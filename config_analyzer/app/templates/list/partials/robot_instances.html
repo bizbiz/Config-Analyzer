@@ -4,14 +4,23 @@
 {% from 'macros/_indicateurs.html' import indicateurs with context %}
 
 <div class="card mb-4">
-    {{ card_header(
-        title=title|default('Robots Clients'),
-        add_url=url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
-        add_text="Ajouter un robot client",
-        show_button=(show_add_button|default(true)) and (items|length > 0 or not hide_add_when_empty|default(true)),
-        show_badge=show_badge|default(false),
-        badge_count=items|length
-    ) }}
+    {% set add_url = url_for('robot_instances.add') + 
+                    (('?client_id=' + client.id|string) if client is defined and client else '') + 
+                    (('&robot_model_id=' + robot_model.id|string) if robot_model is defined and robot_model else '') %}
+                    
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-robot me-2"></i>{{ title|default('Robots Clients') }}
+            {% if show_badge|default(true) %}
+            <span class="badge bg-primary ms-2">{{ items|length }}</span>
+            {% endif %}
+        </h5>
+        {% if (show_add_button|default(true)) and (items|length > 0 or not hide_add_when_empty|default(true)) %}
+            <a href="{{ add_url }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>{{ add_text|default('Ajouter un robot client') }}
+            </a>
+        {% endif %}
+    </div>
     
     <div class="card-body">
         {% if is_list_view|default(false) %}
@@ -39,7 +48,7 @@
                        id="robotClientTable"
                        data-list-filter="true"
                        data-filter-input="clientSearchInput"
-                       data-filter-columns="{% if hide_client and hide_model %}2{% elif hide_client or hide_model %}3{% else %}4{% endif %}">
+                       data-filter-columns="{% if hide_client|default(false) and hide_model|default(false) %}2{% elif hide_client|default(false) or hide_model|default(false) %}3{% else %}4{% endif %}">
                     <thead class="table-light">
                         <tr>
                             <th>N° Série</th>
@@ -81,7 +90,6 @@
                 </table>
             </div>
         {% else %}
-            {% set add_url = url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') if show_add_button|default(true) else None %}
             {{ alert_empty_list(
                 message="Aucun robot client trouvé.",
                 add_url=add_url,

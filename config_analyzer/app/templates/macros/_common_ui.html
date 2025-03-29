@@ -34,3 +34,10 @@
 {% macro badge(type, text, colors={'text': 'info', 'numeric': 'primary', 'enum': 'success'}) %}
 <span class="badge bg-{{ colors[type]|default('secondary') }}">{{ text }}</span>
 {% endmacro %}
+
+{# Espacement entre les blocs #}
+{% macro spaced_section(template_path, options={}, spacing_class="mb-5") %}
+<div class="{{ spacing_class }}">
+    {% include template_path with context %}
+</div>
+{% endmacro %}
