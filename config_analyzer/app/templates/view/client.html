@@ -69,7 +69,9 @@
             add_url=url_for('robot_instances.add') + "?client_id=" + client.id|string,
             add_text="Ajouter un robot",
             show_add_button=true,
-            hide_client=true
+            hide_client=true,
+            client=client,
+            is_list_view=false
         %}
             {% include 'list/partials/robot_instances.html' %}
         {% endwith %}

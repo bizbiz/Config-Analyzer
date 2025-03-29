@@ -1,22 +1,28 @@
-{# list/partials/robot_instances.html #}
+{# app/templates/list/partials/robot_instances.html #}
 {% if items is defined %}
 {% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
 {% from 'macros/_indicateurs.html' import indicateurs with context %}
 
-<div class="card mt-4">
+<div class="card mb-4">
     {{ card_header(
         title=title|default('Robots Clients'),
-        add_url=url_for('robot_instances.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
+        add_url=url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else ''),
         add_text="Ajouter un robot client",
         show_button=show_add_button|default(true)
     ) }}
     
     <div class="card-body">
+        {% if is_list_view|default(false) %}
         <div class="row mb-4">
             {{ indicateurs(items=items, title='Clients Robot', color='primary') }}
             {{ indicateurs(items=items|selectattr('softwares')|list, title='Avec Logiciels', color='success') }}
             {{ indicateurs(items=items|selectattr('client')|list, title='Clients Actifs', color='info') }}
         </div>
+        {% elif not no_summary|default(false) %}
+        <div class="row mb-4">
+            {{ indicateurs(items=items|selectattr('softwares')|list, title='Avec Logiciels', color='success') }}
+        </div>
+        {% endif %}
 
         {% if items %}
             {% if show_search|default(true) %}
@@ -73,7 +79,7 @@
                 </table>
             </div>
         {% else %}
-            {% set add_url = url_for('robot_instances.add') + (('?robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') if show_add_button|default(true) else None %}
+            {% set add_url = url_for('robot_instances.add') + (('?client_id=' + client.id|string) if client and client.id else '') + (('&robot_model_id=' + robot_model.id|string) if robot_model and robot_model.id else '') if show_add_button|default(true) else None %}
             {{ alert_empty_list(
                 message="Aucun robot client trouvé.",
                 add_url=add_url,
