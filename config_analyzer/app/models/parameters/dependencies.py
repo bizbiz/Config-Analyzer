@@ -1,44 +1,51 @@
 # app/models/parameters/dependencies.py
-from sqlalchemy import ForeignKey, Integer, CheckConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, Integer, CheckConstraint
+from sqlalchemy.orm import relationship, declared_attr
 from sqlalchemy.sql import func
 from app.extensions import db
-from .values import ParameterValue
+from .definitions import ParameterDefinition
 
 class ParameterDependency(db.Model):
     __tablename__ = 'parameter_dependencies'
- 
-    __table_args__ = (
-        CheckConstraint('source_parameter_id != target_parameter_id', 
-                      name='ck_no_self_dependency'),
+    
+    source_parameter_id = db.Column( 
+        db.Integer, 
+        db.ForeignKey('parameter_definitions.id', ondelete='CASCADE'), 
+        primary_key=True,
+        comment="Paramètre source de la dépendance"
     )
-        
-    id = db.Column(db.Integer, primary_key=True)
-    source_parameter_id = db.Column(
-        Integer, 
-        ForeignKey('parameter_values.id', ondelete='CASCADE'),
-        index=True  # Ajout d'index pour les performances
+    target_parameter_id = db.Column( 
+        db.Integer, 
+        db.ForeignKey('parameter_definitions.id', ondelete='CASCADE'), 
+        primary_key=True,
+        comment="Paramètre cible de la dépendance"
     )
-    target_parameter_id = db.Column(
-        Integer, 
-        ForeignKey('parameter_values.id', ondelete='CASCADE'),
-        index=True
-    )
+
     condition_type = db.Column(db.String(50))
     condition_value = db.Column(db.JSON)
+
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     # Relations avec spécification explicite des clés étrangères
-    source_value = db.relationship(
-        "ParameterValue", 
-        foreign_keys=[source_parameter_id],
-        back_populates="dependencies",
-        lazy="joined"  # Chargement automatique par défaut
+    source = relationship(
+        "ParameterDefinition", 
+        foreign_keys=[source_parameter_id],  # Nom corrigé
+        back_populates="dependencies_out"
     )
-    
-    target_value = db.relationship(
-        "ParameterValue", 
-        foreign_keys=[target_parameter_id],
-        back_populates="dependent_dependencies",  # Relation inverse nécessaire
-        lazy="select"
+    target = relationship(
+        "ParameterDefinition", 
+        foreign_keys=[target_parameter_id],  # Nom corrigé
+        back_populates="dependencies_in"
+    )
+
+    source_value_id = db.Column(  # Nouvelle colonne
+        db.Integer, 
+        db.ForeignKey('parameter_values.id', ondelete='CASCADE'),
+        primary_key=True,
+        comment="Valeur source de la dépendance"
+    )
+    source_value = db.relationship(
+        "ParameterValue",
+        foreign_keys=[source_value_id],
+        back_populates="dependencies"
     )

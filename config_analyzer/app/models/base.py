@@ -58,18 +58,20 @@ class Entity(db.Model, EntityMixin, QueryMixin):
     }
 
     __table_args__ = (
-        db.Index('idx_entity_name', 'name'),  # Nouvel index global
+        db.Index('idx_entity_composite', 'id', 'entity_type', unique=True),
+        db.Index('idx_entity_name', 'name'),
         db.Index('idx_entity_slug', 'slug', unique=True),
     )
     
     @declared_attr
     def configurations(cls):
-        enum_name = camel_to_snake(cls.__name__)  # Utiliser la fonction de conversion
         return relationship(
             'ConfigurationEntityLink',
             primaryjoin=(
-                f"and_(ConfigurationEntityLink.entity_type == '{EntityType[enum_name].value}', "
-                f"ConfigurationEntityLink.entity_id == {cls.__name__}.id)"
+                "and_("
+                "foreign(ConfigurationEntityLink.entity_type) == Entity.entity_type, "
+                "foreign(ConfigurationEntityLink.entity_id) == Entity.id"
+                ")"
             ),
             backref=backref('entity', lazy='joined'),
             cascade='all, delete-orphan',
@@ -80,10 +82,8 @@ class Entity(db.Model, EntityMixin, QueryMixin):
 class SpecificEntity(Entity):
     """Classe de base pour les entités spécifiques"""
     __abstract__ = True
-    
-    @declared_attr
-    def id(cls):
-        return Column(Integer, ForeignKey('entities.id'), primary_key=True)
+
+    id = db.Column(db.Integer, db.ForeignKey('entities.id'), primary_key=True)
     
     @declared_attr
     def __tablename__(cls):
@@ -97,7 +97,7 @@ class SpecificEntity(Entity):
             
             return {
                 'polymorphic_identity': EntityType[enum_name],
-                'inherit_condition': (getattr(cls, 'id') == Entity.id)
+                'inherit_condition': (cls.id == Entity.id)
             }
         return {}
 

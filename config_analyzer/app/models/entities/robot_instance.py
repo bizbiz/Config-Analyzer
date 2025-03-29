@@ -1,6 +1,6 @@
 # app/models/entities/robot_instance.py
 from sqlalchemy import ForeignKey, Index
-from sqlalchemy.orm import validates, relationship
+from sqlalchemy.orm import validates, relationship, declared_attr
 from app.extensions import db
 from app.models.enums import EntityType
 from app.models.base import SpecificEntity, configure_slug_generation
@@ -9,6 +9,8 @@ from app.models.base import SpecificEntity, configure_slug_generation
 class RobotInstance(SpecificEntity):
     """Instance concrète d'un robot chez un client"""
     __mapper_args__ = {'polymorphic_identity': EntityType.ROBOT_INSTANCE}
+
+    __tablename__ = 'robotinstance'
     
     slug_source_field = 'client_robot'
     CUSTOM_SLUG_FIELD = 'serial_number'
@@ -17,13 +19,27 @@ class RobotInstance(SpecificEntity):
     serial_number = db.Column(db.String(50), nullable=False, unique=True, index=True)
     
     # Clés étrangères
-    client_id = db.Column(db.Integer, ForeignKey('client.id', ondelete='CASCADE'), nullable=False, index=True)
+    client_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('client.id', ondelete='CASCADE'),  # Référence à la table enfant
+        nullable=False, 
+        index=True
+    )
     robot_model_id = db.Column(db.Integer, ForeignKey('robotmodel.id', ondelete='RESTRICT'), nullable=False, index=True)
 
     # Relations
-    client = relationship("Client", back_populates="robots")
-    model = relationship("RobotModel", back_populates="instances")
-    software_versions = relationship(
+    client = db.relationship(
+        "Client", 
+        foreign_keys=[client_id],
+        back_populates="robots",
+        primaryjoin="Client.id == RobotInstance.client_id"  # Jointure explicite
+    )
+    model = db.relationship(
+        "RobotModel", 
+        back_populates="instances",
+        foreign_keys=[robot_model_id]  # Déclaration explicite
+    )
+    software_versions = db.relationship(
         "RobotInstanceSoftwareVersion",
         back_populates="robot_instance",
         cascade="all, delete-orphan",

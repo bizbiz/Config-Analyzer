@@ -1,6 +1,6 @@
 # app/models/entities/robot_model.py
 from sqlalchemy import Column, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declared_attr
 from sqlalchemy.ext.associationproxy import association_proxy
 from app.extensions import db
 from app.models.enums import EntityType
@@ -20,15 +20,16 @@ class RobotModel(SpecificEntity):
     company = Column(String(255), index=True, comment="Fabricant du robot")
     
     # Relations
-    software = association_proxy(
-        'robot_model_software', 
-        'software',
-        creator=lambda s: RobotModelSoftware(software=s)
+    software_associations = db.relationship(
+        "RobotModelSoftware",
+        back_populates="robot_model",
+        cascade="all, delete-orphan"
     )
     
-    instances = relationship(
+    instances = db.relationship(
         "RobotInstance", 
         back_populates="model",
+        foreign_keys="[RobotInstance.robot_model_id]",  # Ajout explicite
         lazy='dynamic',
         cascade='all, delete-orphan'
     )

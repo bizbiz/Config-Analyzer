@@ -1,6 +1,6 @@
 # app/models/configuration.py
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Index, event
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 from app.extensions import db
@@ -24,17 +24,53 @@ class ConfigurationInstance(db.Model):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relations
-    parameters = relationship("ParameterValue", back_populates="configuration_instance", cascade="all, delete-orphan")
+    parameters = relationship(
+        "ParameterValue", 
+        back_populates="configuration_instance",
+        cascade="all, delete-orphan"
+    )
+
     entity_links = relationship(
         'ConfigurationEntityLink',
         back_populates='configuration',
         cascade='all, delete-orphan',
         passive_deletes=True
     )
-    schema = relationship("ConfigSchema", back_populates="configuration_instances")
+
+    schema_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('config_schemas.id', ondelete='SET NULL'),  # Ajout de la clé étrangère
+        index=True
+    )
+
+    schema = db.relationship(
+        "ConfigSchema", 
+        foreign_keys=[schema_id],  # Déclaration explicite
+        back_populates="configuration_instances"
+    )
+
+
+
+    client_links = db.relationship(
+        "ClientConfiguration",
+        back_populates="configuration",
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index('idx_entity_config', 'entity_id', 'entity_type'),
+    )
+
+    software_version_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('softwareversion.id', ondelete='SET NULL'),  # Clé étrangère
+        index=True,
+        comment="Version logicielle associée"
+        )
+    software_version = db.relationship(
+        "SoftwareVersion",
+        back_populates="configurations",
+        foreign_keys=[software_version_id]
     )
 
     @property
@@ -117,7 +153,11 @@ class ConfigSchema(db.Model):
     file_pattern = Column(String(100), nullable=False)
     parser_class = Column(String(100), nullable=False)
     
-    configuration_instances = relationship("ConfigurationInstance", back_populates="schema")
+    configuration_instances = db.relationship(
+        "ConfigurationInstance", 
+        back_populates="schema",
+        cascade="all, delete-orphan"
+    )
 
 @event.listens_for(ConfigurationEntityLink, 'before_insert')
 @event.listens_for(ConfigurationEntityLink, 'before_update')

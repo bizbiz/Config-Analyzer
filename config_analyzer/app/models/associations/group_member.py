@@ -2,6 +2,7 @@
 from datetime import date
 from sqlalchemy import ForeignKey, CheckConstraint, Index
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship, declared_attr
 from app.extensions import db
 
 class GroupMember(db.Model):
@@ -10,19 +11,19 @@ class GroupMember(db.Model):
     
     user_id = db.Column(
         db.Integer, 
-        ForeignKey('user.id', ondelete='CASCADE'), 
+        db.ForeignKey('users.id', ondelete='CASCADE'), 
         primary_key=True,
         comment="ID de l'utilisateur"
     )
     group_id = db.Column(
         db.Integer, 
-        ForeignKey('group.id', ondelete='CASCADE'), 
+        db.ForeignKey('groups.id', ondelete='CASCADE'), 
         primary_key=True,
         comment="ID du groupe"
     )
     role_id = db.Column(
         db.Integer, 
-        ForeignKey('role.id', ondelete='SET NULL'),
+        db.ForeignKey('role.id', ondelete='SET NULL'),
         index=True,
         comment="ID du rôle"
     )

@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, JSON
 from app.extensions import db
 from app.models.enums import EntityType
 from app.models.base import SpecificEntity, configure_slug_generation
+from sqlalchemy.orm import relationship, declared_attr
 
 @configure_slug_generation
 class Role(SpecificEntity):
@@ -10,8 +11,15 @@ class Role(SpecificEntity):
     __mapper_args__ = {'polymorphic_identity': EntityType.ROLE}
     
     # Colonnes spécifiques
-    name = Column(String(50), unique=True, nullable=False, index=True)
+    role_name = Column(String(50), unique=True, nullable=False, index=True)
     permissions = Column(JSON, comment="Stockage flexible des droits")
+
+    group_assignments = db.relationship(
+        "GroupMember",
+        back_populates="role",
+        cascade="all, delete-orphan",
+        lazy='dynamic'
+    )
 
     def __repr__(self):
         return f'<Role {self.name}>'

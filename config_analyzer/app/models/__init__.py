@@ -1,7 +1,14 @@
 # app/models/__init__.py
 from app.extensions import db
-from .base import Entity, configure_slug_generation
+from .base import Entity, SpecificEntity, configure_slug_generation
 from .enums import EntityType
+from .associations import (
+    GroupMember, 
+    ClientConfiguration, 
+    RobotInstanceSoftwareVersion, 
+    RobotModelSoftware,
+    ConfigurationEntityLink
+)
 from .entities import (
     User, 
     Client, 
@@ -30,6 +37,11 @@ __version__ = "1.0.0"
 __author__ = "qbizouard@gmail.com"
 
 __all__ = [
+    
+    # Associations
+    'GroupMember', 
+
+
     # Core
     'Entity',
     'EntityType',
@@ -58,5 +70,6 @@ __all__ = [
     'FloatParameterValue',
     'StringParameterValue',
     'JSONParameterValue',
-    'ParameterDependency'
+    'ParameterDependency',
+
 ]

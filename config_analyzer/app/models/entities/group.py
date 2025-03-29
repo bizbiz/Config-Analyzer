@@ -1,6 +1,6 @@
 # app/models/entities/group.py
 from sqlalchemy import event
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import relationship, declared_attr, validates
 from app.extensions import db
 from app.models.enums import EntityType
 from app.models.base import SpecificEntity, configure_slug_generation
@@ -16,7 +16,7 @@ class Group(SpecificEntity):
     CUSTOM_SLUG_FIELD = 'owner.username'  # Fallback sur le nom du propriétaire
 
     # Colonnes spécifiques
-    name = db.Column(
+    group_name = db.Column(
         db.String(100), 
         nullable=False,
         index=True,
@@ -35,6 +35,7 @@ class Group(SpecificEntity):
     )
     owner = db.relationship(
         "User", 
+        foreign_keys=[owner_id],  # Spécification explicite
         back_populates="owned_groups",
         lazy='joined'
     )
@@ -45,13 +46,19 @@ class Group(SpecificEntity):
         order_by='GroupMember.start_date.desc()',
         lazy='dynamic'
     )
+    users = db.relationship(
+        "User",
+        secondary="group_members",
+        back_populates="groups",
+        viewonly=True
+    )
 
-    @validates('name')
-    def validate_name(self, key, name):
+    @validates('group_name')
+    def validate_name(self, key, group_name):
         """Valide le nom avant sauvegarde"""
-        if len(name) < 3:
+        if len(group_name) < 3:
             raise ValueError("Le nom du groupe doit contenir au moins 3 caractères")
-        return name
+        return group_name
 
     def generate_slug(self):
         """Génère un slug combinant nom et propriétaire"""

@@ -1,17 +1,17 @@
 # app/models/entities/user.py
 from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declared_attr
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
 from app.models.enums import EntityType
 from app.models.base import SpecificEntity, configure_slug_generation
-from app.models.associations.group_member import GroupMember
 
 
 @configure_slug_generation
 class User(SpecificEntity):
     """Utilisateur du système avec gestion polymorphique étendue"""
     __mapper_args__ = {'polymorphic_identity': EntityType.USER}
+    __tablename__ = 'users'
     
     slug_source_field = 'username'
     CUSTOM_SLUG_FIELD = 'email'
@@ -29,7 +29,19 @@ class User(SpecificEntity):
         back_populates="users",
         viewonly=True
     )
-    owned_groups = relationship("Group", back_populates="owner", lazy='dynamic')
+    owned_groups = db.relationship(
+        "Group", 
+        foreign_keys="Group.owner_id",  # Ajout explicite des clés étrangères
+        back_populates="owner",
+        lazy='dynamic'
+    )
+
+    group_memberships = db.relationship(
+        "GroupMember",  # Chaîne plutôt que référence directe
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy='dynamic'
+    )
     
     @property
     def password(self):

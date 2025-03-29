@@ -2,14 +2,24 @@
 
 from sqlalchemy import ForeignKey, CheckConstraint
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship, declared_attr
 from app.extensions import db
 
 class RobotInstanceSoftwareVersion(db.Model):
     """Association entre RobotInstance et SoftwareVersion"""
     __tablename__ = 'robot_instance_software_versions'
     
-    robot_instance_id = db.Column(db.Integer, ForeignKey('robot_instances.id'), primary_key=True)
-    software_version_id = db.Column(db.Integer, ForeignKey('softwareversion.id'), primary_key=True)
+    robot_instance_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('robotinstance.id'),  # Modifié 'robot_instances.id' → 'robotinstance.id'
+        primary_key=True
+    )
+    software_version_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('softwareversion.id'), 
+        primary_key=True
+    )
+
     installation_date = db.Column(db.DateTime, default=db.func.now())
     
     # Configurer l'index composite
@@ -17,13 +27,14 @@ class RobotInstanceSoftwareVersion(db.Model):
         db.Index('idx_robot_software', 'robot_instance_id', 'software_version_id'),
     )
 
-    # Relations optimisées
     robot_instance = relationship(
         "RobotInstance", 
         back_populates="software_versions",
-        lazy='joined'
+        foreign_keys=[robot_instance_id]  # Ajout explicite
     )
+
     software_version = relationship(
         "SoftwareVersion", 
-        lazy='selectin'
+        back_populates="robot_instances",  # À vérifier dans SoftwareVersion
+        foreign_keys=[software_version_id]
     )

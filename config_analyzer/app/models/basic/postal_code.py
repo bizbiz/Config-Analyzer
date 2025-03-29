@@ -1,5 +1,6 @@
 # app/models/basic/postal_code.py
 from sqlalchemy import CheckConstraint, Index
+from sqlalchemy.orm import relationship, declared_attr
 from app.extensions import db
 
 class PostalCode(db.Model):
