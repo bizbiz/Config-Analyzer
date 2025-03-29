@@ -38,7 +38,15 @@
                         <tr>
                             <td>{{ robot_model.name }}</td>
                             <td>{{ robot_model.company }}</td>
-                            <td>{{ robot_model.software.name if robot_model.software else 'N/A' }}</td>
+                            <td>
+                                {% if robot_model.software_associations %}
+                                    {% for assoc in robot_model.software_associations %}
+                                        {{ assoc.software.name }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
                             {{ action_buttons(
                                 view_url=url_for('robot_models.view', slug=robot_model.slug),
                                 edit_url=url_for('robot_models.edit', slug=robot_model.slug),

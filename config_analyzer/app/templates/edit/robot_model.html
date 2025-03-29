@@ -6,7 +6,7 @@
 <div class="container py-5">
     <h1 class="text-center mb-4">Modifier le modèle de robot : {{ robot_model.name }}</h1>
     <div class="card p-4 shadow-sm">
-        <form action="{{ url_for('robot_models.edit_robot_model', robot_model_id=robot_model.id) }}" method="POST">
+        <form action="{{ url_for('robot_models.edit', slug=robot_model.slug) }}" method="POST">
             <div class="mb-3">
                 <label for="name" class="form-label">Nom :</label>
                 <input type="text" id="name" name="name" class="form-control" value="{{ robot_model.name }}" required>
@@ -16,25 +16,68 @@
                 <input type="text" id="company" name="company" class="form-control" value="{{ robot_model.company }}" required>
             </div>
             <div class="mb-3">
-                <label for="software_id" class="form-label">Logiciel :</label>
-                <select class="form-select" id="software_id" name="software_id">
-                    <option value="">Sélectionner un logiciel</option>
-                    {% for software in softwares %}
-                    <option value="{{ software.id }}" {% if robot_model.software and robot_model.software.id == software.id %}selected{% endif %}>
-                        {{ software.name }}
-                    </option>
+                <label for="software_ids" class="form-label">Logiciel :</label>
+                <div id="software-container">
+                    {% for software_id in selected_software_ids %}
+                    <div class="input-group mb-2">
+                        <select class="form-select" name="software_ids">
+                            <option value="">Sélectionner un logiciel</option>
+                            {% for software in softwares %}
+                            <option value="{{ software.id }}" {% if software.id == software_id %}selected{% endif %}>
+                                {{ software.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-danger" onclick="removeSoftwareSelect(this)">×</button>
+                    </div>
                     {% endfor %}
-                </select>
+                    
+                    {% if not selected_software_ids %}
+                    <div class="input-group mb-2">
+                        <select class="form-select" name="software_ids">
+                            <option value="">Sélectionner un logiciel</option>
+                            {% for software in softwares %}
+                            <option value="{{ software.id }}">{{ software.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="addSoftwareSelect()">Ajouter un autre logiciel</button>
+                    </div>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary" onclick="addSoftwareSelect()">Ajouter un autre logiciel</button>
+                    {% endif %}
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-2"></i> Enregistrer
                 </button>
-                <a href="{{ url_for('robot_models.list_robot_models') }}" class="btn btn-secondary">
+                <a href="{{ url_for('robot_models.list') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Retour à la liste
                 </a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+function addSoftwareSelect() {
+    const container = document.getElementById('software-container');
+    const newSelectDiv = document.createElement('div');
+    newSelectDiv.className = 'input-group mb-2';
+    newSelectDiv.innerHTML = `
+        <select class="form-select" name="software_ids">
+            <option value="">Sélectionner un logiciel</option>
+            {% for software in softwares %}
+            <option value="{{ software.id }}">{{ software.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-danger" onclick="removeSoftwareSelect(this)">×</button>
+    `;
+    container.appendChild(newSelectDiv);
+}
+
+function removeSoftwareSelect(button) {
+    button.parentElement.remove();
+}
+</script>
 {% endblock %}

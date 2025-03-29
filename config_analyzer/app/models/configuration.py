@@ -112,7 +112,7 @@ class ConfigurationInstance(db.Model):
     @hybrid_property
     def linked_entities(self):
         """Retourne toutes les entités liées de manière polymorphique"""
-        return [link.resolve_entity() for link in self.entity_links]
+        return [link.resolved_entity for link in self.entity_links]
 
     def link_entity(self, entity):
         """Ajoute une liaison à une entité"""

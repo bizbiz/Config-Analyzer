@@ -26,18 +26,19 @@ class RobotModel(SpecificEntity):
         cascade="all, delete-orphan"
     )
     
+    # Add association proxy for direct software access
+    software = association_proxy(
+        'software_associations', 
+        'software',
+        creator=lambda sw: RobotModelSoftware(software=sw)
+    )
+    
     instances = db.relationship(
         "RobotInstance", 
         back_populates="model",
-        foreign_keys="[RobotInstance.robot_model_id]",  # Ajout explicite
+        foreign_keys="[RobotInstance.robot_model_id]",
         lazy='dynamic',
         cascade='all, delete-orphan'
-    )
-
-    robot_model_software = relationship(
-        "RobotModelSoftware",
-        back_populates="robot_model",
-        cascade="all, delete-orphan"
     )
 
     def __repr__(self):

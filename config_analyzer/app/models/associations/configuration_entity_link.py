@@ -62,12 +62,12 @@ class ConfigurationEntityLink(db.Model):
     )
 
     @property
-    def entity(self):
+    def resolved_entity(self):
         """Résout l'entité référencée de manière polymorphique"""
         return Entity.get_polymorphic_class(EntityType(self.entity_type)).query.get(self.entity_id)
 
-    @entity.setter
-    def entity(self, value):
+    @resolved_entity.setter
+    def resolved_entity(self, value):
         """Définit l'entité cible de manière contrôlée"""
         if not isinstance(value, Entity):
             raise TypeError("Seulement des sous-classes Entity autorisées")
