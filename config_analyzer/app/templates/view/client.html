@@ -135,15 +135,13 @@
         </div>
 
         <!-- Section Paramètres -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
-                {{ card_header(
-                    "Paramètres spécifiques",
-                    add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
-                    add_text="Ajouter un paramètre spécifique",
-                    entity_name="paramètre"
-                ) }}
-
+                <h5 class="card-title mb-4">
+                    <i class="fas fa-cog me-2"></i>Paramètres spécifiques
+                    <span class="badge bg-primary ms-2">{{ (configured_params|length + unconfigured_params|length) }}</span>
+                </h5>
+                
                 {% if configured_params or unconfigured_params %}
                     {{ param_table(
                         configured_params + unconfigured_params, 
@@ -151,15 +149,13 @@
                         client.slug
                     ) }}
                 {% else %}
-                    {{ alert_empty_list(
-                        "Aucun paramètre configuré",
-                        add_url=url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug),
-                        add_text="Ajouter un premier paramètre"
-                    ) }}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Aucun paramètre configuré
+                        <a href="{{ url_for('additional_params_config.add', entity_type='client', entity_slug=client.slug) }}" class="alert-link">Ajouter un premier paramètre</a>
+                    </div>
                 {% endif %}
             </div>
         </div>
-    </div>
 
     <!-- Actions globales -->
     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
