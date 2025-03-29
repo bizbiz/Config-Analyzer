@@ -69,10 +69,3 @@
 </tr>
 {% endfor %}
 {% endblock %}
-
-{% if show_add_form|default(false) %}
-{% block additional_content %}
-    <h2 class="text-center mt-5">Ajouter un modèle de Robot</h2>
-    {% include 'add/partials/robot_model.html' %}
-{% endblock %}
-{% endif %}
