@@ -3,24 +3,41 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models.entities.robot_model import RobotModel
 from app.models.entities.software import Software
 from app.models.associations.robot_model_software import RobotModelSoftware
+from app.models.configuration import ConfigurationInstance
 from app.models.parameters.definitions import ParameterDefinition
 from app.models.parameters.values import ParameterValue
 from app.models.enums import EntityType
 from app.extensions import db
 from app.utils.param_helpers import get_unconfigured_params
 import traceback
+from sqlalchemy import func, distinct
 
 robot_models_bp = Blueprint('robot_models', __name__, url_prefix='/robot-models')
 
 @robot_models_bp.route('/list')
 def list():
+    """Liste tous les modèles de robots avec statistiques."""
     robot_models = RobotModel.query.options(
         db.joinedload(RobotModel.software_associations).joinedload(RobotModelSoftware.software)
     ).all()
     
+    # Calcul des statistiques
+    
+    # Nombre total de logiciels distincts associés à des modèles de robots
+    total_softwares = db.session.query(func.count(distinct(RobotModelSoftware.software_id))).scalar()
+    
+    # Nombre total de configurations associées aux modèles de robots
+    # En supposant qu'il existe une relation entre ConfigurationInstance et RobotModel
+    # Si cette relation n'existe pas directement, il faudra ajuster cette requête
+    total_configs = db.session.query(func.count(ConfigurationInstance.id))\
+        .filter(ConfigurationInstance.entity_type == EntityType.ROBOT_MODEL)\
+        .scalar()
+    
     return render_template('list/robot_models.html', 
-                         robot_models=robot_models,
-                         softwares=Software.query.all())
+                          robot_models=robot_models,
+                          softwares=Software.query.all(),
+                          total_softwares=total_softwares,
+                          total_configs=total_configs)
 
 @robot_models_bp.route('/view/<string:slug>')
 def view(slug):

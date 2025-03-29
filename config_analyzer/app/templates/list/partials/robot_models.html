@@ -1,79 +1,78 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
-{% if items is defined %}
-{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{# templates/list/partials/robot_models.html #}
+{% extends 'list/partials/_base_list_partial.html' %}
+{% from 'macros/_statistics.html' import stats_cards with context %}
 
-<div class="card mt-4">
-    {{ card_header(
-        title=title|default('Modèles de Robots'),
-        add_url=url_for('robot_models.add'),
-        add_text="Ajouter un modèle de robot",
-        show_button=show_add_button|default(true)
-    ) }}
-    
-    <div class="card-body">
-        {% if items %}
-            {% if show_search|default(true) %}
-            <div class="mb-3">
-                <input type="text" id="robotModelsSearchInput" class="form-control" 
-                       placeholder="Rechercher un modèle de robot...">
-            </div>
-            {% endif %}
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
-                       id="robotModelsTable"
-                       data-list-filter="true"
-                       data-filter-input="robotModelsSearchInput" 
-                       data-filter-columns="3">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nom</th>
-                            <th>Entreprise</th>
-                            <th>Logiciels Associés</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for robot_model in items %}
-                        <tr>
-                            <td>{{ robot_model.name }}</td>
-                            <td>{{ robot_model.company }}</td>
-                            <td>
-                                {% if robot_model.software_associations %}
-                                    {% for assoc in robot_model.software_associations %}
-                                        {{ assoc.software.name }}{% if not loop.last %}, {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            {{ action_buttons(
-                                view_url=url_for('robot_models.view', slug=robot_model.slug),
-                                edit_url=url_for('robot_models.edit', slug=robot_model.slug),
-                                delete_url=url_for('robot_models.delete', slug=robot_model.slug),
-                                delete_message='Êtes-vous sûr de vouloir supprimer ce modèle de robot ?'
-                            ) }}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            {{ alert_empty_list(
-                message="Aucun modèle de robot trouvé.",
-                add_url=url_for('robot_models.add'),
-                add_text="Ajouter un modèle de robot"
-            ) }}
-        {% endif %}
-    </div>
-</div>
+{% block default_title %}Modèles de Robots{% endblock %}
 
-{{ init_search('robotModelsTable', 'robotModelsSearchInput') }}
+{% block add_url %}{{ url_for('robot_models.add') }}{% endblock %}
+{% block add_text %}Ajouter un modèle de robot{% endblock %}
 
-{# Afficher le formulaire d'ajout si demandé #}
-{% if show_add_form|default(false) %}
-    <h2 class="text-center mt-5">Ajouter un modèle de Robot</h2>
-    {% include 'add/robot_model.html' %}
+{% block search_input_id %}robotModelsSearchInput{% endblock %}
+{% block filter_input_id %}robotModelsSearchInput{% endblock %}
+{% block table_id %}robotModelsTable{% endblock %}
+{% block table_id_js %}robotModelsTable{% endblock %}
+{% block table_id_js2 %}robotModelsTable{% endblock %}
+{% block search_placeholder %}Rechercher un modèle de robot...{% endblock %}
+{% block filter_columns %}3{% endblock %}
+
+{% block tbody_id %}robot-models-table-body{% endblock %}
+{% block tbody_id_js %}robot-models-table-body{% endblock %}
+
+{% block empty_message %}Aucun modèle de robot trouvé.{% endblock %}
+
+{% block quick_stats %}
+{% if quick_stats|default(false) and not is_embedded|default(false) %}
+    {{ stats_cards([
+        {'title': 'Modèles de Robot', 'value': items|length, 'color': 'primary', 'icon': 'robot'},
+        {'title': 'Logiciels Associés', 'value': total_softwares|default(0), 'color': 'success', 'icon': 'code', 'subtitle': 'en utilisation'},
+        {'title': 'Configurations', 'value': total_configs|default(0), 'color': 'info', 'icon': 'file-code', 'subtitle': 'actives'}
+    ]) }}
 {% endif %}
+{% endblock %}
 
+{% block table_headers %}
+<th scope="col">Nom</th>
+<th scope="col">Entreprise</th>
+<th scope="col">Logiciels Associés</th>
+{% if not is_embedded|default(false) %}
+<th scope="col" class="no-sort">Actions</th>
+{% endif %}
+{% endblock %}
+
+{% block table_rows %}
+{% for robot_model in items %}
+<tr>
+    <td>
+        <a href="{{ url_for('robot_models.view', slug=robot_model.slug) }}">
+            {{ robot_model.name }}
+        </a>
+    </td>
+    <td>{{ robot_model.company }}</td>
+    <td>
+        {% if robot_model.software_associations %}
+            {% for assoc in robot_model.software_associations %}
+                <span class="badge bg-secondary">{{ assoc.software.name }}</span>
+                {% if not loop.last %} {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="text-muted">Aucun logiciel associé</span>
+        {% endif %}
+    </td>
+    {% if not is_embedded|default(false) %}
+    {{ action_buttons(
+        view_url=url_for('robot_models.view', slug=robot_model.slug),
+        edit_url=url_for('robot_models.edit', slug=robot_model.slug),
+        delete_url=url_for('robot_models.delete', slug=robot_model.slug),
+        delete_message='Êtes-vous sûr de vouloir supprimer ce modèle de robot ?'
+    ) }}
+    {% endif %}
+</tr>
+{% endfor %}
+{% endblock %}
+
+{% if show_add_form|default(false) %}
+{% block additional_content %}
+    <h2 class="text-center mt-5">Ajouter un modèle de Robot</h2>
+    {% include 'add/partials/robot_model.html' %}
+{% endblock %}
 {% endif %}

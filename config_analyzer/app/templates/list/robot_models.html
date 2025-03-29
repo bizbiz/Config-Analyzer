@@ -1,3 +1,4 @@
+{# templates/list/robot_models.html #}
 {% extends "base.html" %}
 
 {% block title %}Liste des Modèles de Robots{% endblock %}
@@ -6,7 +7,13 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Modèles de Robots</h1>
     
-    {% with items=robot_models, show_add_button=false %}
+    {% with 
+        items=robot_models, 
+        show_add_button=false, 
+        quick_stats=true,
+        total_softwares=total_softwares,
+        total_configs=total_configs
+    %}
         {% include 'list/partials/robot_models.html' %}
     {% endwith %}
     
