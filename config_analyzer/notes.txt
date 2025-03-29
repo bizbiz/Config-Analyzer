@@ -200,3 +200,33 @@ Comment penses tu qu'on peut créer une structure intélligente avec du polymorp
 Tu peux prendre ton temps pour répondre, c'est important qu'on prenne la meilleur décision maintenant pour éviter d'avoir à refactorer tous le code qui est déjà bien avancé
 
 Si il y a des choses que tu ne comprends pas n'hésite pas à me demander de te donner des exemples ou des explications, ne fais pas de guess si tu n'es pas sur, demande moi
+
+===========================
+
+
+
+Un gestionnaire de fichiers de configuration (= une liste de couple paramètre + valeur) qui utilise python, flask et postgresql.
+Le but de l'application est de :
+Suivre l'évolution des configurations dans le temps
+Rattacher un fichier de configuration à des instances d'entités (Client, Software, Hardware, Robot_Model, Computer, etc), pour permettre des comparaisons de fichier de configuration pertinentes
+Ajouter des parametres aux Entités (exemple : parametre d'un modele de robot = nombre de bras du robot)
+Définir des dépendances entre parametres (entre deux parametres d'un même fichier de configuration, ou entre un parametre de fichier de configuration et un parametre d'entité, ou entre parametre d'une même entité, etc pas de restriction)
+
+Donc j'essaye de faire une application modulaire ou on peut venir upload un fichier de config, et le relier à un client, une machine, un logiciel, une version de logiciel précise, on le lie à autant d'entity qu'on veut
+
+Et ensuite comme ca tu peux comparer les valeurs dans ton fichier de config à d'autres config qui ont des points commun
+Genre si le parametre est lié à une option, tu compare juste ce parametre dans ton fichier config avec les autres qui ont la même option
+Et si tel autre parametre il est dépendant de la localisation par exemple bah tu peux comparer avec les valeurs des fichiers de config d'autres clients qui sont dans la même région par exemple etc
+
+Chaque parametre de chaque fichier config est traité de façon indépendante
+
+Ca permet aussi l'historisation de chacun de paramètres dans le temps, à chaque fois que t'upload un fichier il va venir créer une nouvelle "valeur", désactiver l'ancienne valeur
+Et comme ca tu peux regarder comment une valeur d'un parametre d'un fichier de config a évolué dans le temps 
+
+Ca permet de comparer des fichiers de config dans lequels les couples parametres/valeurs sont pas dans le même ordre
+
+On peut rajouter des parametres à n'importe quel entité (robot, client, software, etc etc), qui sont définit par l'utilisateur de l'appli et  créer des dépendances comme on veut entre parametre d'un fichier ou parametre d'une entité
+
+Le polymorphisme je l'utilise pour gérer mes entités (robot, software, etc)
+Et pour gérer mes parametres : FloatParameter, EnumParameter, StringParameter, etc
+

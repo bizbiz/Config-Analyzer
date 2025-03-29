@@ -1,3 +1,4 @@
+{# templates/edit/client.html #}
 {% extends "base.html" %}
 {% from 'macros/_form_ui.html' import text_field, select_field, textarea_field with context %}
 {% from "macros/_table_ui.html" import param_table, card_header %}
@@ -6,42 +7,36 @@
 
 {% block extra_scripts %}
     <script src="{{ url_for('static', filename='js/expand_form_table.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <h1 class="text-center mb-4">Modifier le Client : {{ client.name }}</h1>
 
-    <form action="{{ url_for('clients.edit', slug=client.slug) }}" method="POST">
+    <form action="{{ url_for('clients.edit', slug=client.slug) }}" method="POST" id="clientEditForm">
         <div class="card p-4 shadow-sm mb-4">
             <h2 class="mb-3">Informations du Client</h2>
-            {{ text_field(
-                name="name",
-                label="Nom :",
-                value=client.name,
-                required=true
-            ) }}
             
-            {{ text_field(
-                name="postal_code",
-                label="Code Postal :",
-                value=client.postal_code_relation.code,
-                required=true
-            ) }}
-            
-            {{ text_field(
-                name="city",
-                label="Ville :",
-                value=client.postal_code_relation.city,
-                required=true
-            ) }}
-            
-            {{ text_field(
-                name="country_code",
-                label="Code Pays :",
-                value=client.postal_code_relation.country_code,
-                required=true
-            ) }}
+            {# Inclure le template partiel pour les champs communs du client #}
+            {% with 
+                form_id = "clientEditForm",
+                form_action = url_for('clients.edit', slug=client.slug),
+                form_data = form_data,
+                countries = countries,
+                name_error = name_error,
+                postal_code_error = postal_code_error,
+                city_error = city_error,
+                country_code_error = country_code_error,
+                submit_text = "Enregistrer",
+                submit_btn_class = "btn-primary",
+                submit_icon = "fa-save",
+                cancel_url = url_for('clients.view', slug=client.slug),
+                cancel_text = "Retour",
+                client_form_validation = false
+            %}
+                {% include 'add/partials/client.html' %}
+            {% endwith %}
         </div>
 
         <!-- Section Paramètres -->
@@ -57,15 +52,11 @@
                 <p class="text-muted">Aucun paramètre configuré ou disponible.</p>
             {% endif %}
         </div>
-
-        <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save me-2"></i>Enregistrer
-            </button>
-            <a href="{{ url_for('clients.view', slug=client.slug) }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Retour à la vue détaillée
-            </a>
-        </div>
     </form>
 </div>
+
+<script>
+    // Utiliser le script de validation commun
+    initFormValidation('clientEditForm');
+</script>
 {% endblock %}

@@ -31,18 +31,16 @@ def slugify(text, max_length=None):
     
     return text
 
-def generate_model_slug(model_class, instance, text_field, max_length=25, custom_field=None, custom_value=None):
+def generate_model_slug(base_text, model_class, custom_value=None, max_length=25):
     """
     Génère un slug unique pour n'importe quel modèle, en respectant strictement max_length.
-    Permet également d'essayer un slug personnalisé avec un champ supplémentaire avant d'ajouter un compteur.
+    Permet également d'essayer un slug personnalisé avec une valeur supplémentaire avant d'ajouter un compteur.
     
     Args:
+        base_text: Le texte à convertir en slug (username, name, etc.)
         model_class: La classe du modèle (User, UserGroup, etc.)
-        instance: L'instance du modèle (pour exclure lors de la vérification d'unicité)
-        text_field: Le texte à convertir en slug (username, name, etc.)
+        custom_value: Valeur supplémentaire à utiliser pour le slug (optionnel)
         max_length: Longueur maximale du slug
-        custom_field: Champ supplémentaire à utiliser pour générer un slug alternatif (optionnel)
-        custom_value: Valeur du champ supplémentaire (optionnel)
     
     Returns:
         str: Un slug unique de longueur <= max_length
@@ -52,30 +50,26 @@ def generate_model_slug(model_class, instance, text_field, max_length=25, custom
     safe_length = max_length - suffix_length
     
     # Générer le slug de base avec une longueur réduite pour accommoder un éventuel suffixe
-    base_slug = slugify(text_field, safe_length)
+    base_slug = slugify(base_text, safe_length)
     slug = base_slug
     
-    # Création de la requête avec exclusion de l'instance actuelle si elle a un ID
+    # Création de la requête pour vérifier si le slug existe déjà
     query = model_class.query.filter(model_class.slug == slug)
-    if hasattr(instance, 'id') and instance.id is not None:
-        query = query.filter(model_class.id != instance.id)
     
     # Vérifier si le slug existe déjà
     if query.first():
-        # Si un champ personnalisé est fourni, essayer un slug avec ce champ
-        if custom_field and custom_value:
+        # Si une valeur personnalisée est fournie, essayer un slug avec cette valeur
+        if custom_value:
             # Calculer l'espace disponible pour chaque partie du slug composé
             combined_safe_length = max_length - suffix_length - 1  # -1 pour le tiret de séparation
             part1_length = int(combined_safe_length * 0.7)  # 70% pour le texte principal
-            part2_length = combined_safe_length - part1_length  # Le reste pour le champ personnalisé
+            part2_length = combined_safe_length - part1_length  # Le reste pour la valeur personnalisée
             
             # Générer le slug composé
-            custom_slug = f"{slugify(text_field, part1_length)}-{slugify(custom_value, part2_length)}"
+            custom_slug = f"{slugify(base_text, part1_length)}-{slugify(custom_value, part2_length)}"
             
             # Vérifier si ce slug composé existe déjà
             custom_query = model_class.query.filter(model_class.slug == custom_slug)
-            if hasattr(instance, 'id') and instance.id is not None:
-                custom_query = custom_query.filter(model_class.id != instance.id)
             
             if not custom_query.first():
                 return custom_slug
@@ -86,12 +80,10 @@ def generate_model_slug(model_class, instance, text_field, max_length=25, custom
             # Si le compteur atteint 1000, réduire davantage la base pour un suffixe plus long
             if counter == 1000:
                 suffix_length += 1
-                base_slug = slugify(text_field, max_length - suffix_length)
+                base_slug = slugify(base_text, max_length - suffix_length)
             
             slug = f"{base_slug}-{counter}"
             counter += 1
             query = model_class.query.filter(model_class.slug == slug)
-            if hasattr(instance, 'id') and instance.id is not None:
-                query = query.filter(model_class.id != instance.id)
     
     return slug

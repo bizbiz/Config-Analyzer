@@ -1,7 +1,7 @@
+{# /templates/list/partials/clients.html #}
 {# Fragment sans extends pour inclusion dans d'autres templates #}
 {% if items is defined %}
 {% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
-
 <div class="card mt-4">
     {{ card_header(
         title=title|default('Clients'),
@@ -61,6 +61,5 @@
         {% endif %}
     </div>
 </div>
-
 {{ init_search('clientsTable', 'clientsSearchInput') }}
 {% endif %}

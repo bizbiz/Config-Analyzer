@@ -1,7 +1,7 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
-{% from 'macros/_form_ui.html' import text_field with context %}
+{# templates/add/partials/client.html #}
+{% from 'macros/_form_ui.html' import text_field, select_field with context %}
 
-<form action="{{ url_for('clients.add') }}" method="POST">
+<form action="{{ form_action|default(url_for('clients.add')) }}" method="POST" id="{{ form_id|default('clientForm') }}">
     {{ text_field(
         name="name",
         label="Nom :",
@@ -28,18 +28,31 @@
         error=city_error
     ) }}
     
-    {{ text_field(
+    {{ select_field(
         name="country_code",
-        label="Code Pays :",
-        value=form_data.country_code if form_data else "FR",
+        label="Pays :",
+        options=countries if countries is defined else [],
+        option_value="code",
+        option_text="name",
+        selected=form_data.country_code if form_data and form_data.country_code else "FRA",
         required=true,
-        pattern="[A-Z]{2}",
-        help_text="Le code pays doit être composé de 2 lettres majuscules (ex: FR)",
+        help_text="Veuillez sélectionner un pays",
         error=country_code_error
     ) }}
     
     <div class="mt-4">
-        <button type="submit" class="btn btn-success">Ajouter</button>
-        <a href="{{ url_for('clients.list') }}" class="btn btn-secondary ms-2">Annuler</a>
+        <button type="submit" class="btn {{ submit_btn_class|default('btn-success') }}">
+            <i class="fas {{ submit_icon|default('fa-save') }} me-2"></i>{{ submit_text|default('Ajouter') }}
+        </button>
+        <a href="{{ cancel_url|default(url_for('clients.list')) }}" class="btn btn-secondary ms-2">
+            <i class="fas fa-times me-2"></i>{{ cancel_text|default('Annuler') }}
+        </a>
     </div>
 </form>
+
+{% if client_form_validation is not defined or client_form_validation %}
+<script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+<script>
+    initFormValidation('{{ form_id|default("clientForm") }}');
+</script>
+{% endif %}

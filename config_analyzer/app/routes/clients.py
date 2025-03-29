@@ -1,4 +1,7 @@
 # app/routes/clients.py
+"""
+Routes pour la gestion des clients.
+"""
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models.entities.client import Client
@@ -14,19 +17,20 @@ from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.utils.param_helpers import get_applicable_params_configs, get_unconfigured_params
-import re
+from app.utils.countries import get_countries_list
+from app.utils.validators import validate_client_form, get_or_create_postal_code
 
 # Définition du blueprint avec un préfixe explicite
 clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 
 @clients_bp.route('/view/<string:slug>')
 def view(slug):
+    """Affiche les détails d'un client."""
     client = Client.query.filter_by(slug=slug).options(
-        joinedload(Client.postal_code_relation),
-        joinedload(Client.robots).joinedload(RobotInstance.model),
-        joinedload(Client.configurations)
+        joinedload(Client.postal_code_relation)
     ).first_or_404()
 
+    # Le reste du code reste inchangé
     applicable_configs = ParameterDefinition.query.filter(
         ParameterDefinition.target_entity == EntityType.CLIENT
     ).all()
@@ -41,7 +45,7 @@ def view(slug):
     return render_template(
         'view/client.html',
         client=client,
-        robots=client.robots,
+        robots=client.robots.all(),
         configurations=client.configurations,
         configured_params=configured_params,
         unconfigured_params=unconfigured_params
@@ -50,34 +54,36 @@ def view(slug):
 
 @clients_bp.route('/list')
 def list():
+    """Liste tous les clients."""
     clients = Client.query.all()
     form_data = {}
     name_error = postal_code_error = city_error = country_code_error = None
+    
+    # Obtenir la liste des pays pour le formulaire d'ajout rapide
+    countries = get_countries_list()
 
-    params_configs = AdditionalParametersConfig.query.filter(
-        or_(
-            (AdditionalParametersConfig.target_entity == EntityType.CLIENT) &
-            (AdditionalParametersConfig.applicable_ids == []),
-            
-            (AdditionalParametersConfig.target_entity.is_(None)) &
-            (AdditionalParametersConfig.applicable_ids == [])
-        )
+    # Récupérer les définitions de paramètres globaux pour les clients
+    params_configs = ParameterDefinition.query.filter(
+        ParameterDefinition.target_entity == EntityType.CLIENT
     ).all()
 
     # Sérialiser les configurations pour JavaScript
     configs_json = [{
-        'configuration_values': config.configuration_values,
-        'type': config.type.value
+        'id': config.id,
+        'name': config.name,
+        'description': config.description,
+        'type': config.definition_type
     } for config in params_configs]
 
     return render_template(
         'list/clients.html', 
         params_configs=params_configs,
-        configs_json=configs_json,  # Nouveau paramètre
+        configs_json=configs_json,
         clients=clients,
         entity_type='client',
         entity_slug='global',
         form_data=form_data,
+        countries=countries,
         name_error=name_error,
         postal_code_error=postal_code_error,
         city_error=city_error,
@@ -87,6 +93,9 @@ def list():
 @clients_bp.route('/add', methods=['GET', 'POST'])
 def add():
     """Ajoute un nouveau client."""
+    # Obtenir la liste des pays
+    countries = get_countries_list()
+    
     if request.method == 'POST':
         name = request.form.get('name')
         postal_code_value = request.form.get('postal_code')
@@ -100,41 +109,16 @@ def add():
             'country_code': country_code
         }
 
-        # Validation du nom
-        if not name:
-            flash("Le nom est obligatoire.", "error")
-            return render_template('add/client.html', form_data=form_data, name_error="Le nom est obligatoire.")
+        # Validation du formulaire
+        is_valid, response = validate_client_form(
+            name, postal_code_value, city, country_code, 
+            countries, 'add/client.html', form_data
+        )
+        if not is_valid:
+            return response
 
-        # Validation du code postal
-        if not re.match(r'^\d{5}$', postal_code_value):
-            postal_code_error = "Le code postal doit contenir exactement 5 chiffres."
-            return render_template('add/client.html', 
-                                 form_data=form_data, 
-                                 postal_code_error=postal_code_error)
-        
-        # Validation du code pays
-        if not re.match(r'^[A-Z]{2}$', country_code):
-            country_code_error = "Le code pays doit être composé de 2 lettres majuscules."
-            return render_template('add/client.html', 
-                                 form_data=form_data, 
-                                 country_code_error=country_code_error)
-
-        # Chercher si ce code postal existe déjà
-        postal_code = PostalCode.query.filter_by(
-            code=postal_code_value, 
-            city=city, 
-            country_code=country_code
-        ).first()
-        
-        # S'il n'existe pas, créer un nouveau code postal
-        if not postal_code:
-            postal_code = PostalCode(
-                code=postal_code_value,
-                city=city,
-                country_code=country_code
-            )
-            db.session.add(postal_code)
-            db.session.flush()  # Pour obtenir l'ID du code postal
+        # Récupérer ou créer le code postal
+        postal_code = get_or_create_postal_code(postal_code_value, city, country_code)
             
         # Créer le nouveau client avec la relation
         new_client = Client(name=name, postal_code_id=postal_code.id)
@@ -145,35 +129,55 @@ def add():
         flash("Client ajouté avec succès !", "success")
         return redirect(url_for('clients.list'))
 
-    return render_template('add/client.html')
+    return render_template('add/client.html', countries=countries)
 
 @clients_bp.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit(slug):
+    """Modifie un client existant."""
     client = Client.query.filter_by(slug=slug).first_or_404()
     
+    # Obtenir la liste des pays
+    countries = get_countries_list()
+    
+    # Récupérer les configurations existantes pour la vue
+    applicable_configs = get_applicable_params_configs('client', client.id)
+    unconfigured_params = get_unconfigured_params(client.id, applicable_configs)
+    configured_params = [p for p in applicable_configs if p not in unconfigured_params]
+    
     if request.method == 'POST':
-        client.name = request.form['name']
+        name = request.form.get('name')
+        code = request.form.get('postal_code')
+        city = request.form.get('city')
+        country_code = request.form.get('country_code')
         
-        code = request.form['postal_code']
-        city = request.form['city']
-        country_code = request.form['country_code']
+        form_data = {
+            'name': name,
+            'postal_code': code,
+            'city': city,
+            'country_code': country_code
+        }
         
-        postal_code = PostalCode.query.filter_by(
-            code=code, 
-            city=city, 
-            country_code=country_code
-        ).first()
+        # Validation du formulaire client
+        is_valid, response = validate_client_form(
+            name, code, city, country_code, 
+            countries, 'edit/client.html', form_data,
+            client=client,
+            configured_params=configured_params,
+            unconfigured_params=unconfigured_params
+        )
+        if not is_valid:
+            return response
         
-        if not postal_code:
-            postal_code = PostalCode(
-                code=code,
-                city=city,
-                country_code=country_code
-            )
-            db.session.add(postal_code)
-            
+        # Mettre à jour le nom du client
+        client.name = name
+        
+        # Récupérer ou créer le code postal
+        postal_code = get_or_create_postal_code(code, city, country_code)
+        
+        # Mettre à jour la relation
         client.postal_code_relation = postal_code
 
+        # Traiter les paramètres supplémentaires
         for key, value in request.form.items():
             if key.startswith('param_'):
                 param_id = int(key.split('_')[1])
@@ -200,15 +204,23 @@ def edit(slug):
         flash("Modifications enregistrées avec succès !", "success")
         return redirect(url_for('clients.view', slug=client.slug))
 
-    applicable_configs = get_applicable_params_configs('client', client.id)
-    unconfigured_params = get_unconfigured_params(client.id, applicable_configs)
-    configured_params = [p for p in applicable_configs if p not in unconfigured_params]
+    # Récupérer les infos du code postal actuel
+    postal_code = client.postal_code_relation
+    
+    # Préparer les données du formulaire
+    form_data = {
+        'name': client.name,
+        'postal_code': postal_code.code if postal_code else '',
+        'city': postal_code.city if postal_code else '',
+        'country_code': postal_code.country_code if postal_code else 'FRA'
+    }
 
     return render_template('edit/client.html', 
-                           client=client, 
-                           configured_params=configured_params,
-                           unconfigured_params=unconfigured_params)
-
+                          client=client,
+                          form_data=form_data,
+                          countries=countries,
+                          configured_params=configured_params,
+                          unconfigured_params=unconfigured_params)
 
 
 @clients_bp.route('/delete/<slug>', methods=['POST'])
@@ -226,4 +238,3 @@ def delete(slug):
         flash(f"Impossible de supprimer ce client : {str(e)}", "error")
     
     return redirect(url_for('clients.list'))
-

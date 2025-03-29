@@ -1,5 +1,10 @@
+{# templates/add/client.html #}
 {% extends "base.html" %}
 {% block title %}Ajouter un Client{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -11,10 +16,18 @@
             name_error=name_error,
             postal_code_error=postal_code_error,
             city_error=city_error,
-            country_code_error=country_code_error
+            country_code_error=country_code_error,
+            countries=countries,
+            form_id="addClientForm",
+            client_form_validation=false
         %}
             {% include 'add/partials/client.html' %}
         {% endwith %}
     </div>
 </div>
+
+<script>
+    // Utiliser le script de validation commun
+    initFormValidation('addClientForm');
+</script>
 {% endblock %}
