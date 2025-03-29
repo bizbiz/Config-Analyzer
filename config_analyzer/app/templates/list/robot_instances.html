@@ -1,3 +1,4 @@
+{# templates/list/robot_instances.html #}
 {% extends "base.html" %}
 
 {% block title %}Liste des Robots Clients{% endblock %}
@@ -6,7 +7,13 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Robots Clients</h1>
     
-    {% with items=robot_instances, show_add_button=false %}
+    {% with 
+        items=robot_instances, 
+        show_add_button=false, 
+        quick_stats=true,
+        robots_with_software=robots_with_software|default(0),
+        unique_clients=unique_clients|default(0)
+    %}
         {% include 'list/partials/robot_instances.html' %}
     {% endwith %}
     
@@ -24,6 +31,22 @@
         %}
             {% include 'add/partials/robot_instance.html' %}
         {% endwith %}
+    </div>
+    
+    <!-- Section pour afficher les paramètres additionnels -->
+    {% with 
+        params_configs=configs_json|default([]),
+        entity_name="tous les robots clients",
+        entity_type="robot_instance",
+        entity_slug=None,
+        show_add_button=false
+    %}
+        {% include 'list/partials/additional_params_config.html' %}
+    {% endwith %}
+    
+    <!-- Lien de retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Retour à l'accueil</a>
     </div>
 </div>
 {% endblock %}

@@ -1,8 +1,8 @@
-{# Fragment sans extends pour inclusion dans d'autres templates #}
+{# config_analyzer/app/templates/add/partials/robot_instance.html #}
 {% if clients is defined and robot_models is defined %}
 {% from 'macros/_form_ui.html' import text_field, select_field with context %}
 
-<form method="post">
+<form method="post" action="{{ url_for('robot_instances.add') }}">
     {{ select_field(
         name="client_id",
         label="Client",
@@ -18,12 +18,12 @@
     ) }}
     
     {{ select_field(
-        name="robot_modele_id",
+        name="robot_model_id",
         label="Modèle de Robot",
         options=robot_models,
         option_value="id",
         option_text="name",
-        selected=(form_data.robot_modele_id if form_data else None) or preselected_model_id|default(None),
+        selected=(form_data.robot_model_id if form_data else None) or preselected_model_id|default(None),
         required=true,
         add_button={
             "url": url_for('robot_models.add'),
@@ -37,24 +37,6 @@
         value=form_data.serial_number if form_data else "",
         required=true,
         error=serial_number_error
-    ) }}
-    
-    {{ text_field(
-        name="length",
-        label="Longueur (m)",
-        value=form_data.length if form_data else "",
-        pattern="\d+(\.\d{1,2})?",
-        help_text="Veuillez entrer un nombre valide avec jusqu'à deux décimales.",
-        error=length_error
-    ) }}
-    
-    {{ text_field(
-        name="height",
-        label="Hauteur (m)",
-        value=form_data.height if form_data else "",
-        pattern="\d+(\.\d{1,2})?",
-        help_text="Veuillez entrer un nombre valide avec jusqu'à deux décimales.",
-        error=height_error
     ) }}
     
     <div class="mt-4">

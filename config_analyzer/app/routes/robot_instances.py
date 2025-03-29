@@ -1,9 +1,10 @@
-# app/routes/robot_instances.py
+# config_analyzer/app/routes/robot_instances.py
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models.entities.client import Client
 from app.models.entities.robot_model import RobotModel
 from app.models.entities.robot_instance import RobotInstance
 from app.extensions import db
+from sqlalchemy.exc import SQLAlchemyError  # Ajout de l'import manquant
 
 robot_instances_bp = Blueprint('robot_instances', __name__, url_prefix='/robot-instances')
 
@@ -23,24 +24,42 @@ def list():
 def add():
     if request.method == 'POST':
         try:
+            # Récupération et validation des données du formulaire
+            serial_number = request.form.get('serial_number')
+            client_id = request.form.get('client_id')
+            # Vérifier les deux noms possibles pour le champ
+            robot_model_id = request.form.get('robot_model_id')
+            if not robot_model_id:
+                robot_model_id = request.form.get('robot_modele_id')
+            
+            # Validation
+            if not serial_number or not client_id or not robot_model_id:
+                flash("Tous les champs obligatoires doivent être remplis", "error")
+                return render_template('add/robot_instance.html',
+                                    clients=Client.query.all(),
+                                    robot_models=RobotModel.query.all(),
+                                    form_data=request.form)
+            
+            # Création du robot (sans length et height pour l'instant)
             new_robot = RobotInstance(
-                serial_number=request.form['serial_number'],
-                client_id=request.form['client_id'],
-                robot_model_id=request.form['robot_model_id'],
-                length=float(request.form['length']) if request.form['length'] else None,
-                height=float(request.form['height']) if request.form['height'] else None
+                serial_number=serial_number,
+                client_id=int(client_id),
+                robot_model_id=int(robot_model_id)
             )
+                
             db.session.add(new_robot)
             db.session.commit()
             flash("Instance robot ajoutée avec succès", "success")
-            return redirect(url_for('robot_instances.list_instances'))
-            
-        except ValueError:
+            return redirect(url_for('robot_instances.list'))
+        except ValueError as e:
             db.session.rollback()
-            flash("Erreur de format numérique", "error")
+            flash(f"Erreur de format numérique : {str(e)}", "error")
         except SQLAlchemyError as e:
             db.session.rollback()
             flash(f"Erreur base de données : {str(e)}", "error")
+        except TypeError as e:
+            db.session.rollback()
+            flash(f"Erreur type : {str(e)}", "error")
     
     return render_template('add/robot_instance.html',
                          clients=Client.query.all(),
@@ -61,7 +80,7 @@ def edit(serial_number):
             
             db.session.commit()
             flash("Modifications enregistrées", "success")
-            return redirect(url_for('robot_instances.list_instances'))
+            return redirect(url_for('robot_instances.list'))
             
         except ValueError:
             flash("Valeurs numériques invalides", "error")
@@ -86,7 +105,7 @@ def delete(serial_number):
         db.session.rollback()
         flash(f"Erreur suppression : {str(e)}", "error")
     
-    return redirect(url_for('robot_instances.list_instances'))
+    return redirect(url_for('robot_instances.list'))
 
 @robot_instances_bp.route('/view/<string:serial_number>')
 def view(serial_number):
