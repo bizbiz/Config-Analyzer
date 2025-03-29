@@ -1,0 +1,72 @@
+{# templates/list/partials/_base_list_partial.html #}
+{% if items is defined %}
+{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
+{% from 'macros/_common_ui.html' import badge with context %}
+{% block import_macros %}{% endblock %}
+
+<div class="card {% if not is_embedded|default(false) %}mt-4{% endif %}">
+    {% if not is_embedded|default(false) %}
+        {{ card_header(
+            title=title|default(block('default_title')),
+            add_url=block('add_url'),
+            add_text=block('add_text')|default("Ajouter"),
+            show_button=show_add_button|default(true)
+        ) }}
+    {% endif %}
+    
+    <div class="card-body">
+        {% block pre_table_content %}{% endblock %}
+
+        {% if items %}
+            {% if show_search|default(true) and not is_embedded|default(false) %}
+            <div class="mb-3">
+                <input type="text" id="{% block search_input_id %}entitySearchInput{% endblock %}" class="form-control" 
+                       placeholder="{% block search_placeholder %}Rechercher...{% endblock %}">
+            </div>
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-striped {% if not is_embedded|default(false) %}table-bordered{% endif %} align-middle data-table" 
+                       id="{% block table_id %}entityTable{% endblock %}"
+                       data-list-filter="true"
+                       data-filter-input="{% block filter_input_id %}entitySearchInput{% endblock %}" 
+                       data-filter-columns="{% block filter_columns %}3{% endblock %}"
+                       data-sortable="true">
+                    <thead class="table-light">
+                        <tr>
+                            {% block table_headers %}
+                            <!-- Les en-têtes de colonnes seront remplacés ici -->
+                            {% endblock %}
+                        </tr>
+                    </thead>
+                    <tbody id="{% block tbody_id %}entity-table-body{% endblock %}">
+                        {% block table_rows %}
+                        <!-- Les lignes du tableau seront remplacées ici -->
+                        {% endblock %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            {{ alert_empty_list(
+                message=block('empty_message')|default("Aucun élément trouvé."),
+                add_url=block('add_url'),
+                add_text=block('add_text')|default("Ajouter")
+            ) }}
+        {% endif %}
+    </div>
+</div>
+
+{% if not is_embedded|default(false) %}
+{{ init_search(block('table_id'), block('search_input_id')) }}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/table_sorter.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser le tri pour ce tableau
+    initSortableTable('{% block table_id_js %}entityTable{% endblock %}', '{% block tbody_id_js %}entity-table-body{% endblock %}');
+});
+</script>
+
+{% block additional_content %}{% endblock %}
+{% endif %}

@@ -1,65 +1,52 @@
-{# /templates/list/partials/clients.html #}
-{# Fragment sans extends pour inclusion dans d'autres templates #}
-{% if items is defined %}
-{% from 'macros/_table_ui.html' import init_search, card_header, action_buttons, alert_empty_list with context %}
-<div class="card mt-4">
-    {{ card_header(
-        title=title|default('Clients'),
-        add_url=url_for('clients.add'),
-        add_text="Ajouter un client",
-        show_button=show_add_button|default(true)
-    ) }}
-    
-    <div class="card-body">
-        {% if items %}
-            {% if show_search|default(true) %}
-            <div class="mb-3">
-                <input type="text" id="clientsSearchInput" class="form-control" 
-                       placeholder="Rechercher un client...">
-            </div>
-            {% endif %}
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle" 
-                       id="clientsTable"
-                       data-list-filter="true"
-                       data-filter-input="clientsSearchInput" 
-                       data-filter-columns="4">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nom</th>
-                            <th>Code Postal</th>
-                            <th>Ville</th>
-                            <th>Code Pays</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for client in items %}
-                        <tr>
-                            <td>{{ client.name }}</td>
-                            <td>{{ client.postal_code_relation.code }}</td>
-                            <td>{{ client.postal_code_relation.city }}</td>
-                            <td>{{ client.postal_code_relation.country_code }}</td>
-                            {{ action_buttons(
-                                view_url=url_for('clients.view', slug=client.slug),
-                                edit_url=url_for('clients.edit', slug=client.slug),
-                                delete_url=url_for('clients.delete', slug=client.slug),
-                                delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
-                            ) }}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            {{ alert_empty_list(
-                message="Aucun client trouvé.",
-                add_url=url_for('clients.add'),
-                add_text="Ajouter un client"
-            ) }}
-        {% endif %}
-    </div>
-</div>
-{{ init_search('clientsTable', 'clientsSearchInput') }}
+{# templates/list/partials/clients.html #}
+{% extends 'list/partials/_base_list_partial.html' %}
+
+{% block default_title %}Clients{% endblock %}
+
+{% block add_url %}{{ url_for('clients.add') }}{% endblock %}
+{% block add_text %}Ajouter un client{% endblock %}
+
+{% block search_input_id %}clientsSearchInput{% endblock %}
+{% block filter_input_id %}clientsSearchInput{% endblock %}
+{% block table_id %}clientsTable{% endblock %}
+{% block table_id_js %}clientsTable{% endblock %}
+{% block search_placeholder %}Rechercher un client...{% endblock %}
+{% block filter_columns %}4{% endblock %}
+
+{% block tbody_id %}clients-table-body{% endblock %}
+{% block tbody_id_js %}clients-table-body{% endblock %}
+
+{% block empty_message %}Aucun client trouvé.{% endblock %}
+
+{% block table_headers %}
+<th scope="col">Nom</th>
+<th scope="col">Code Postal</th>
+<th scope="col">Ville</th>
+<th scope="col">Code Pays</th>
+{% if not is_embedded|default(false) %}
+<th scope="col" class="no-sort">Actions</th>
 {% endif %}
+{% endblock %}
+
+{% block table_rows %}
+{% for client in items %}
+<tr>
+    <td>
+        <a href="{{ url_for('clients.view', slug=client.slug) }}">
+            {{ client.name }}
+        </a>
+    </td>
+    <td>{{ client.postal_code_relation.code }}</td>
+    <td>{{ client.postal_code_relation.city }}</td>
+    <td>{{ client.postal_code_relation.country_code }}</td>
+    {% if not is_embedded|default(false) %}
+    {{ action_buttons(
+        view_url=url_for('clients.view', slug=client.slug),
+        edit_url=url_for('clients.edit', slug=client.slug),
+        delete_url=url_for('clients.delete', slug=client.slug),
+        delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
+    ) }}
+    {% endif %}
+</tr>
+{% endfor %}
+{% endblock %}
