@@ -1,7 +1,6 @@
 {# /app/templates/view/robot_model.html #}
 {% extends "view/entity_detail_base.html" %}
 {% from "macros/_entity_sections.html" import parameters_section %}
-{% from "macros/_common_ui.html" import spaced_section %}
 
 {% block entity_title %}Détails du robot : {{ robot_model.name }}{% endblock %}
 {% block entity_header %}Détails du robot : {{ robot_model.name }}{% endblock %}
@@ -80,7 +79,7 @@
     {% endwith %}
 </div>
 
-<!-- Section Paramètres -->
+<!-- Section Paramètres - NOTE: Pas de div englobant supplémentaire ici -->
 {{ parameters_section(configured_params, unconfigured_params, 'robot_model', robot_model.slug) }}
 {% endblock %}
 
