@@ -286,3 +286,24 @@ Colonnes communes
 
 Certaines colonnes (date de création, dernière modification) pourraient être standardisées
 Formatage cohérent pour les différents types de données
+
+
+4. Pour aller plus loin
+Pour une factorisation encore plus poussée, vous pourriez :
+
+Créer un système de blocs configurables
+
+Un composant réutilisable pour les tableaux de données avec paramètres
+Des paramètres standards pour tous les types d'entités
+
+
+Utiliser une approche orientée composants
+
+Diviser les templates en "composants" autonomes
+Passer les données par contexte pour rendre ces composants plus génériques
+
+
+Développer un framework de vue plus avancé
+
+Classe de base en Python pour présenter les données de manière uniforme
+Fonctions d'aide qui réduisent la duplication de code dans les routes

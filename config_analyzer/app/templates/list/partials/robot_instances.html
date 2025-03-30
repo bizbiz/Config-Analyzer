@@ -48,7 +48,7 @@
 {% for robot_instance in items %}
 <tr>
     <td>
-        <a href="{{ url_for('robot_instances.view', serial_number=robot_instance.serial_number) }}">
+        <a href="{{ url_for('robot_instances.view', slug=robot_instance.slug) }}">
             {{ robot_instance.serial_number }}
         </a>
     </td>
@@ -56,7 +56,7 @@
     <td>{{ robot_instance.client.name }}</td>
     {% endif %}
     {% if not hide_model|default(false) %}
-    <td>{{ robot_instance.robot_modele.name }}</td>
+    <td>{{ robot_instance.model.name }}</td>
     {% endif %}
     <td>
         {% for software in robot_instance.softwares %}
@@ -65,9 +65,9 @@
     </td>
     {% if not is_embedded|default(false) %}
     {{ action_buttons(
-        view_url=url_for('robot_instances.view', serial_number=robot_instance.serial_number),
-        edit_url=url_for('robot_instances.edit', serial_number=robot_instance.serial_number),
-        delete_url=url_for('robot_instances.delete', serial_number=robot_instance.serial_number),
+        view_url=url_for('robot_instances.view', slug=robot_instance.slug),
+        edit_url=url_for('robot_instances.edit', slug=robot_instance.slug),
+        delete_url=url_for('robot_instances.delete', slug=robot_instance.slug),
         delete_message='Êtes-vous sûr de vouloir supprimer ce robot client ?'
     ) }}
     {% endif %}

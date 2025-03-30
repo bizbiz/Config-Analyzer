@@ -93,12 +93,6 @@ def add():
                 client_id=int(client_id),
                 robot_model_id=int(robot_model_id)
             )
-            
-            # Ajout des attributs facultatifs
-            if request.form.get('length'):
-                setattr(new_robot, 'length', float(request.form.get('length')))
-            if request.form.get('height'):
-                setattr(new_robot, 'height', float(request.form.get('height')))
                 
             db.session.add(new_robot)
             db.session.commit()
@@ -119,9 +113,9 @@ def add():
                          robot_models=RobotModel.query.all(),
                          preselected_model_id=request.args.get('robot_model_id'))
 
-@robot_instances_bp.route('/edit/<string:serial_number>', methods=['GET', 'POST'])
+@robot_instances_bp.route('/edit/<string:slug>', methods=['GET', 'POST'])
 def edit(serial_number):
-    robot = RobotInstance.query.filter_by(serial_number=serial_number).first_or_404()
+    robot = RobotInstance.query.filter_by(slug=slug).first_or_404()
     
     if request.method == 'POST':
         try:
@@ -146,9 +140,9 @@ def edit(serial_number):
                          clients=Client.query.all(),
                          robot_models=RobotModel.query.all())
 
-@robot_instances_bp.route('/delete/<string:serial_number>', methods=['POST'])
+@robot_instances_bp.route('/delete/<string:slug>', methods=['POST'])
 def delete(serial_number):
-    robot = RobotInstance.query.filter_by(serial_number=serial_number).first_or_404()
+    robot = RobotInstance.query.filter_by(slug=slug).first_or_404()
     
     try:
         db.session.delete(robot)
@@ -160,12 +154,32 @@ def delete(serial_number):
     
     return redirect(url_for('robot_instances.list'))
 
-@robot_instances_bp.route('/view/<string:serial_number>')
-def view(serial_number):
+@robot_instances_bp.route('/view/<string:slug>')
+def view(slug):
     robot = RobotInstance.query.options(
         db.joinedload(RobotInstance.client),
-        db.joinedload(RobotInstance.model)
-    ).filter_by(serial_number=serial_number).first_or_404()
+        db.joinedload(RobotInstance.model),
+        db.joinedload(RobotInstance.software_versions)
+    ).filter_by(slug=slug).first_or_404()
+    
+    # Récupérer les configurations de paramètres applicables pour ce robot
+    from app.models.parameters.definitions import ParameterDefinition
+    from app.models.parameters.values import ParameterValue
+    from app.models.enums import EntityType
+    from app.utils.param_helpers import get_unconfigured_params
+    
+    applicable_configs = ParameterDefinition.query.filter(
+        ParameterDefinition.target_entity == EntityType.ROBOT_INSTANCE
+    ).all()
+    
+    configured_params = ParameterValue.query.filter(
+        ParameterValue.entity_id == robot.id,
+        ParameterValue.entity_type == EntityType.ROBOT_INSTANCE
+    ).all()
+    
+    unconfigured_params = get_unconfigured_params(robot.id, applicable_configs)
     
     return render_template('view/robot_instance.html', 
-                         robot_instance=robot)
+                          robot_instance=robot,
+                          configured_params=configured_params,
+                          unconfigured_params=unconfigured_params)

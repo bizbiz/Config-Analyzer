@@ -1,32 +1,115 @@
-{% extends "base.html" %}
-{% block title %}Voir Client Robot{% endblock %}
-{% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">Voir Client Robot</h1>
-    <div class="mb-3">
-        <label class="form-label"><strong>ID :</strong></label>
-        <p>{{ robot-instance.id }}</p>
-    </div>
-    <div class="mb-3">
-        <label class="form-label"><strong>Client :</strong></label>
-        <p>{{ robot-instance.client.name }}</p>
-    </div>
-    <div class="mb-3">
-        <label class="form-label"><strong>Modèle de Robot :</strong></label>
-        <p>{{ robot-instance.robot_modele.name }}</p>
-    </div>
-    <div class="mb-3">
-        <label class="form-label"><strong>Numéro de Série :</strong></label>
-        <p>{{ robot-instance.serial_number }}</p>
-    </div>
-    <div class="mb-3">
-        <label class="form-label"><strong>Longueur :</strong></label>
-        <p>{{ robot-instance.length }}</p>
-    </div>
-    <div class="mb-3">
-        <label class="form-label"><strong>Hauteur :</strong></label>
-        <p>{{ robot-instance.height }}</p>
-    </div>
-    <a href="{{ url_for('robot-instances.list') }}" class="btn btn-secondary">Retour à la liste</a>
-</div>
+{# /app/templates/view/robot_instance.html #}
+{% extends "view/entity_detail_base.html" %}
+{% from "macros/_entity_sections.html" import parameters_section %}
+
+{% block entity_title %}Détails du Robot Client : {{ robot_instance.serial_number }}{% endblock %}
+{% block entity_header %}Détails du Robot Client : {{ robot_instance.serial_number }}{% endblock %}
+
+{% block action_buttons %}
+<a href="{{ url_for('robot_instances.edit', slug=robot_instance.slug) }}" 
+   class="btn btn-outline-primary">
+    <i class="fas fa-edit"></i> Modifier
+</a>
+<a href="{{ url_for('additional_params_config.add', entity_type='robot_instance', entity_slug=robot_instance.slug) }}" 
+   class="btn btn-outline-success">
+    <i class="fas fa-cog"></i> Ajouter un paramètre
+</a>
 {% endblock %}
+
+{% block info_content %}
+<dt class="col-sm-4">Numéro de Série</dt>
+<dd class="col-sm-8">{{ robot_instance.serial_number }}</dd>
+
+<dt class="col-sm-4">Client</dt>
+<dd class="col-sm-8">
+    <a href="{{ url_for('clients.view', slug=robot_instance.client.slug) }}">
+        {{ robot_instance.client.name }}
+    </a>
+</dd>
+
+<dt class="col-sm-4">Modèle de Robot</dt>
+<dd class="col-sm-8">
+    <a href="{{ url_for('robot_models.view', slug=robot_instance.model.slug) }}">
+        {{ robot_instance.model.name }}
+    </a>
+</dd>
+
+<dt class="col-sm-4">Créé le</dt>
+<dd class="col-sm-8">{{ robot_instance.created_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+{% endblock %}
+
+{% block stats_content %}
+<dt class="col-sm-6">Logiciels installés</dt>
+<dd class="col-sm-6">{{ robot_instance.software_versions|length }}</dd>
+
+{% if configured_params is defined and unconfigured_params is defined %}
+<dt class="col-sm-6">Paramètres</dt>
+<dd class="col-sm-6">
+    {{ configured_params|length }}/{{ configured_params|length + unconfigured_params|length }}
+</dd>
+{% endif %}
+{% endblock %}
+
+{% block entity_sections %}
+<!-- Section Logiciels installés -->
+<div class="mb-5">
+    {% if robot_instance.software_versions %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-code-branch me-2"></i>Logiciels installés
+                <span class="badge bg-primary ms-2">{{ robot_instance.software_versions|length }}</span>
+            </h5>
+            <a href="{{ url_for('robot_instances.edit', serial_number=robot_instance.slug) }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>Ajouter un logiciel
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Logiciel</th>
+                            <th>Version</th>
+                            <th>Date d'installation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sw_version in robot_instance.software_versions %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('softwares.view', name=sw_version.software_version.software.name) }}">
+                                    {{ sw_version.software_version.software.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('software_versions.view', software_name=sw_version.software_version.software.name, version=sw_version.software_version.version) }}">
+                                    {{ sw_version.software_version.version }}
+                                </a>
+                            </td>
+                            <td>{{ sw_version.installation_date.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>Aucun logiciel installé sur ce robot.
+        <a href="{{ url_for('robot_instances.edit', slug=robot_instance.slug) }}" class="alert-link">
+            Ajouter un logiciel
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Section Paramètres si définis -->
+{% if configured_params is defined and unconfigured_params is defined %}
+{{ parameters_section(configured_params, unconfigured_params, 'robot_instance', robot_instance.serial_number) }}
+{% endif %}
+{% endblock %}
+
+{% block back_url %}{{ url_for('robot_instances.list') }}{% endblock %}
+{% block back_text %}Retour à la liste des robots{% endblock %}
