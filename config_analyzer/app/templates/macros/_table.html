@@ -1,5 +1,285 @@
 {# /templates/macros/_table.html #}
 
+{# Macro principale pour l'affichage des tableaux - version complète #}
+{% macro data_table(
+    entity_type,
+    items,
+    headers,
+    columns,
+    title=null,
+    icon=null,
+    add_url=null,
+    add_label="Ajouter",
+    actions=true,
+    search=true,
+    pagination=true,
+    filters={},
+    sort_options=[],
+    custom_row_classes=null,
+    additional_buttons=[],
+    show_export=false,
+    export_url=null,
+    export_label="Exporter",
+    empty_message="Aucun élément trouvé",
+    bulk_actions=[],
+    row_click_action=null,
+    refresh_interval=null,
+    table_class="",
+    show_count=true,
+    custom_actions={}
+) %}
+    <div class="data-table-container" data-entity-type="{{ entity_type }}" 
+         {% if refresh_interval %}data-refresh="{{ refresh_interval }}"{% endif %}>
+        
+        {# En-tête du tableau avec titre et boutons principaux #}
+        <div class="table-header">
+            {% if title %}
+            <h2 class="table-title">
+                {% if icon %}<i class="fa fa-{{ icon }}"></i>{% endif %}
+                {{ title }}
+                {% if show_count %}
+                <span class="item-count">({{ items|length }})</span>
+                {% endif %}
+            </h2>
+            {% endif %}
+            
+            <div class="header-actions">
+                {% if add_url %}
+                <a href="{{ add_url }}" class="btn btn-primary add-btn">
+                    <i class="fa fa-plus"></i> {{ add_label }}
+                </a>
+                {% endif %}
+                
+                {% if show_export %}
+                <a href="{{ export_url }}" class="btn btn-secondary export-btn">
+                    <i class="fa fa-download"></i> {{ export_label }}
+                </a>
+                {% endif %}
+                
+                {% for button in additional_buttons %}
+                <button class="btn {{ button.class|default('btn-secondary') }}" 
+                        {% if button.id %}id="{{ button.id }}"{% endif %}
+                        {% if button.action %}data-action="{{ button.action }}"{% endif %}
+                        {% if button.url %}onclick="window.location.href='{{ button.url }}'"{% endif %}
+                        {% for attr, value in button.attributes|default({}) %}
+                            {{ attr }}="{{ value }}"
+                        {% endfor %}>
+                    {% if button.icon %}<i class="fa fa-{{ button.icon }}"></i>{% endif %}
+                    {{ button.label }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {# Contrôles de table (recherche, filtres, tri) #}
+        {% if search or filters|length > 0 or sort_options|length > 0 %}
+        <div class="table-controls">
+            {% if search %}
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Rechercher..." 
+                       data-search-target="{{ entity_type }}-table">
+                <button class="search-button">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+            {% endif %}
+            
+            {% if filters|length > 0 %}
+            <div class="filters-container">
+                {% for filter_name, filter_options in filters %}
+                <div class="filter-group">
+                    <label>{{ filter_name|title }}</label>
+                    <select data-filter="{{ filter_name }}">
+                        <option value="">Tous</option>
+                        {% for option in filter_options %}
+                            {% if option is iterable and option.value is defined %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                            {% else %}
+                                <option value="{{ option }}">{{ option|title }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if sort_options|length > 0 %}
+            <div class="sort-container">
+                <label>Trier par</label>
+                <select data-sort-table="{{ entity_type }}-table">
+                    {% for sort_option in sort_options %}
+                        {% if sort_option is iterable and sort_option.value is defined %}
+                            <option value="{{ sort_option.value }}">{{ sort_option.label }}</option>
+                        {% else %}
+                            <option value="{{ sort_option }}">{{ headers[sort_option] }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <button class="sort-direction" data-direction="asc">
+                    <i class="fa fa-arrow-up"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {# Actions en masse si activées #}
+        {% if bulk_actions|length > 0 %}
+        <div class="bulk-actions" style="display: none;">
+            <span class="selected-count">0 élément(s) sélectionné(s)</span>
+            {% for action in bulk_actions %}
+            <button class="bulk-action-btn" data-action="{{ action.action }}">
+                {% if action.icon %}<i class="fa fa-{{ action.icon }}"></i>{% endif %}
+                {{ action.label }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {# Tableau principal #}
+        <div class="table-responsive">
+            <table id="{{ entity_type }}-table" class="data-table {{ table_class }}"
+                  {% if row_click_action %}data-row-action="{{ row_click_action }}"{% endif %}
+                  {% if bulk_actions|length > 0 %}data-bulk-select="true"{% endif %}>
+                <thead>
+                    <tr>
+                        {% if bulk_actions|length > 0 %}
+                        <th class="bulk-select-column">
+                            <input type="checkbox" class="select-all-checkbox">
+                        </th>
+                        {% endif %}
+                        
+                        {% for column_id, header_text in headers %}
+                        <th data-column="{{ column_id }}" 
+                            {% if column_id in sort_options %}data-sortable="true"{% endif %}>
+                            {{ header_text }}
+                        </th>
+                        {% endfor %}
+                        
+                        {% if actions %}
+                        <th class="actions-column">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if items|length > 0 %}
+                        {% for item in items %}
+                        <tr {% if custom_row_classes %}
+                            class="{{ custom_row_classes(item) }}"
+                            {% endif %}
+                            data-id="{{ item.id }}" 
+                            {% if row_click_action %}data-clickable="true"{% endif %}>
+                            
+                            {% if bulk_actions|length > 0 %}
+                            <td class="bulk-select-column">
+                                <input type="checkbox" class="row-checkbox" data-id="{{ item.id }}">
+                            </td>
+                            {% endif %}
+                            
+                            {% for column_id, column_path in columns %}
+                            <td data-column="{{ column_id }}">
+                                {{ _render_column_value(item, column_path)|raw }}
+                            </td>
+                            {% endfor %}
+                            
+                            {% if actions %}
+                            <td class="actions-cell">
+                                <div class="action-buttons">
+                                    {% if custom_actions.view is not defined or custom_actions.view %}
+                                    <a href="{{ path(entity_type ~ '_view', {'id': item.id}) }}" 
+                                       class="action-btn view" title="Voir">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if custom_actions.edit is not defined or custom_actions.edit %}
+                                    <a href="{{ path(entity_type ~ '_edit', {'id': item.id}) }}" 
+                                       class="action-btn edit" title="Modifier">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if custom_actions.delete is not defined or custom_actions.delete %}
+                                    <button class="action-btn delete" 
+                                            data-delete-id="{{ item.id }}"
+                                            data-delete-type="{{ entity_type }}"
+                                            title="Supprimer">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    {# Actions personnalisées supplémentaires #}
+                                    {% for action_key, action in custom_actions %}
+                                        {% if action_key not in ['view', 'edit', 'delete'] and action %}
+                                            {% if action.url is defined %}
+                                            <a href="{{ action.url|replace({'%id%': item.id}) }}" 
+                                               class="action-btn {{ action_key }}" 
+                                               title="{{ action.label|default(action_key|title) }}">
+                                                <i class="fa fa-{{ action.icon|default('cog') }}"></i>
+                                            </a>
+                                            {% else %}
+                                            <button class="action-btn {{ action_key }}"
+                                                    data-id="{{ item.id }}"
+                                                    data-action="{{ action_key }}"
+                                                    title="{{ action.label|default(action_key|title) }}">
+                                                <i class="fa fa-{{ action.icon|default('cog') }}"></i>
+                                            </button>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr class="empty-table">
+                            <td colspan="{{ headers|length + (actions ? 1 : 0) + (bulk_actions|length > 0 ? 1 : 0) }}">
+                                {{ empty_message }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        {# Pagination #}
+        {% if pagination and items|length > 0 %}
+        <div class="pagination">
+            <div class="pagination-controls">
+                <button class="page-prev" {% if page is defined and page <= 1 %}disabled{% endif %}>
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                
+                <span class="page-info">
+                    Page <span class="current-page">{{ page|default(1) }}</span> 
+                    sur <span class="total-pages">{{ total_pages|default(1) }}</span>
+                </span>
+                
+                <button class="page-next" {% if page is defined and page >= total_pages %}disabled{% endif %}>
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            {% if items_per_page_options is defined %}
+            <div class="items-per-page">
+                <label>Éléments par page</label>
+                <select class="per-page-select">
+                    {% for option in items_per_page_options %}
+                    <option value="{{ option }}" 
+                            {% if items_per_page is defined and items_per_page == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
 {% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=request.url) %}
     {% if is_td %}<td class="text-center">{% endif %}
     
