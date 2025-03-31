@@ -220,23 +220,35 @@
                                     {# Gestion des attributs imbriqués comme postal_code_relation.code #}
                                     {% set value = item %}
                                     {% for attr in column.split('.') %}
-                                        {% if value is not none and attr in value|keys %}
-                                            {% set value = value[attr] %}
-                                        {% elif value is not none and hasattr(value, attr) %}
-                                            {% set value = attribute(value, attr) %}
+                                        {% if value is not none %}
+                                            {% if value is mapping and attr in value %}
+                                                {# Si c'est un dictionnaire #}
+                                                {% set value = value[attr] %}
+                                            {% elif hasattr(value, attr) %}
+                                                {# Si c'est un objet avec attributs #}
+                                                {% set value = attribute(value, attr) %}
+                                            {% else %}
+                                                {% set value = '' %}
+                                            {% endif %}
                                         {% else %}
                                             {% set value = '' %}
                                         {% endif %}
                                     {% endfor %}
                                     
                                     {# Gestion des liens pour cette colonne si définis #}
-                                    {% if column in column_links and value %}
-                                        <a href="{{ column_links[column]|replace({'%id%': item.id, '%slug%': item.slug}) }}">
+                                    {% if column in column_links and value is not none %}
+                                        {% set item_id = item.id|default('') %}
+                                        {% set item_slug = item.slug|default('') %}
+                                        {% set column_url = column_links[column]|replace('%id%', item_id)|replace('%slug%', item_slug) %}
+                                        <a href="{{ column_url }}">
                                             {{ value }}
                                         </a>
                                     {% elif loop.first and view_url_pattern and (item.id or item.slug) %}
                                         {# Premier colonne est un lien par défaut si view_url_pattern est fourni #}
-                                        <a href="{{ view_url_pattern|replace({'%id%': item.id, '%slug%': item.slug}) }}">
+                                        {% set item_id = item.id|default('') %}
+                                        {% set item_slug = item.slug|default('') %}
+                                        {% set view_url = view_url_pattern|replace('%id%', item_id)|replace('%slug%', item_slug) %}
+                                        <a href="{{ view_url }}">
                                             {{ value }}
                                         </a>
                                     {% else %}
@@ -247,10 +259,46 @@
                                 
                                 {% if actions %}
                                 <td class="text-center">
+                                    {% set item_id = item.id|default('') %}
+                                    {% set item_slug = item.slug|default('') %}
+                                    
+                                    {% if custom_actions.view_url is defined %}
+                                        {% set view_url = custom_actions.view_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
+                                    {% else %}
+                                        {% set view_route = entity_type + '.view' %}
+                                        {% if item.slug is defined and item.slug %}
+                                            {% set view_url = url_for(view_route, slug=item.slug) %}
+                                        {% else %}
+                                            {% set view_url = url_for(view_route, id=item.id) %}
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if custom_actions.edit_url is defined %}
+                                        {% set edit_url = custom_actions.edit_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
+                                    {% else %}
+                                        {% set edit_route = entity_type + '.edit' %}
+                                        {% if item.slug is defined and item.slug %}
+                                            {% set edit_url = url_for(edit_route, slug=item.slug) %}
+                                        {% else %}
+                                            {% set edit_url = url_for(edit_route, id=item.id) %}
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if custom_actions.delete_url is defined %}
+                                        {% set delete_url = custom_actions.delete_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
+                                    {% else %}
+                                        {% set delete_route = entity_type + '.delete' %}
+                                        {% if item.slug is defined and item.slug %}
+                                            {% set delete_url = url_for(delete_route, slug=item.slug) %}
+                                        {% else %}
+                                            {% set delete_url = url_for(delete_route, id=item.id) %}
+                                        {% endif %}
+                                    {% endif %}
+                                    
                                     {{ action_buttons(
-                                        view_url=custom_actions.view_url|default(url_for(entity_type + '.view', slug=item.slug) if hasattr(item, 'slug') else url_for(entity_type + '.view', id=item.id)),
-                                        edit_url=custom_actions.edit_url|default(url_for(entity_type + '.edit', slug=item.slug) if hasattr(item, 'slug') else url_for(entity_type + '.edit', id=item.id)),
-                                        delete_url=custom_actions.delete_url|default(url_for(entity_type + '.delete', slug=item.slug) if hasattr(item, 'slug') else url_for(entity_type + '.delete', id=item.id)),
+                                        view_url=view_url,
+                                        edit_url=edit_url,
+                                        delete_url=delete_url,
                                         delete_message=delete_message,
                                         additional_buttons=custom_actions.additional_buttons|default([])
                                     ) }}
@@ -285,6 +333,7 @@
     </div>
 {% endmacro %}
 
+{# Macro action_buttons inchangée pour référence #}
 {% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=request.url) %}
     {% if is_td %}<td class="text-center">{% endif %}
     
@@ -317,6 +366,7 @@
     {% if is_td %}</td>{% endif %}
 {% endmacro %}
 
+{# Init search - inchangé également #}
 {% macro init_search(table_id, input_id, column_indexes=[], row_selector='tbody tr') %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -325,6 +375,17 @@
 </script>
 {% endmacro %}
 
+{# Macro pour la liste vide - simplifiée #}
+{% macro alert_empty_list(message, add_url=None, add_text=None) %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>{{ message }}
+    {% if add_url and add_text %}
+        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Macro pour la pagination #}
 {% macro pagination(page, total_pages, total_items, items_length, offset, endpoint=request.endpoint, endpoint_args=request.view_args) %}
 <div class="d-flex justify-content-between align-items-center mt-3">
     <div>
@@ -358,6 +419,7 @@
 </div>
 {% endmacro %}
 
+{# Affiche un badge de type de paramètre #}
 {% macro display_param_type_badge(config) %}
     {% if config.type.value == 'text' %}
         <span class="badge bg-info">{{ config.type_display }}</span>
@@ -373,6 +435,7 @@
     {% endif %}
 {% endmacro %}
 
+{# Affiche les valeurs d'un paramètre #}
 {% macro display_param_values(config) %}
 {% if config.type.value == 'enum' %}
     {% if config.configuration_values and config.configuration_values|length > 1 %}
@@ -406,6 +469,7 @@
 {% endif %}
 {% endmacro %}
 
+{# Affiche les règles d'un paramètre #}
 {% macro display_param_rules(param) %}
     {% if param.type.value == 'numeric' %}
         Val: {{ param.configuration_values[0] }}
@@ -417,91 +481,4 @@
     {% else %}
         Texte libre
     {% endif %}
-{% endmacro %}
-
-{% macro param_table(params, entity_type, entity_slug, editable=false) %}
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Nom</th>
-                <th>Type</th>
-                <th>Règles</th>
-                <th>Valeur</th>
-                {% if editable %}<th class="text-end">Actions</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for param in params %}
-            <tr>
-                <td>{{ param.name }}</td>
-                <td>{{ display_param_type_badge(param) }}</td>
-                <td>{{ display_param_rules(param) }}</td>
-                <td>
-                    {% if editable %}
-                        {{ display_editable_value(param) }}
-                    {% else %}
-                        {{ display_param_value(param) }}
-                    {% endif %}
-                </td>
-                {% if editable %}
-                <td class="text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger reset-param"
-                            data-param-id="{{ param.id }}">
-                        <i class="fas fa-undo"></i>
-                    </button>
-                </td>
-                {% endif %}
-            </tr>
-
-            {# Ajouter ce bloc conditionnel pour les explications #}
-            {% if editable %}
-            <tr class="notes-row" id="notes-row-{{ param.id }}" style="display: none;">
-                <td colspan="{% if editable %}5{% else %}4{% endif %}">
-                    <div class="notes-container p-3 bg-light">
-                        <textarea class="form-control" 
-                                  name="notes_{{ param.id }}"
-                                  placeholder="Explications sur les raisons de la modification (facultatif)"
-                                  rows="2"></textarea>
-                    </div>
-                </td>
-            </tr>
-            {% endif %}
-
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endmacro %}
-
-{% macro display_editable_value(param) %}
-{% if param.type.value == 'enum' %}
-    <select class="form-select form-select-sm param-value-input"
-            name="param_{{ param.id }}"
-            data-param-id="{{ param.id }}"
-            data-original-value="{{ param.active_parameter.value if param.active_parameter else '' }}">
-        {% for value in param.configuration_values[2:] %}
-        <option value="{{ value }}" {{ 'selected' if param.active_parameter and value == param.active_parameter.value }}>
-            {{ value }}
-        </option>
-        {% endfor %}
-    </select>
-{% else %}
-    <input type="{{ 'number' if param.type.value == 'numeric' else 'text' }}"
-           class="form-control form-control-sm param-value-input"
-           name="param_{{ param.id }}"
-           data-param-id="{{ param.id }}"
-           data-original-value="{{ param.active_parameter.value if param.active_parameter else '' }}"
-           value="{{ param.active_parameter.value if param.active_parameter else '' }}">
-{% endif %}
-{% endmacro %}
-
-{# Macro pour la liste vide - simplifiée pour éviter l'opérateur ternaire incorrect #}
-{% macro alert_empty_list(message, add_url=None, add_text=None) %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>{{ message }}
-    {% if add_url and add_text %}
-        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
-    {% endif %}
-</div>
 {% endmacro %}
