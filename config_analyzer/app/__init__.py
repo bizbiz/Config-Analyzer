@@ -1,4 +1,4 @@
-#/app/__init__.py
+# app/__init__.py
 
 from flask import Flask, session
 from flask_migrate import Migrate
@@ -7,6 +7,7 @@ from app.models.entities.user import User
 from app.extensions import db
 from app.config import config
 from datetime import datetime
+import jinja2
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -19,6 +20,19 @@ migrate = Migrate()
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Fonction attribute à ajouter à l'environnement Jinja2
+def jinja2_attribute(obj, attribute_name):
+    """
+    Fonction utilitaire pour accéder aux attributs d'un objet dans Jinja2.
+    Équivalent à la fonction `attribute` native de Jinja2.
+    """
+    if obj is None:
+        return None
+    try:
+        return getattr(obj, attribute_name)
+    except AttributeError:
+        return None
+
 def create_app(config_name='default'):
     app = Flask(__name__)
     
@@ -27,6 +41,7 @@ def create_app(config_name='default'):
     
     # Configuration spécifique aux sessions
     app.config.update(
+        SESSION_COOKIE_NAME='config_analyzer_session',
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
@@ -38,6 +53,9 @@ def create_app(config_name='default'):
     
     # Ajouter hasattr comme fonction globale
     app.jinja_env.globals['hasattr'] = hasattr
+    
+    # Ajouter la fonction attribute (très important pour notre cas)
+    app.jinja_env.globals['attribute'] = jinja2_attribute
 
     # Extensions supplémentaires
     app.jinja_env.add_extension('jinja2.ext.do')
