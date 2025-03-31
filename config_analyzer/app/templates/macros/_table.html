@@ -94,7 +94,6 @@
     add_url=None,
     add_text="Ajouter",
     show_add_button=true,
-    actions=true,
     search=true,
     pagination=false,
     filters={},
@@ -105,12 +104,6 @@
     export_url=None,
     export_label="Exporter",
     empty_message="Aucun élément trouvé.",
-    bulk_actions=[],
-    row_click_action=None,
-    refresh_interval=None,
-    table_class="",
-    show_count=true,
-    custom_actions={},
     table_id=None,
     search_input_id=None,
     filter_columns=3,
@@ -122,11 +115,8 @@
     search_placeholder=None,
     force_add_button=true,
     hide_add_when_empty=false,
-    headers=[],
-    columns=[],
-    column_links={},
-    view_url_pattern=None,
-    delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?"
+    template_partial=None,
+    context={}
 ) %}
     {# Calcul des IDs du tableau si non fournis #}
     {% set table_id = table_id|default(entity_type + 'Table') %}
@@ -180,138 +170,47 @@
                 </div>
                 {% endif %}
                 
-                {# Tableau principal - rendu direct sans template partiel #}
-                <div class="table-responsive">
-                    <table class="table table-striped table-bordered align-middle {{ table_class }}" 
-                           id="{{ table_id }}"
-                           data-list-filter="{{ 'true' if search else 'false' }}"
-                           data-filter-input="{{ search_input_id }}" 
-                           data-filter-columns="{{ filter_columns }}">
-                        <thead class="table-light">
-                            <tr>
-                                {% if bulk_actions|length > 0 %}
-                                <th class="bulk-select-column">
-                                    <input type="checkbox" class="select-all-checkbox">
-                                </th>
-                                {% endif %}
-                                
-                                {% for header in headers %}
-                                <th>{{ header }}</th>
+                {# Inclusion du corps du tableau via template partiel #}
+                {% if template_partial %}
+                    {% include template_partial with context %}
+                {% else %}
+                    {# Tableau par défaut si pas de template partiel #}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered align-middle" 
+                               id="{{ table_id }}"
+                               data-list-filter="{{ 'true' if search else 'false' }}"
+                               data-filter-input="{{ search_input_id }}" 
+                               data-filter-columns="{{ filter_columns }}">
+                            <thead class="table-light">
+                                <tr>
+                                    {% block table_headers %}
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Actions</th>
+                                    {% endblock %}
+                                </tr>
+                            </thead>
+                            <tbody id="{{ tbody_id }}">
+                                {% block table_rows %}
+                                {% for item in items %}
+                                <tr {% if custom_row_classes %}class="{{ custom_row_classes(item) }}"{% endif %}>
+                                    <td>{{ item.id }}</td>
+                                    <td>{{ item.name }}</td>
+                                    <td class="text-center">
+                                        {{ action_buttons(
+                                            view_url=url_for(entity_type + '.view', id=item.id),
+                                            edit_url=url_for(entity_type + '.edit', id=item.id),
+                                            delete_url=url_for(entity_type + '.delete', id=item.id),
+                                            delete_message='Êtes-vous sûr de vouloir supprimer cet élément ?'
+                                        ) }}
+                                    </td>
+                                </tr>
                                 {% endfor %}
-                                
-                                {% if actions %}
-                                <th class="actions-column">Actions</th>
-                                {% endif %}
-                            </tr>
-                        </thead>
-                        <tbody id="{{ tbody_id }}">
-                            {% for item in items %}
-                            <tr {% if custom_row_classes %}class="{{ custom_row_classes(item) }}"{% endif %}
-                                {% if row_click_action %}data-clickable="true"{% endif %}>
-                                
-                                {% if bulk_actions|length > 0 %}
-                                <td class="bulk-select-column">
-                                    <input type="checkbox" class="row-checkbox" data-id="{{ item.id }}">
-                                </td>
-                                {% endif %}
-                                
-                                {% for column in columns %}
-                                <td>
-                                    {# Gestion des attributs imbriqués comme postal_code_relation.code #}
-                                    {% set value = item %}
-                                    {% for attr in column.split('.') %}
-                                        {% if value is not none %}
-                                            {% if value is mapping and attr in value %}
-                                                {% set value = value[attr] %}
-                                            {% elif hasattr(value, attr) %}
-                                                {% set value = attribute(value, attr) %}
-                                            {% else %}
-                                                {% set value = '' %}
-                                                {% break %}
-                                            {% endif %}
-                                        {% else %}
-                                            {% set value = '' %}
-                                            {% break %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    {# Gestion des liens pour cette colonne si définis #}
-                                    {% if column in column_links and value is not none and value != '' %}
-                                        {% set item_id = item.id|default('') %}
-                                        {% set item_slug = item.slug|default('') %}
-                                        {% set column_url = column_links[column]|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                        <a href="{{ column_url }}">
-                                            {{ value }}
-                                        </a>
-                                    {% elif loop.first and view_url_pattern %}
-                                        {# Premier colonne est un lien par défaut si view_url_pattern est fourni #}
-                                        {% set item_id = item.id|default('') %}
-                                        {% set item_slug = item.slug|default('') %}
-                                        {% set view_url = view_url_pattern|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                        <a href="{{ view_url }}">
-                                            {{ value }}
-                                        </a>
-                                    {% else %}
-                                        {{ value }}
-                                    {% endif %}
-                                </td>
-                                {% endfor %}
-                                
-                                {% if actions %}
-                                <td class="text-center">
-                                    {% set item_id = item.id|default('') %}
-                                    {% set item_slug = item.slug|default('') %}
-                                    
-                                    {# Déterminer l'URL de vue #}
-                                    {% if custom_actions.view_url is defined %}
-                                        {% set view_url = custom_actions.view_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set view_route = entity_type + '.view' %}
-                                        {% if hasattr(item, 'slug') and item.slug %}
-                                            {% set view_url = url_for(view_route, slug=item.slug) %}
-                                        {% else %}
-                                            {% set view_url = url_for(view_route, id=item.id) %}
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    {# Déterminer l'URL d'édition #}
-                                    {% if custom_actions.edit_url is defined %}
-                                        {% set edit_url = custom_actions.edit_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set edit_route = entity_type + '.edit' %}
-                                        {% if hasattr(item, 'slug') and item.slug %}
-                                            {% set edit_url = url_for(edit_route, slug=item.slug) %}
-                                        {% else %}
-                                            {% set edit_url = url_for(edit_route, id=item.id) %}
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    {# Déterminer l'URL de suppression #}
-                                    {% if custom_actions.delete_url is defined %}
-                                        {% set delete_url = custom_actions.delete_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set delete_route = entity_type + '.delete' %}
-                                        {% if hasattr(item, 'slug') and item.slug %}
-                                            {% set delete_url = url_for(delete_route, slug=item.slug) %}
-                                        {% else %}
-                                            {% set delete_url = url_for(delete_route, id=item.id) %}
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    {{ action_buttons(
-                                        view_url=view_url,
-                                        edit_url=edit_url,
-                                        delete_url=delete_url,
-                                        delete_message=delete_message,
-                                        additional_buttons=custom_actions.additional_buttons|default([])
-                                    ) }}
-                                </td>
-                                {% endif %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                {% endblock %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
                 
                 {# Initialisation de la recherche #}
                 {% if search %}
@@ -325,12 +224,11 @@
                 
             {% else %}
                 {# Message si aucun élément #}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>{{ empty_message }}
-                    {% if add_url and (show_add_button and not hide_add_when_empty) %}
-                        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
-                    {% endif %}
-                </div>
+                {{ alert_empty_list(
+                    message=empty_message,
+                    add_url=add_url if show_add_button and not hide_add_when_empty else None,
+                    add_text=add_text
+                ) }}
             {% endif %}
         </div>
     </div>
