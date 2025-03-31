@@ -1,6 +1,6 @@
 {# /app/templates/view/client.html #}
 {% extends "view/entity_detail_base.html" %}
-{% from "macros/_entity_sections.html" import parameters_section, configurations_section %}
+{% from "macros/_entity_view_helpers.html" import entity_header, standard_actions, info_card, info_item, stats_card, stats_item %}
 
 {% block entity_title %}Détails du Client : {{ client.name }}{% endblock %}
 {% block entity_header %}Détails du Client : {{ client.name }}{% endblock %}
@@ -30,6 +30,12 @@
         <span class="text-muted">Non renseignée</span>
     {% endif %}
 </dd>
+
+<dt class="col-sm-4">Créé le</dt>
+<dd class="col-sm-8">{{ client.created_at|datetimeformat('%d/%m/%Y') }}</dd>
+
+<dt class="col-sm-4">Mis à jour le</dt>
+<dd class="col-sm-8">{{ client.updated_at|datetimeformat('%d/%m/%Y') }}</dd>
 {% endblock %}
 
 {% block stats_content %}
@@ -52,87 +58,49 @@
         items=robots,
         title="Robots associés",
         show_add_button=true,
-        hide_add_when_empty=true,
-        hide_model=false,
+        hide_add_when_empty=false,
         hide_client=true,
-        client=client,
-        is_list_view=false,
+        is_embedded=true,
         show_badge=true,
-        add_text="Ajouter un robot"
+        add_text="Ajouter un robot",
+        add_url=url_for('robot_instances.add') + "?client_id=" + client.id|string
     %}
         {% include 'list/partials/robot_instances.html' %}
     {% endwith %}
 </div>
 
 <!-- Section Fichiers de configuration -->
-<div class="card mb-5">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="fas fa-file-code me-2"></i>Fichiers de configuration
-            <span class="badge bg-primary ms-2">{{ configurations|length }}</span>
-        </h5>
-        {% if configurations|length > 0 %}
-        <a href="{{ url_for('configurations.add', entity_type='client', entity_id=client.id) }}" class="btn btn-sm btn-primary">
-            <i class="fas fa-plus me-1"></i>Ajouter une configuration
-        </a>
-        {% endif %}
-    </div>
-    <div class="card-body">
-        {% if configurations|length > 0 %}
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Nom du fichier</th>
-                        <th>Date</th>
-                        <th>Logiciel</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for config in configurations %}
-                    <tr>
-                        <td>
-                            {% if config.file_name %}
-                                {{ config.file_name }}
-                            {% else %}
-                                Configuration #{{ config.id }}
-                            {% endif %}
-                        </td>
-                        <td>{{ config.created_at|datetimeformat('%d/%m/%Y') }}</td>
-                        <td>
-                            {% if config.software_version %}
-                                {{ config.software_version.software.name }} {{ config.software_version.version }}
-                            {% else %}
-                                Non spécifié
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            <a href="{{ url_for('parsed_files.view', config_id=config.id) }}" class="btn btn-sm btn-info me-1">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ url_for('configurations.edit', config_id=config.id) }}" class="btn btn-sm btn-warning me-1">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>Aucune configuration enregistrée.
-            <a href="{{ url_for('configurations.add', entity_type='client', entity_id=client.id) }}" class="alert-link">
-                Ajouter une configuration
-            </a>
-        </div>
-        {% endif %}
-    </div>
+<div class="mb-5">
+    {% with 
+        items=configurations,
+        title="Fichiers de configuration",
+        show_add_button=true,
+        hide_add_when_empty=false,
+        is_embedded=true,
+        show_badge=true,
+        add_text="Ajouter une configuration",
+        add_url=url_for('configurations.add', entity_type='client', entity_id=client.id)
+    %}
+        {% include 'list/partials/configuration_instances.html' %}
+    {% endwith %}
 </div>
 
 <!-- Section Paramètres -->
-{{ parameters_section(configured_params, unconfigured_params, 'client', client.slug) }}
+<div class="mb-5">
+    {% with 
+        items=configured_params + unconfigured_params,
+        title="Paramètres",
+        show_add_button=true,
+        hide_add_when_empty=false,
+        entity_type='client',
+        entity_slug=client.slug,
+        is_embedded=true,
+        show_badge=true,
+        add_text="Ajouter un paramètre"
+    %}
+        {% include 'list/partials/parameter_definitions.html' %}
+    {% endwith %}
+</div>
 {% endblock %}
 
 {% block back_url %}{{ url_for('clients.list') }}{% endblock %}
