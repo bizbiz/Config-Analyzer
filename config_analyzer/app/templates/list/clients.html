@@ -42,21 +42,19 @@
         add_text='Ajouter un client',
         show_add_button=true,
         search=true,
-        filter_columns=filter_count,
-        headers=headers_list,
-        columns=columns_list,
+        filter_columns=4,
+        headers=headers,
+        columns=columns,
+        column_renderers=column_renderers,
         column_links={'name': url_for('clients.view', slug='%slug%')},
         view_url_pattern=url_for('clients.view', slug='%slug%'),
         edit_url_pattern=url_for('clients.edit', slug='%slug%'),
         delete_url_pattern=url_for('clients.delete', slug='%slug%'),
         delete_message='Êtes-vous sûr de vouloir supprimer ce client ?',
         show_badge=true,
-        empty_message='Aucun client trouvé.',
-        custom_columns={
-            'robots': True
-        }
+        empty_message='Aucun client trouvé.'
     ) }}
-    
+        
     {# Formulaire d'ajout rapide #}
     <div class="card p-4 shadow-sm mt-4">
         <h2 class="mb-3">Ajouter un Client</h2>

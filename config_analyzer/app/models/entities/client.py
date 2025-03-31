@@ -40,7 +40,6 @@ class Client(SpecificEntity):
         primaryjoin="Client.id == RobotInstance.client_id",
         cascade='all, delete-orphan',
         order_by='RobotInstance.created_at.desc()',
-        lazy='dynamic',
         passive_deletes=True
     )
 

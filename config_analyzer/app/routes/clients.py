@@ -56,9 +56,32 @@ def view(slug):
 def list():
     """Liste tous les clients."""
     # Charger explicitement la relation postal_code
-    clients = Client.query.options(
+    clients_query = Client.query.options(
         db.joinedload(Client.postal_code_relation)
     ).all()
+    
+    # Préparer les données formatées pour le tableau
+    formatted_clients = []
+    for client in clients_query:
+        # Formatter les données des robots
+        robots_data = []
+        for robot in client.robots:
+            robots_data.append({
+                'text': robot.serial_number,
+                'url': url_for('robot_instances.view', slug=robot.slug),
+                'badge_class': 'bg-success'
+            })
+            
+        # Créer l'entrée formatée pour ce client
+        client_data = {
+            'id': client.id,
+            'slug': client.slug,
+            'name': client.name,
+            'postal_code_relation.code': client.postal_code_relation.code if client.postal_code_relation else '-',
+            'postal_code_relation.city': client.postal_code_relation.city if client.postal_code_relation else '-',
+            'robots': robots_data
+        }
+        formatted_clients.append(client_data)
     
     # Calcul des statistiques
     from datetime import datetime, timedelta
@@ -92,17 +115,28 @@ def list():
         ParameterDefinition.target_entity == EntityType.CLIENT
     ).all()
 
+    # Définir les renderers pour certaines colonnes
+    robots_renderer = lambda robots: ''.join([
+        f'<a href="{robot["url"]}" class="badge {robot["badge_class"]}">{robot["text"]}</a>'
+        for robot in robots[:3]
+    ]) + (f'<span class="badge bg-secondary">+{len(robots) - 3}</span>' if len(robots) > 3 else '')
+    
+    column_renderers = {
+        'robots': robots_renderer,
+    }
+    
     return render_template(
         'list/clients.html', 
         params_configs=params_configs,
-        clients=clients,
+        clients=formatted_clients,  # Passer les données formatées
+        column_renderers=column_renderers,  # Passer les renderers
         countries=countries,
         name_error=None,
         postal_code_error=None,
         city_error=None,
         country_code_error=None,
         form_data={},
-        # Colonnes pour le tableau - envoyées directement
+        # Colonnes pour le tableau
         columns=['name', 'postal_code_relation.code', 'postal_code_relation.city', 'robots'],
         headers=['Nom', 'Code Postal', 'Ville', 'Robots', 'Actions'],
         # Statistiques
