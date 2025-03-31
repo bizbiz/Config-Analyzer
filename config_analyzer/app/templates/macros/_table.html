@@ -217,18 +217,20 @@
                                 
                                 {% for column in columns %}
                                 <td>
-                                    {# Gestion des attributs imbriqués comme postal_code_relation.code #}
+                                    {# Gestion sécurisée des attributs imbriqués #}
+                                    {% set attr_parts = column.split('.') %}
                                     {% set value = item %}
-                                    {% for attr in column.split('.') %}
-                                        {% if value is not none %}
-                                            {% if value is mapping and attr in value %}
-                                                {# Si c'est un dictionnaire #}
-                                                {% set value = value[attr] %}
-                                            {% elif hasattr(value, attr) %}
-                                                {# Si c'est un objet avec attributs #}
-                                                {% set value = attribute(value, attr) %}
+                                    
+                                    {% for attr in attr_parts %}
+                                        {% if value is defined and value is not none %}
+                                            {% if value is mapping %}
+                                                {% set value = value[attr]|default('') %}
                                             {% else %}
-                                                {% set value = '' %}
+                                                {% try %}
+                                                    {% set value = attribute(value, attr) %}
+                                                {% except %}
+                                                    {% set value = '' %}
+                                                {% endtry %}
                                             {% endif %}
                                         {% else %}
                                             {% set value = '' %}
@@ -236,14 +238,14 @@
                                     {% endfor %}
                                     
                                     {# Gestion des liens pour cette colonne si définis #}
-                                    {% if column in column_links and value is not none %}
+                                    {% if column in column_links and value is not none and value != '' %}
                                         {% set item_id = item.id|default('') %}
                                         {% set item_slug = item.slug|default('') %}
                                         {% set column_url = column_links[column]|replace('%id%', item_id)|replace('%slug%', item_slug) %}
                                         <a href="{{ column_url }}">
                                             {{ value }}
                                         </a>
-                                    {% elif loop.first and view_url_pattern and (item.id or item.slug) %}
+                                    {% elif loop.first and view_url_pattern %}
                                         {# Premier colonne est un lien par défaut si view_url_pattern est fourni #}
                                         {% set item_id = item.id|default('') %}
                                         {% set item_slug = item.slug|default('') %}
@@ -261,47 +263,55 @@
                                 <td class="text-center">
                                     {% set item_id = item.id|default('') %}
                                     {% set item_slug = item.slug|default('') %}
+                                    {% set view_route = entity_type + '.view' %}
+                                    {% set edit_route = entity_type + '.edit' %}
+                                    {% set delete_route = entity_type + '.delete' %}
                                     
-                                    {% if custom_actions.view_url is defined %}
-                                        {% set view_url = custom_actions.view_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set view_route = entity_type + '.view' %}
-                                        {% if item.slug is defined and item.slug %}
-                                            {% set view_url = url_for(view_route, slug=item.slug) %}
+                                    {% try %}
+                                        {# URL de vue #}
+                                        {% if custom_actions.view_url is defined %}
+                                            {% set view_url = custom_actions.view_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
                                         {% else %}
-                                            {% set view_url = url_for(view_route, id=item.id) %}
+                                            {% if item.slug is defined and item.slug %}
+                                                {% set view_url = url_for(view_route, slug=item.slug) %}
+                                            {% else %}
+                                                {% set view_url = url_for(view_route, id=item.id) %}
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
-                                    
-                                    {% if custom_actions.edit_url is defined %}
-                                        {% set edit_url = custom_actions.edit_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set edit_route = entity_type + '.edit' %}
-                                        {% if item.slug is defined and item.slug %}
-                                            {% set edit_url = url_for(edit_route, slug=item.slug) %}
+                                        
+                                        {# URL d'édition #}
+                                        {% if custom_actions.edit_url is defined %}
+                                            {% set edit_url = custom_actions.edit_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
                                         {% else %}
-                                            {% set edit_url = url_for(edit_route, id=item.id) %}
+                                            {% if item.slug is defined and item.slug %}
+                                                {% set edit_url = url_for(edit_route, slug=item.slug) %}
+                                            {% else %}
+                                                {% set edit_url = url_for(edit_route, id=item.id) %}
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
-                                    
-                                    {% if custom_actions.delete_url is defined %}
-                                        {% set delete_url = custom_actions.delete_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
-                                    {% else %}
-                                        {% set delete_route = entity_type + '.delete' %}
-                                        {% if item.slug is defined and item.slug %}
-                                            {% set delete_url = url_for(delete_route, slug=item.slug) %}
+                                        
+                                        {# URL de suppression #}
+                                        {% if custom_actions.delete_url is defined %}
+                                            {% set delete_url = custom_actions.delete_url|replace('%id%', item_id)|replace('%slug%', item_slug) %}
                                         {% else %}
-                                            {% set delete_url = url_for(delete_route, id=item.id) %}
+                                            {% if item.slug is defined and item.slug %}
+                                                {% set delete_url = url_for(delete_route, slug=item.slug) %}
+                                            {% else %}
+                                                {% set delete_url = url_for(delete_route, id=item.id) %}
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
+                                        
+                                        {{ action_buttons(
+                                            view_url=view_url,
+                                            edit_url=edit_url,
+                                            delete_url=delete_url,
+                                            delete_message=delete_message,
+                                            additional_buttons=custom_actions.additional_buttons|default([])
+                                        ) }}
                                     
-                                    {{ action_buttons(
-                                        view_url=view_url,
-                                        edit_url=edit_url,
-                                        delete_url=delete_url,
-                                        delete_message=delete_message,
-                                        additional_buttons=custom_actions.additional_buttons|default([])
-                                    ) }}
+                                    {% except %}
+                                        <!-- Erreur de génération des URL d'action -->
+                                    {% endtry %}
                                 </td>
                                 {% endif %}
                             </tr>
@@ -421,64 +431,97 @@
 
 {# Affiche un badge de type de paramètre #}
 {% macro display_param_type_badge(config) %}
-    {% if config.type.value == 'text' %}
-        <span class="badge bg-info">{{ config.type_display }}</span>
-    {% elif config.type.value == 'numeric' %}
-        <span class="badge bg-primary">{{ config.type_display }}</span>
-    {% elif config.type.value == 'enum' %}
-        {% set multiple_choice = config.configuration_values[1] == '1' if config.configuration_values else false %}
-        <span class="badge bg-success">
-            {{ 'Choix multiple' if multiple_choice else 'Choix' }}
-        </span>
-    {% else %}
-        <span class="badge bg-secondary">{{ config.type_display }}</span>
-    {% endif %}
+    {% try %}
+        {% if config.type and config.type.value == 'text' %}
+            <span class="badge bg-info">{{ config.type_display }}</span>
+        {% elif config.type and config.type.value == 'numeric' %}
+            <span class="badge bg-primary">{{ config.type_display }}</span>
+        {% elif config.type and config.type.value == 'enum' %}
+            {% set multiple_choice = config.configuration_values and config.configuration_values|length > 1 and config.configuration_values[1] == '1' %}
+            <span class="badge bg-success">
+                {{ 'Choix multiple' if multiple_choice else 'Choix' }}
+            </span>
+        {% else %}
+            <span class="badge bg-secondary">{{ config.type_display|default('Type inconnu') }}</span>
+        {% endif %}
+    {% except %}
+        <span class="badge bg-secondary">Type inconnu</span>
+    {% endtry %}
 {% endmacro %}
 
 {# Affiche les valeurs d'un paramètre #}
 {% macro display_param_values(config) %}
-{% if config.type.value == 'enum' %}
-    {% if config.configuration_values and config.configuration_values|length > 1 %}
-        {% set display_values = ", ".join(config.configuration_values[2:]) %}
-        {% if config.configuration_values|length > 7 %}
-            {{ display_values[:100] }}... ({{ config.configuration_values|length - 2 }} valeurs)
+{% try %}
+    {% if config.type and config.type.value == 'enum' %}
+        {% if config.configuration_values and config.configuration_values|length > 1 %}
+            {% if config.configuration_values|length > 2 %}
+                {% set values = config.configuration_values[2:] %}
+                {% set display_values = values|join(', ') %}
+                {% if display_values|length > 100 %}
+                    {{ display_values[:100] }}... ({{ values|length }} valeurs)
+                {% else %}
+                    {{ display_values }}
+                {% endif %}
+            {% else %}
+                <span class="text-muted">Aucune valeur</span>
+            {% endif %}
         {% else %}
-            {{ display_values[:100] }}
-            {% if display_values|length > 100 %}...{% endif %}
+            <span class="text-muted">Aucune valeur</span>
+        {% endif %}
+    {% elif config.type and config.type.value == 'numeric' %}
+        {% if config.configuration_values %}
+            {% set default_value = config.configuration_values[0] if config.configuration_values|length > 0 else 'N/A' %}
+            {% set min_value = config.configuration_values[1] if config.configuration_values|length > 1 else none %}
+            {% set max_value = config.configuration_values[2] if config.configuration_values|length > 2 else none %}
+            
+            <span class="numeric-values">
+                Défaut : {{ default_value }}
+                {% if min_value or max_value %}
+                    <span class="text-muted">
+                        {% if min_value %}(min: {{ min_value }}{% if max_value %}, {% endif %}{% endif %}
+                        {% if max_value %}max: {{ max_value }}{% endif %}
+                        )
+                    </span>
+                {% endif %}
+            </span>
+        {% else %}
+            <span class="text-muted">Valeur par défaut non définie</span>
         {% endif %}
     {% else %}
-        <span class="text-muted">Aucune valeur</span>
-    {% endif %}
-{% elif config.type.value == 'numeric' %}
-    {% set default_value = config.configuration_values[0] if config.configuration_values and config.configuration_values|length > 0 else 'N/A' %}
-    {% set min_value = config.configuration_values[1] if config.configuration_values|length > 1 else none %}
-    {% set max_value = config.configuration_values[2] if config.configuration_values|length > 2 else none %}
-    
-    <span class="numeric-values">
-        Défaut : {{ default_value }}
-        {% if min_value or max_value %}
-            <span class="text-muted">
-                {% if min_value %}(min: {{ min_value }}{% if max_value %}, {% endif %}{% endif %}
-                {% if max_value %}max: {{ max_value }}{% endif %}
-                )
-            </span>
+        {% if config.configuration_values and config.configuration_values|length > 0 %}
+            {{ config.configuration_values[0] }}
+        {% else %}
+            <span class="text-muted">Valeur non définie</span>
         {% endif %}
-    </span>
-{% else %}
-    {{ config.configuration_values[0] if config.configuration_values and config.configuration_values|length > 0 else '' }}
-{% endif %}
+    {% endif %}
+{% except %}
+    <span class="text-muted">Erreur d'affichage</span>
+{% endtry %}
 {% endmacro %}
 
 {# Affiche les règles d'un paramètre #}
 {% macro display_param_rules(param) %}
-    {% if param.type.value == 'numeric' %}
-        Val: {{ param.configuration_values[0] }}
-        {% if param.configuration_values|length > 1 %} 
-            (Min: {{ param.configuration_values[1] }}, Max: {{ param.configuration_values[2] }})
+{% try %}
+    {% if param.type and param.type.value == 'numeric' %}
+        {% if param.configuration_values %}
+            Val: {{ param.configuration_values[0]|default('N/A') }}
+            {% if param.configuration_values|length > 1 %} 
+                (Min: {{ param.configuration_values[1]|default('N/A') }}, 
+                Max: {{ param.configuration_values[2]|default('N/A') }})
+            {% endif %}
+        {% else %}
+            <span class="text-muted">Règles non définies</span>
         {% endif %}
-    {% elif param.type.value == 'enum' %}
-        Options: {{ param.configuration_values[2:]|join(', ') }}
+    {% elif param.type and param.type.value == 'enum' %}
+        {% if param.configuration_values and param.configuration_values|length > 2 %}
+            Options: {{ param.configuration_values[2:]|join(', ') }}
+        {% else %}
+            <span class="text-muted">Options non définies</span>
+        {% endif %}
     {% else %}
         Texte libre
     {% endif %}
+{% except %}
+    <span class="text-muted">Règles non disponibles</span>
+{% endtry %}
 {% endmacro %}
