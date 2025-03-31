@@ -20,7 +20,7 @@
     
     {# Définition des variables conditionnelles #}
     {% set columns_list = ['name', 'postal_code_relation.code', 'postal_code_relation.city'] %}
-    {% set headers_list = ['Nom', 'Code Postal', 'Ville', 'Robots', 'Actions'] %}
+    {% set headers_list = ['Nom', 'Code Postal', 'Ville', 'Robots'] %}
     {% set filter_count = 4 %}
     
     {% if not same_country|default(false) %}
