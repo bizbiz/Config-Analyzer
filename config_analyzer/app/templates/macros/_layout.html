@@ -1,4 +1,11 @@
-{# /templates/macros/_param_card.html #}
+{# /templates/macros/_layout.html #}
+
+{% macro spaced_section(template_path, options={}, spacing_class="mb-5") %}
+<div class="{{ spacing_class }}">
+    {% include template_path with context %}
+</div>
+{% endmacro %}
+
 {% macro param_card(param, entity_type, entity_slug, is_configured) %}
 <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">

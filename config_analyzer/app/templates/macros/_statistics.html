@@ -1,4 +1,5 @@
-{# templates/macros/_statistics.html #}
+{# /templates/macros/_statistics.html #}
+
 {% macro stats_cards(stats_items) %}
 <div class="row mb-4">
     {% for item in stats_items %}
@@ -16,5 +17,37 @@
         </div>
     </div>
     {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro stats_card(title="Statistiques", icon="chart-bar") %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-{{ icon }} me-2"></i>{{ title }}</h5>
+        <dl class="row">
+            {{ caller() }}
+        </dl>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro stats_item(label, value) %}
+<dt class="col-sm-6">{{ label }}</dt>
+<dd class="col-sm-6">{{ value }}</dd>
+{% endmacro %}
+
+{% macro indicateurs(items, title, color='primary') %}
+<div class="col-md-4 mb-3">
+    <div class="card border-{{ color }} h-100 shadow-sm">
+        <div class="card-body text-center">
+            <h5 class="card-title text-{{ color }} mb-3">
+                <i class="fas fa-robot me-2"></i>{{ title }}
+            </h5>
+            <div class="display-4 fw-bold text-muted">
+                {{ items|length }}
+            </div>
+            <small class="text-muted">dans le système</small>
+        </div>
+    </div>
 </div>
 {% endmacro %}

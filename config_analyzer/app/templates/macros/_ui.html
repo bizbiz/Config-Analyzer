@@ -1,0 +1,57 @@
+{# /templates/macros/_ui.html #}
+
+{% macro badge(type, text, colors={'text': 'info', 'numeric': 'primary', 'enum': 'success'}) %}
+<span class="badge bg-{{ colors[type]|default('secondary') }}">{{ text }}</span>
+{% endmacro %}
+
+{% macro alert_message(message, type="info") %}
+<div class="alert alert-{{ type }} alert-dismissible fade show">
+    <i class="fas fa-info-circle me-2"></i>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endmacro %}
+
+{% macro alert_empty_list(message, add_url=None, add_text=None) %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>{{ message }}
+    {% if add_url and add_text %}
+        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro card(title, content, header_actions="") %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ title }}</h5>
+        {{ header_actions|safe }}
+    </div>
+    <div class="card-body">
+        {{ content|safe }}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro card_header(title, add_url=None, add_text="Ajouter", show_button=true, show_badge=false, badge_count=0) %}
+<div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+        {{ title }}
+        {% if show_badge %}
+        <span class="badge bg-primary ms-2">{{ badge_count }}</span>
+        {% endif %}
+    </h5>
+    {% if show_button and add_url %}
+        <a href="{{ add_url }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>{{ add_text }}
+        </a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro back_button(url, text="Retour", class="btn btn-secondary mt-4") %}
+<div class="text-center">
+    <a href="{{ url }}" class="{{ class }}">
+        <i class="fas fa-arrow-left me-2"></i>{{ text }}
+    </a>
+</div>
+{% endmacro %}

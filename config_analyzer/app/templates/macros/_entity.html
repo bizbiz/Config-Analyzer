@@ -1,5 +1,4 @@
-{# /app/templates/macros/_entity_sections.html #}
-{% from "macros/_table_ui.html" import param_table, alert_empty_list %}
+{# /templates/macros/_entity.html #}
 
 {% macro parameters_section(configured_params, unconfigured_params, entity_type, entity_slug) %}
 <div class="card mb-4">
@@ -16,6 +15,7 @@
     </div>
     <div class="card-body">
         {% if (configured_params|length + unconfigured_params|length) > 0 %}
+            {% from "macros/_table.html" import param_table %}
             {{ param_table(configured_params + unconfigured_params, entity_type, entity_slug, editable=true) }}
         {% else %}
         <div class="alert alert-info">
@@ -28,7 +28,6 @@
     </div>
 </div>
 {% endmacro %}
-
 
 {% macro configurations_section(configurations, entity_type, entity_id) %}
 <div class="card mb-5">
@@ -95,5 +94,65 @@
         </div>
         {% endif %}
     </div>
+</div>
+{% endmacro %}
+
+{% macro entity_header(entity, title_prefix="Détails de", title_field="name") %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">{{ title_prefix }} {{ entity[title_field] }}</h1>
+    <div class="btn-group">
+        {% if caller %}
+            {{ caller() }}
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro standard_actions(entity, edit_url, entity_type, entity_slug) %}
+<a href="{{ edit_url }}" class="btn btn-outline-primary">
+    <i class="fas fa-edit"></i> Modifier
+</a>
+<a href="{{ url_for('additional_params_config.add', entity_type=entity_type, entity_slug=entity_slug) }}" 
+   class="btn btn-outline-success">
+    <i class="fas fa-cog"></i> Ajouter un paramètre
+</a>
+{% endmacro %}
+
+{% macro info_card(title="Informations générales", icon="info-circle") %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-{{ icon }} me-2"></i>{{ title }}</h5>
+        <dl class="row">
+            {{ caller() }}
+        </dl>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro info_item(label, value, url=None) %}
+<dt class="col-sm-4">{{ label }}</dt>
+<dd class="col-sm-8">
+    {% if url %}
+        <a href="{{ url }}">{{ value }}</a>
+    {% else %}
+        {{ value }}
+    {% endif %}
+</dd>
+{% endmacro %}
+
+{% macro entity_list_section(title, items, template_partial, context={}, icon="list", empty_message="Aucun élément trouvé", add_url=None, add_text="Ajouter") %}
+<div class="mb-5">
+    {% if items and items|length > 0 %}
+        {% with title=title, is_embedded=true, show_badge=true, show_add_button=true %}
+            {% include template_partial with context %}
+        {% endwith %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>{{ empty_message }}
+            {% if add_url %}
+            <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 {% endmacro %}
