@@ -102,6 +102,9 @@ def list():
         city_error=None,
         country_code_error=None,
         form_data={},
+        # Colonnes pour le tableau - envoyées directement
+        columns=['name', 'postal_code_relation.code', 'postal_code_relation.city', 'robots'],
+        headers=['Nom', 'Code Postal', 'Ville', 'Robots', 'Actions'],
         # Statistiques
         new_clients=new_clients,
         total_robots=total_robots,
