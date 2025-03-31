@@ -1,55 +1,61 @@
 // static/js/data_table.js
 
 /**
- * Bibliothèque simplifiée pour gérer les tableaux de données
+ * Bibliothèque pour gérer les tableaux de données
  * - Filtrage (recherche)
  * - Tri par colonne
+ * - Fonctionnalités de tableau interactif
  */
 
-// État global pour les tableaux 
-window.tableStates = {};
-
-/**
- * Initialise un tableau complet avec tri et filtrage
- * @param {string} tableId - ID du tableau
- * @param {string} tbodyId - ID du tbody
- * @param {string} searchInputId - ID du champ de recherche
- */
-function initDataTable(tableId, tbodyId, searchInputId) {
-    console.log(`Initializing table ${tableId}`);
+// Fonction d'initialisation globale
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Data Tables: Initializing all data tables');
     
-    // Vérifier l'existence des éléments de base
-    const table = document.getElementById(tableId);
-    const tbody = document.getElementById(tbodyId);
-    const searchInput = document.getElementById(searchInputId);
+    // Initialiser tous les tableaux de données
+    document.querySelectorAll('table.data-table').forEach(table => {
+        if (!table.id) {
+            console.warn('Data Tables: Found table without ID, skipping');
+            return;
+        }
+        
+        console.log(`Data Tables: Processing table #${table.id}`);
+        
+        // Récupérer les attributs data-*
+        const searchInputId = table.dataset.searchInput || null;
+        const tbodyId = table.dataset.tbodyId || `${table.id}-body`;
+        const filterColumns = parseInt(table.dataset.filterColumns || '3', 10);
+        const isSortable = table.dataset.sortable !== 'false'; // Par défaut activé
+        
+        // Initialiser le filtrage si un input de recherche est spécifié
+        if (searchInputId) {
+            initTableSearch(table.id, searchInputId, filterColumns);
+        }
+        
+        // Initialiser le tri si activé
+        if (isSortable) {
+            initTableSorting(table.id, tbodyId);
+        }
+    });
     
-    if (!table) {
-        console.error(`Table #${tableId} not found`);
-        return;
-    }
-    
-    if (!tbody) {
-        console.error(`Tbody #${tbodyId} not found for table #${tableId}`);
-        return;
-    }
-    
-    // Initialiser l'état du tableau
-    window.tableStates[tableId] = {
-        currentSortColumn: null,
-        ascending: true,
-        originalRows: Array.from(tbody.rows || []),
-        filteredRows: Array.from(tbody.rows || []),
-        searchTerm: ''
-    };
-    
-    // Initialiser le tri
-    initTableSorting(tableId, tbodyId);
-    
-    // Initialiser la recherche si l'input existe
-    if (searchInput) {
-        initTableSearch(tableId, searchInputId);
-    }
-}
+    // Initialiser également les champs de recherche avec attribut data-target-table
+    document.querySelectorAll('input.table-search-input').forEach(input => {
+        if (!input.id) {
+            console.warn('Data Tables: Found search input without ID, skipping');
+            return;
+        }
+        
+        // Vérifier si l'initialisation n'a pas déjà été faite
+        const targetTableId = input.dataset.targetTable;
+        if (targetTableId && !input.dataset.initialized) {
+            const table = document.getElementById(targetTableId);
+            if (table) {
+                const filterColumns = parseInt(table.dataset.filterColumns || '3', 10);
+                initTableSearch(targetTableId, input.id, filterColumns);
+                input.dataset.initialized = 'true';
+            }
+        }
+    });
+});
 
 /**
  * Initialise le tri sur les colonnes d'un tableau
@@ -58,10 +64,25 @@ function initDataTable(tableId, tbodyId, searchInputId) {
  */
 function initTableSorting(tableId, tbodyId) {
     const table = document.getElementById(tableId);
-    if (!table) return;
+    if (!table) {
+        console.error(`Data Tables: Table #${tableId} not found for sorting`);
+        return;
+    }
+    
+    const tbody = document.getElementById(tbodyId) || table.querySelector('tbody');
+    if (!tbody) {
+        console.error(`Data Tables: Tbody for table #${tableId} not found`);
+        return;
+    }
     
     const headers = table.querySelectorAll('th.sortable-header');
-    console.log(`Found ${headers.length} sortable headers in table #${tableId}`);
+    console.log(`Data Tables: Found ${headers.length} sortable headers in table #${tableId}`);
+    
+    // État de tri pour ce tableau
+    const sortState = {
+        currentColumn: null,
+        ascending: true
+    };
     
     headers.forEach(header => {
         // Ajouter un style pour indiquer que la colonne est triable
@@ -70,24 +91,21 @@ function initTableSorting(tableId, tbodyId) {
         header.addEventListener('click', function() {
             // Obtenir l'index de la colonne depuis l'attribut data
             const columnIndex = parseInt(this.getAttribute('data-column-index') || '0', 10);
-            console.log(`Sorting table #${tableId} by column ${columnIndex}`);
-            
-            // Récupérer l'état du tableau
-            const state = window.tableStates[tableId];
+            console.log(`Data Tables: Sorting table #${tableId} by column ${columnIndex}`);
             
             // Gérer la direction du tri
-            if (state.currentSortColumn === columnIndex) {
-                state.ascending = !state.ascending;
+            if (sortState.currentColumn === columnIndex) {
+                sortState.ascending = !sortState.ascending;
             } else {
-                state.currentSortColumn = columnIndex;
-                state.ascending = true;
+                sortState.currentColumn = columnIndex;
+                sortState.ascending = true;
             }
             
             // Mettre à jour les indicateurs visuels
-            updateSortIndicators(table, columnIndex, state.ascending);
+            updateSortIndicators(table, columnIndex, sortState.ascending);
             
             // Trier les lignes
-            sortTable(tableId, tbodyId, columnIndex, state.ascending);
+            sortTableRows(tbody, columnIndex, sortState.ascending);
         });
     });
 }
@@ -123,30 +141,29 @@ function updateSortIndicators(table, activeColumnIndex, ascending) {
 }
 
 /**
- * Trie un tableau
- * @param {string} tableId - ID du tableau
- * @param {string} tbodyId - ID du tbody
- * @param {number} columnIndex - Index de la colonne à trier
- * @param {boolean} ascending - Direction du tri
+ * Trie les lignes d'un tableau
+ * @param {HTMLElement} tbody - Le corps du tableau contenant les lignes
+ * @param {number} columnIndex - L'index de la colonne à trier
+ * @param {boolean} ascending - La direction du tri (vrai pour ascendant)
  */
-function sortTable(tableId, tbodyId, columnIndex, ascending) {
-    const tbody = document.getElementById(tbodyId);
+function sortTableRows(tbody, columnIndex, ascending) {
     if (!tbody) return;
     
     const rows = Array.from(tbody.rows);
+    if (rows.length === 0) return;
     
     // Trier les lignes
-    rows.sort((rowA, rowB) => {
-        // Vérifier que l'index de colonne est valide
-        if (columnIndex >= rowA.cells.length || columnIndex >= rowB.cells.length) {
+    rows.sort((a, b) => {
+        // Vérifier la validité des cellules
+        if (columnIndex >= a.cells.length || columnIndex >= b.cells.length) {
             return 0;
         }
         
-        // Obtenir le texte des cellules
-        const cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
-        const cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
+        // Extraire le contenu des cellules
+        const cellA = a.cells[columnIndex].textContent.trim().toLowerCase();
+        const cellB = b.cells[columnIndex].textContent.trim().toLowerCase();
         
-        // Tentative de tri numérique si possible
+        // Essayer un tri numérique d'abord
         const numA = parseFloat(cellA.replace(/[^\d.-]/g, ''));
         const numB = parseFloat(cellB.replace(/[^\d.-]/g, ''));
         
@@ -154,13 +171,13 @@ function sortTable(tableId, tbodyId, columnIndex, ascending) {
             return ascending ? numA - numB : numB - numA;
         }
         
-        // Tri alphabétique
+        // Sinon faire un tri alphabétique
         if (cellA < cellB) return ascending ? -1 : 1;
         if (cellA > cellB) return ascending ? 1 : -1;
         return 0;
     });
     
-    // Réorganiser les lignes dans le DOM
+    // Réarranger les lignes dans le DOM
     rows.forEach(row => {
         tbody.appendChild(row);
     });
@@ -170,28 +187,36 @@ function sortTable(tableId, tbodyId, columnIndex, ascending) {
  * Initialise un filtre de recherche pour un tableau
  * @param {string} tableId - ID du tableau
  * @param {string} inputId - ID du champ de recherche
+ * @param {number} filterColumns - Nombre de colonnes à considérer pour la recherche
  */
-function initTableSearch(tableId, inputId) {
-    const searchInput = document.getElementById(inputId);
+function initTableSearch(tableId, inputId, filterColumns) {
     const table = document.getElementById(tableId);
+    const searchInput = document.getElementById(inputId);
     
-    if (!searchInput || !table) {
-        console.error(`Cannot initialize search: missing elements for table #${tableId}`);
+    if (!table || !searchInput) {
+        console.error(`Data Tables: Missing elements for table #${tableId} or input #${inputId}`);
         return;
     }
     
-    console.log(`Initializing search for table #${tableId} with input #${inputId}`);
+    console.log(`Data Tables: Setting up search for table #${tableId} with input #${inputId}`);
     
-    // Déterminer le nombre de colonnes à filtrer
-    const filterColumns = parseInt(table.getAttribute('data-filter-columns') || '3', 10);
+    // Marquer cet input comme initialisé pour éviter les doubles init
+    if (searchInput.dataset.initialized === 'true') {
+        console.log(`Data Tables: Search input #${inputId} already initialized`);
+        return;
+    }
     
-    // Garder les lignes originales pour le filtrage
+    // Récupérer le corps du tableau
     const tbody = table.querySelector('tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error(`Data Tables: Tbody not found for table #${tableId}`);
+        return;
+    }
     
+    // Stocker les lignes originales
     const originalRows = Array.from(tbody.rows);
     
-    // Gestionnaire d'événement pour la recherche
+    // Attacher l'écouteur d'événements
     searchInput.addEventListener('input', function() {
         const filter = this.value.toLowerCase();
         let visibleCount = 0;
@@ -199,7 +224,7 @@ function initTableSearch(tableId, inputId) {
         originalRows.forEach(row => {
             let match = false;
             
-            // Parcourir les colonnes à filtrer
+            // Rechercher dans les premières colonnes selon filterColumns
             for (let i = 0; i < filterColumns && i < row.cells.length; i++) {
                 const cell = row.cells[i];
                 if (cell && cell.textContent.toLowerCase().includes(filter)) {
@@ -214,8 +239,11 @@ function initTableSearch(tableId, inputId) {
         });
         
         // Mettre à jour un compteur de résultats (optionnel)
-        updateResultsCount(tableId, visibleCount, originalRows.length);
+        updateSearchResultsCount(tableId, visibleCount, originalRows.length);
     });
+    
+    // Marquer cet input comme initialisé
+    searchInput.dataset.initialized = 'true';
 }
 
 /**
@@ -224,23 +252,25 @@ function initTableSearch(tableId, inputId) {
  * @param {number} visible - Nombre d'éléments visibles
  * @param {number} total - Nombre total d'éléments
  */
-function updateResultsCount(tableId, visible, total) {
+function updateSearchResultsCount(tableId, visible, total) {
+    // ID du compteur basé sur l'ID du tableau
     const counterId = `${tableId}-counter`;
-    let counter = document.getElementById(counterId);
     
-    // Créer le compteur s'il n'existe pas
+    // Trouver ou créer le compteur
+    let counter = document.getElementById(counterId);
     if (!counter) {
         counter = document.createElement('div');
         counter.id = counterId;
         counter.className = 'search-results-count small text-muted mt-1';
         
-        const searchInput = document.querySelector(`#${tableId.replace('Table', 'SearchInput')}`);
+        // Essayer de placer le compteur après le champ de recherche
+        const searchInput = document.querySelector(`input[data-target-table="${tableId}"]`);
         if (searchInput && searchInput.parentNode) {
             searchInput.parentNode.appendChild(counter);
         }
     }
     
-    // Afficher le compteur si nécessaire
+    // Mettre à jour le compteur
     if (visible < total) {
         counter.textContent = `Affichage de ${visible} sur ${total} éléments`;
         counter.style.display = 'block';
@@ -248,9 +278,3 @@ function updateResultsCount(tableId, visible, total) {
         counter.style.display = 'none';
     }
 }
-
-// Initialisation automatique des tableaux
-document.addEventListener('DOMContentLoaded', function() {
-    // Cette partie est désormais redondante car l'initialisation
-    // est faite directement via des scripts inline dans chaque tableau
-});
