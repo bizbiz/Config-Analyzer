@@ -55,9 +55,10 @@ def view(slug):
 @clients_bp.route('/list')
 def list():
     """Liste tous les clients."""
-    clients = Client.query.all()
-    form_data = {}
-    name_error = postal_code_error = city_error = country_code_error = None
+    # Charger explicitement la relation postal_code
+    clients = Client.query.options(
+        db.joinedload(Client.postal_code_relation)
+    ).all()
     
     # Calcul des statistiques
     from datetime import datetime, timedelta
@@ -72,6 +73,17 @@ def list():
     # Total des robots pour tous les clients
     total_robots = db.session.query(func.count(RobotInstance.id)).scalar()
     
+    # Vérifier si tous les clients ont le même code pays
+    same_country = True
+    country_code = None
+    
+    if clients:
+        country_code = clients[0].postal_code_relation.country_code if clients[0].postal_code_relation else None
+        for client in clients:
+            if not client.postal_code_relation or client.postal_code_relation.country_code != country_code:
+                same_country = False
+                break
+    
     # Obtenir la liste des pays pour le formulaire d'ajout rapide
     countries = get_countries_list()
 
@@ -80,30 +92,22 @@ def list():
         ParameterDefinition.target_entity == EntityType.CLIENT
     ).all()
 
-    # Sérialiser les configurations pour JavaScript
-    configs_json = [{
-        'id': config.id,
-        'name': config.name,
-        'description': config.description,
-        'type': config.definition_type
-    } for config in params_configs]
-
     return render_template(
         'list/clients.html', 
         params_configs=params_configs,
-        configs_json=configs_json,
         clients=clients,
-        entity_type='client',
-        entity_slug='global',
-        form_data=form_data,
         countries=countries,
-        name_error=name_error,
-        postal_code_error=postal_code_error,
-        city_error=city_error,
-        country_code_error=country_code_error,
-        # Ajout des statistiques
+        name_error=None,
+        postal_code_error=None,
+        city_error=None,
+        country_code_error=None,
+        form_data={},
+        # Statistiques
         new_clients=new_clients,
-        total_robots=total_robots
+        total_robots=total_robots,
+        # Info pays
+        same_country=same_country,
+        country_code=country_code
     )
 
 @clients_bp.route('/add', methods=['GET', 'POST'])

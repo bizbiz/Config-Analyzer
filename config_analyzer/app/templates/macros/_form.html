@@ -1,6 +1,6 @@
 {# /templates/macros/_form.html #}
 
-{% macro text_field(name, label, value="", required=false, placeholder="", help_text="", error=None, pattern=None, type="text") %}
+{% macro text_field(name, label, value="", required=false, placeholder="", help_text="", error=None, pattern=None, type="text", attributes="") %}
 <div class="mb-3">
     <label for="{{ name }}" class="form-label">{{ label }}</label>
     <input type="{{ type }}"
@@ -10,7 +10,8 @@
            value="{{ value }}"
            {% if required %}required{% endif %}
            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-           {% if pattern %}pattern="{{ pattern }}" title="{{ help_text }}"{% endif %}>
+           {% if pattern %}pattern="{{ pattern }}" title="{{ help_text }}"{% endif %}
+           {{ attributes|safe }}>
     {% if error %}
     <div class="invalid-feedback">{{ error }}</div>
     {% elif help_text %}
@@ -19,23 +20,30 @@
 </div>
 {% endmacro %}
 
-{% macro select_field(name, label, options, option_value, option_text, selected=None, required=false, add_button=None, attributes="", error=None, help_text="") %}
+{% macro select_field(name, label, options, option_value, option_text, selected=None, required=false, help_text="", error=None, attributes="", multiple=false, add_button=None) %}
 <div class="mb-3">
     <label for="{{ name }}" class="form-label">{{ label }}</label>
     <div class="input-group">
-        <select class="form-select{% if error %} is-invalid{% endif %}" id="{{ name }}" name="{{ name }}" {% if required %}required{% endif %} {{ attributes|safe }}>
+        <select class="form-select{% if error %} is-invalid{% endif %}" 
+                id="{{ name }}" 
+                name="{{ name }}{% if multiple %}[]{% endif %}" 
+                {% if required %}required{% endif %} 
+                {% if multiple %}multiple{% endif %}
+                {{ attributes|safe }}>
+            {% if not multiple %}
             <option value="" {% if not selected %}selected{% endif %} disabled>Choisir un {{ label|lower }}</option>
+            {% endif %}
             {% for option in options %}
             <option value="{{ option[option_value] }}" 
-                    {% if selected and selected|string == option[option_value]|string %}selected{% endif %}>
+                    {% if selected is not none and ((multiple and option[option_value] in selected) or (not multiple and selected|string == option[option_value]|string)) %}selected{% endif %}>
                 {{ option[option_text] }}
             </option>
             {% endfor %}
         </select>
         {% if add_button %}
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ add_button.url }}'">
+        <a href="{{ add_button.url }}" class="btn btn-secondary">
             {{ add_button.text }}
-        </button>
+        </a>
         {% endif %}
     </div>
     {% if error %}
@@ -47,13 +55,16 @@
 </div>
 {% endmacro %}
 
-{% macro textarea_field(name, label, value="", rows=3, required=false, placeholder="", help_text="", error=None) %}
+{% macro textarea_field(name, label, value="", rows=3, required=false, placeholder="", help_text="", error=None, attributes="") %}
 <div class="mb-3">
     <label for="{{ name }}" class="form-label">{{ label }}</label>
     <textarea class="form-control {% if error %}is-invalid{% endif %}" 
-              id="{{ name }}" name="{{ name }}" rows="{{ rows }}"
+              id="{{ name }}" 
+              name="{{ name }}" 
+              rows="{{ rows }}"
               {% if required %}required{% endif %}
-              {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}>{{ value }}</textarea>
+              {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+              {{ attributes|safe }}>{{ value }}</textarea>
     {% if error %}
     <div class="invalid-feedback">{{ error }}</div>
     {% elif help_text %}
@@ -62,14 +73,74 @@
 </div>
 {% endmacro %}
 
-{% macro expandable_notes(param_id) %}
-<div class="notes-container collapse" id="notes-{{ param_id }}">
-    <div class="p-3 bg-light mt-2">
-        <textarea class="form-control notes-textarea" 
-                  name="notes_{{ param_id }}"
-                  data-param-id="{{ param_id }}"
-                  placeholder="Explications sur les raisons de la modification (facultatif)"
-                  rows="2"></textarea>
-    </div>
+{% macro checkbox_field(name, label, checked=false, help_text="", error=None, attributes="") %}
+<div class="mb-3 form-check">
+    <input type="checkbox" 
+           class="form-check-input {% if error %}is-invalid{% endif %}" 
+           id="{{ name }}" 
+           name="{{ name }}"
+           {% if checked %}checked{% endif %}
+           {{ attributes|safe }}>
+    <label class="form-check-label" for="{{ name }}">{{ label }}</label>
+    {% if error %}
+    <div class="invalid-feedback">{{ error }}</div>
+    {% elif help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
 </div>
+{% endmacro %}
+
+{% macro radio_field(name, label, options, selected=None, required=false, help_text="", error=None, inline=false) %}
+<div class="mb-3">
+    <label class="form-label d-block">{{ label }}</label>
+    {% for option in options %}
+    <div class="form-check {% if inline %}form-check-inline{% endif %}">
+        <input class="form-check-input {% if error %}is-invalid{% endif %}" 
+               type="radio" 
+               name="{{ name }}" 
+               id="{{ name }}_{{ loop.index }}" 
+               value="{{ option.value }}"
+               {% if selected == option.value %}checked{% endif %}
+               {% if required %}required{% endif %}>
+        <label class="form-check-label" for="{{ name }}_{{ loop.index }}">
+            {{ option.text }}
+        </label>
+    </div>
+    {% endfor %}
+    {% if error %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+    {% elif help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro file_field(name, label, required=false, accept=None, help_text="", error=None, multiple=false) %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">{{ label }}</label>
+    <input type="file" 
+           class="form-control {% if error %}is-invalid{% endif %}" 
+           id="{{ name }}" 
+           name="{{ name }}{% if multiple %}[]{% endif %}"
+           {% if required %}required{% endif %}
+           {% if accept %}accept="{{ accept }}"{% endif %}
+           {% if multiple %}multiple{% endif %}>
+    {% if error %}
+    <div class="invalid-feedback">{{ error }}</div>
+    {% elif help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro submit_button(text="Enregistrer", icon="save", button_class="btn-primary", name="submit", value="1") %}
+<button type="submit" class="btn {{ button_class }}" name="{{ name }}" value="{{ value }}">
+    <i class="fas fa-{{ icon }} me-2"></i>{{ text }}
+</button>
+{% endmacro %}
+
+{% macro cancel_button(url, text="Annuler", icon="times") %}
+<a href="{{ url }}" class="btn btn-secondary">
+    <i class="fas fa-{{ icon }} me-2"></i>{{ text }}
+</a>
 {% endmacro %}

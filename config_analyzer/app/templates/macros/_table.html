@@ -46,45 +46,10 @@
  * @param template_partial  String  Template partiel à utiliser pour corps tableau
  * @param context           Object  Contexte à passer au template partiel
  *
- * Exemple d'utilisation basique:
- * {{ data_table(
- *     entity_type='client',
- *     items=clients,
- *     title='Liste des clients',
- *     icon='users',
- *     add_url=url_for('clients.add'),
- *     template_partial='list/partials/clients.html',
- *     context={
- *         'items': clients,
- *         'show_add_button': false
- *     }
- * ) }}
- *
- * Exemple avec options avancées:
- * {{ data_table(
- *     entity_type='client',
- *     items=clients,
- *     title='Liste des clients',
- *     icon='users',
- *     add_url=url_for('clients.add'),
- *     search=true,
- *     pagination=true,
- *     filters={'country': countries},
- *     sort_options=['name', 'city'],
- *     show_export=true,
- *     export_url=url_for('clients.export'),
- *     template_partial='list/partials/clients.html',
- *     context={
- *         'items': clients,
- *         'show_search': true,
- *         'show_actions': true
- *     },
- *     bulk_actions=[
- *         {'label': 'Supprimer', 'icon': 'trash', 'action': 'delete'}
- *     ]
- * ) }}
  */
 #}
+
+
 
 {% macro data_table(
     entity_type,
@@ -96,13 +61,6 @@
     show_add_button=true,
     search=true,
     pagination=false,
-    filters={},
-    sort_options=[],
-    custom_row_classes=None,
-    additional_buttons=[],
-    show_export=false,
-    export_url=None,
-    export_label="Exporter",
     empty_message="Aucun élément trouvé.",
     table_id=None,
     search_input_id=None,
@@ -110,13 +68,17 @@
     tbody_id=None,
     show_badge=false,
     is_embedded=false,
-    show_sort=false,
     show_search=true,
     search_placeholder=None,
     force_add_button=true,
     hide_add_when_empty=false,
-    template_partial=None,
-    context={}
+    headers=None,
+    columns=None,
+    column_links=None,
+    view_url_pattern=None,
+    edit_url_pattern=None,
+    delete_url_pattern=None,
+    delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?"
 ) %}
     {# Calcul des IDs du tableau si non fournis #}
     {% set table_id = table_id|default(entity_type + 'Table') %}
@@ -136,21 +98,6 @@
             </h5>
             
             <div class="d-flex">
-                {# Boutons supplémentaires #}
-                {% for button in additional_buttons %}
-                <a href="{{ button.url }}" class="btn btn-sm {{ button.class|default('btn-secondary') }} me-2">
-                    {% if button.icon %}<i class="fas fa-{{ button.icon }} me-1"></i>{% endif %}
-                    {{ button.text }}
-                </a>
-                {% endfor %}
-                
-                {# Bouton d'exportation si activé #}
-                {% if show_export and export_url %}
-                <a href="{{ export_url }}" class="btn btn-sm btn-secondary me-2">
-                    <i class="fas fa-download me-1"></i>{{ export_label }}
-                </a>
-                {% endif %}
-                
                 {# Bouton d'ajout #}
                 {% if add_url and show_add_button and (items|length > 0 or not hide_add_when_empty or force_add_button) %}
                 <a href="{{ add_url }}" class="btn btn-sm btn-primary">
@@ -170,72 +117,158 @@
                 </div>
                 {% endif %}
                 
-                {# Inclusion du corps du tableau via template partiel #}
-                {% if template_partial %}
-                    {% include template_partial with context %}
-                {% else %}
-                    {# Tableau par défaut si pas de template partiel #}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered align-middle" 
-                               id="{{ table_id }}"
-                               data-list-filter="{{ 'true' if search else 'false' }}"
-                               data-filter-input="{{ search_input_id }}" 
-                               data-filter-columns="{{ filter_columns }}">
-                            <thead class="table-light">
-                                <tr>
-                                    {% block table_headers %}
+                {# Tableau de données #}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle" 
+                           id="{{ table_id }}"
+                           data-list-filter="{{ 'true' if search else 'false' }}"
+                           data-filter-input="{{ search_input_id }}" 
+                           data-filter-columns="{{ filter_columns }}">
+                        <thead class="table-light">
+                            <tr>
+                                {% if headers %}
+                                    {% for header in headers %}
+                                        <th>{{ header }}</th>
+                                    {% endfor %}
+                                {% else %}
                                     <th>ID</th>
                                     <th>Nom</th>
                                     <th>Actions</th>
-                                    {% endblock %}
-                                </tr>
-                            </thead>
-                            <tbody id="{{ tbody_id }}">
-                                {% block table_rows %}
-                                {% for item in items %}
-                                <tr {% if custom_row_classes %}class="{{ custom_row_classes(item) }}"{% endif %}>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="{{ tbody_id }}">
+                            {% for item in items %}
+                            <tr>
+                                {% if columns %}
+                                    {% for column in columns %}
+                                        <td>
+                                            {# Fonction pour accéder aux attributs imbriqués de manière sécurisée #}
+                                            {% macro get_nested_attr(obj, attr_path) %}
+                                                {% set parts = attr_path.split('.') %}
+                                                {% set current_obj = obj %}
+                                                
+                                                {% for part in parts %}
+                                                    {% if current_obj is not none and hasattr(current_obj, part) %}
+                                                        {% set current_obj = attribute(current_obj, part) %}
+                                                    {% else %}
+                                                        {% set current_obj = none %}
+                                                        {% break %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                
+                                                {{ current_obj if current_obj is not none else '<span class="text-muted">-</span>' }}
+                                            {% endmacro %}
+                                            
+                                            {% if column_links and column in column_links %}
+                                                <a href="{{ column_links[column]|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}">
+                                                    {% if '.' in column %}
+                                                        {{ get_nested_attr(item, column) }}
+                                                    {% elif hasattr(item, column) %}
+                                                        {{ attribute(item, column) }}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </a>
+                                            {% else %}
+                                                {% if '.' in column %}
+                                                    {{ get_nested_attr(item, column) }}
+                                                {% elif hasattr(item, column) %}
+                                                    {{ attribute(item, column) }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                {% else %}
                                     <td>{{ item.id }}</td>
                                     <td>{{ item.name }}</td>
-                                    <td class="text-center">
-                                        {{ action_buttons(
-                                            view_url=url_for(entity_type + '.view', id=item.id),
-                                            edit_url=url_for(entity_type + '.edit', id=item.id),
-                                            delete_url=url_for(entity_type + '.delete', id=item.id),
-                                            delete_message='Êtes-vous sûr de vouloir supprimer cet élément ?'
-                                        ) }}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% endblock %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% endif %}
+                                {% endif %}
+                                
+                                <td class="text-center">
+                                    {% if view_url_pattern %}
+                                        <a href="{{ view_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" class="btn btn-sm btn-info me-1">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if edit_url_pattern %}
+                                        <a href="{{ edit_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" class="btn btn-sm btn-warning me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if delete_url_pattern %}
+                                        <form action="{{ delete_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-danger" 
+                                                    onclick="return confirm('{{ delete_message }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 
-                {# Initialisation de la recherche #}
-                {% if search %}
-                    {{ init_search(table_id, search_input_id) }}
-                {% endif %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        initTableSearch('{{ table_id }}', '{{ search_input_id }}', [], 'tbody tr');
+                    });
+                </script>
                 
                 {# Pagination #}
                 {% if pagination and total_pages is defined and total_pages > 1 %}
-                    {{ pagination(page, total_pages, total_items, items|length, offset) }}
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            Affichage de {{ offset + 1 }} à {{ offset + items|length }} sur {{ total_items }} éléments
+                        </div>
+                        <nav aria-label="Navigation des pages">
+                            <ul class="pagination">
+                                <li class="page-item {{ 'disabled' if page == 1 else '' }}">
+                                    <a class="page-link" href="{{ url_for(request.endpoint, page=page-1, **request.view_args) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                
+                                {% set start_page = [1, page - 2]|max %}
+                                {% set end_page = [start_page + 4, total_pages]|min %}
+                                {% set start_page = [end_page - 4, 1]|max %}
+                                
+                                {% for p in range(start_page, end_page + 1) %}
+                                    <li class="page-item {{ 'active' if p == page else '' }}">
+                                        <a class="page-link" href="{{ url_for(request.endpoint, page=p, **request.view_args) }}">{{ p }}</a>
+                                    </li>
+                                {% endfor %}
+                                
+                                <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
+                                    <a class="page-link" href="{{ url_for(request.endpoint, page=page+1, **request.view_args) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 {% endif %}
                 
             {% else %}
                 {# Message si aucun élément #}
-                {{ alert_empty_list(
-                    message=empty_message,
-                    add_url=add_url if show_add_button and not hide_add_when_empty else None,
-                    add_text=add_text
-                ) }}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>{{ empty_message }}
+                    {% if add_url and show_add_button and not hide_add_when_empty %}
+                        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
 {% endmacro %}
 
-{# Macro action_buttons inchangée pour référence #}
-{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=request.url) %}
+{# Macro action_buttons #}
+{% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=None) %}
     {% if is_td %}<td class="text-center">{% endif %}
     
     {% if view_url %}
@@ -252,7 +285,9 @@
     
     {% if delete_url %}
     <form action="{{ delete_url }}" method="POST" class="d-inline">
+        {% if return_to %}
         <input type="hidden" name="return_to" value="{{ return_to }}">
+        {% endif %}
         <button type="submit" class="btn btn-sm btn-danger" 
                 onclick="return confirm('{{ delete_message }}')">
             <i class="fas fa-trash"></i>
@@ -267,66 +302,13 @@
     {% if is_td %}</td>{% endif %}
 {% endmacro %}
 
-{# Init search - inchangé également #}
-{% macro init_search(table_id, input_id, column_indexes=[], row_selector='tbody tr') %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        initTableSearch('{{ table_id }}', '{{ input_id }}', {{ column_indexes|tojson }}, '{{ row_selector }}');
-    });
-</script>
-{% endmacro %}
-
-{# Macro pour la liste vide - simplifiée #}
-{% macro alert_empty_list(message, add_url=None, add_text=None) %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>{{ message }}
-    {% if add_url and add_text %}
-        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
-    {% endif %}
-</div>
-{% endmacro %}
-
-{# Macro pour la pagination #}
-{% macro pagination(page, total_pages, total_items, items_length, offset, endpoint=request.endpoint, endpoint_args=request.view_args) %}
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <div>
-        Affichage de {{ offset + 1 }} à {{ offset + items_length }} sur {{ total_items }} éléments
-    </div>
-    <nav aria-label="Navigation des pages">
-        <ul class="pagination">
-            <li class="page-item {{ 'disabled' if page == 1 else '' }}">
-                <a class="page-link" href="{{ url_for(endpoint, page=page-1, **endpoint_args) }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-            
-            {% set start_page = [1, page - 2]|max %}
-            {% set end_page = [start_page + 4, total_pages]|min %}
-            {% set start_page = [end_page - 4, 1]|max %}
-            
-            {% for p in range(start_page, end_page + 1) %}
-                <li class="page-item {{ 'active' if p == page else '' }}">
-                    <a class="page-link" href="{{ url_for(endpoint, page=p, **endpoint_args) }}">{{ p }}</a>
-                </li>
-            {% endfor %}
-            
-            <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
-                <a class="page-link" href="{{ url_for(endpoint, page=page+1, **endpoint_args) }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-</div>
-{% endmacro %}
-
 {# Affiche un badge de type de paramètre #}
 {% macro display_param_type_badge(config) %}
     {% if hasattr(config, 'type') and hasattr(config.type, 'value') %}
         {% if config.type.value == 'text' %}
-            <span class="badge bg-info">{{ config.type_display }}</span>
+            <span class="badge bg-info">{{ config.type_display|default('Texte') }}</span>
         {% elif config.type.value == 'numeric' %}
-            <span class="badge bg-primary">{{ config.type_display }}</span>
+            <span class="badge bg-primary">{{ config.type_display|default('Nombre') }}</span>
         {% elif config.type.value == 'enum' %}
             {% set multiple_choice = hasattr(config, 'configuration_values') and config.configuration_values|length > 1 and config.configuration_values[1] == '1' %}
             <span class="badge bg-success">
@@ -390,29 +372,11 @@
 {% endif %}
 {% endmacro %}
 
-{# Affiche les règles d'un paramètre #}
-{% macro display_param_rules(param) %}
-    {% if hasattr(param, 'type') and hasattr(param.type, 'value') %}
-        {% if param.type.value == 'numeric' %}
-            {% if hasattr(param, 'configuration_values') and param.configuration_values %}
-                Val: {{ param.configuration_values[0]|default('N/A') }}
-                {% if param.configuration_values|length > 1 %} 
-                    (Min: {{ param.configuration_values[1]|default('N/A') }}, 
-                    Max: {{ param.configuration_values[2]|default('N/A') }})
-                {% endif %}
-            {% else %}
-                <span class="text-muted">Règles non définies</span>
-            {% endif %}
-        {% elif param.type.value == 'enum' %}
-            {% if hasattr(param, 'configuration_values') and param.configuration_values and param.configuration_values|length > 2 %}
-                Options: {{ param.configuration_values[2:]|join(', ') }}
-            {% else %}
-                <span class="text-muted">Options non définies</span>
-            {% endif %}
-        {% else %}
-            Texte libre
-        {% endif %}
-    {% else %}
-        <span class="text-muted">Type non spécifié</span>
-    {% endif %}
+{# Fonctions utilitaires pour initTableSearch #}
+{% macro init_search(table_id, input_id, column_indexes=[], row_selector='tbody tr') %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initTableSearch('{{ table_id }}', '{{ input_id }}', {{ column_indexes|tojson }}, '{{ row_selector }}');
+    });
+</script>
 {% endmacro %}

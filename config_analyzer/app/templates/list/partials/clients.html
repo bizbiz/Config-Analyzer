@@ -1,64 +1,105 @@
-{# templates/list/partials/clients.html #}
-{% extends 'list/partials/_base_list_partial.html' %}
-{% from 'macros/_statistics.html' import stats_cards with context %}
+{# templates/list/clients.html #}
+{% extends "base.html" %}
+{% from "macros/_statistics.html" import stats_cards %}
+{% from "macros/_form_ui.html" import text_field, select_field %}
+{% from "macros/_table.html" import data_table %}
+{% from "macros/_common_ui.html" import back_button %}
 
-{% block default_title %}Clients{% endblock %}
+{% block title %}Liste des Clients{% endblock %}
 
-{% block add_url %}{{ url_for('clients.add') }}{% endblock %}
-{% block add_text %}Ajouter un client{% endblock %}
-
-{% block search_input_id %}clientsSearchInput{% endblock %}
-{% block filter_input_id %}clientsSearchInput{% endblock %}
-{% block table_id %}clientsTable{% endblock %}
-{% block table_id_js %}clientsTable{% endblock %}
-{% block table_id_js2 %}clientsTable{% endblock %}
-{% block search_placeholder %}Rechercher un client...{% endblock %}
-{% block filter_columns %}4{% endblock %}
-
-{% block tbody_id %}clients-table-body{% endblock %}
-{% block tbody_id_js %}clients-table-body{% endblock %}
-
-{% block empty_message %}Aucun client trouvé.{% endblock %}
-
-{% block quick_stats %}
-{% if quick_stats|default(false) and not is_embedded|default(false) %}
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Liste des Clients</h1>
+    
+    {# Statistiques #}
     {{ stats_cards([
-        {'title': 'Total Clients', 'value': items|length, 'color': 'primary', 'icon': 'building'},
+        {'title': 'Total Clients', 'value': clients|length, 'color': 'primary', 'icon': 'building'},
         {'title': 'Nombre de Robots', 'value': total_robots|default(0), 'color': 'success', 'icon': 'robot', 'subtitle': 'associés aux clients'},
         {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
     ]) }}
-{% endif %}
-{% endblock %}
-
-{% block table_headers %}
-<th scope="col">Nom</th>
-<th scope="col">Code Postal</th>
-<th scope="col">Ville</th>
-<th scope="col">Code Pays</th>
-{% if not is_embedded|default(false) %}
-<th scope="col" class="no-sort">Actions</th>
-{% endif %}
-{% endblock %}
-
-{% block table_rows %}
-{% for client in items %}
-<tr>
-    <td>
-        <a href="{{ url_for('clients.view', slug=client.slug) }}">
-            {{ client.name }}
-        </a>
-    </td>
-    <td>{{ client.postal_code_relation.code }}</td>
-    <td>{{ client.postal_code_relation.city }}</td>
-    <td>{{ client.postal_code_relation.country_code }}</td>
-    {% if not is_embedded|default(false) %}
-    {{ action_buttons(
-        view_url=url_for('clients.view', slug=client.slug),
-        edit_url=url_for('clients.edit', slug=client.slug),
-        delete_url=url_for('clients.delete', slug=client.slug),
-        delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
-    ) }}
+    
+    {# Tableau des clients #}
+    {% with items=clients, title='Liste des Clients' %}
+        {% include 'list/partials/clients.html' %}
+    {% endwith %}
+    
+    {# Formulaire d'ajout rapide #}
+    <div class="card p-4 shadow-sm mt-4">
+        <h2 class="mb-3">Ajouter un Client</h2>
+        
+        <form action="{{ url_for('clients.add') }}" method="POST" id="clientForm">
+            {{ text_field(
+                name="name",
+                label="Nom :",
+                value=form_data.name if form_data else "",
+                required=true,
+                error=name_error
+            ) }}
+            
+            {{ text_field(
+                name="postal_code",
+                label="Code Postal :",
+                value=form_data.postal_code if form_data else "",
+                required=true,
+                pattern="\\d{5}",
+                help_text="Le code postal doit contenir exactement 5 chiffres (ex: 75018)",
+                error=postal_code_error
+            ) }}
+            
+            {{ text_field(
+                name="city",
+                label="Ville :",
+                value=form_data.city if form_data else "",
+                required=true,
+                error=city_error
+            ) }}
+            
+            {{ select_field(
+                name="country_code",
+                label="Pays :",
+                options=countries,
+                option_value="code",
+                option_text="name",
+                selected=form_data.country_code if form_data and form_data.country_code else "FRA",
+                required=true,
+                help_text="Veuillez sélectionner un pays",
+                error=country_code_error
+            ) }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Ajouter
+                </button>
+                <button type="reset" class="btn btn-secondary ms-2">
+                    <i class="fas fa-sync-alt me-2"></i>Réinitialiser
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {# Section paramètres additionnels #}
+    {% if params_configs is defined and params_configs|length > 0 %}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-cogs me-2"></i>Paramètres additionnels pour tous les clients
+                <span class="badge bg-primary ms-2">{{ params_configs|length }}</span>
+            </h5>
+            <a href="{{ url_for('additional_params_config.add', entity_type='client') }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>Ajouter un paramètre global
+            </a>
+        </div>
+        <div class="card-body">
+            {% include 'list/partials/additional_params_config.html' with context %}
+        </div>
+    </div>
     {% endif %}
-</tr>
-{% endfor %}
+    
+    {# Bouton de retour #}
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à l'accueil
+        </a>
+    </div>
+</div>
 {% endblock %}

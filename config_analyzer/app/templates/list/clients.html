@@ -18,23 +18,47 @@
         {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
     ]) }}
     
+    {# Message si tous les clients ont le même code pays #}
+    {% if same_country|default(false) and country_code %}
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle me-2"></i>Tous les clients sont situés dans le même pays : {{ country_code }}
+    </div>
+    {% endif %}
+    
+    {# Définition des variables conditionnelles #}
+    {% set columns_list = ['name', 'postal_code_relation.code', 'postal_code_relation.city'] %}
+    {% set headers_list = ['Nom', 'Code Postal', 'Ville'] %}
+    {% set filter_count = 3 %}
+    
+    {% if not same_country|default(false) %}
+        {% set columns_list = columns_list + ['postal_code_relation.country_code'] %}
+        {% set headers_list = headers_list + ['Code Pays'] %}
+        {% set filter_count = 4 %}
+    {% endif %}
+    
+    {# Ajout de la colonne Actions #}
+    {% set headers_list = headers_list + ['Actions'] %}
+    
     {# Tableau des clients avec data_table #}
     {{ data_table(
-        entity_type='clients',
+        entity_type='client',
         items=clients,
         title='Liste des Clients',
         icon='building',
         add_url=url_for('clients.add'),
         add_text='Ajouter un client',
-        show_add_button=false,
+        show_add_button=true,
         search=true,
-        show_badge=true,
-        empty_message='Aucun client trouvé.',
-        headers=['Nom', 'Code Postal', 'Ville', 'Code Pays', 'Actions'],
-        columns=['name', 'postal_code_relation.code', 'postal_code_relation.city', 'postal_code_relation.country_code'],
+        filter_columns=filter_count,
+        headers=headers_list,
+        columns=columns_list,
         column_links={'name': url_for('clients.view', slug='%slug%')},
         view_url_pattern=url_for('clients.view', slug='%slug%'),
-        delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
+        edit_url_pattern=url_for('clients.edit', slug='%slug%'),
+        delete_url_pattern=url_for('clients.delete', slug='%slug%'),
+        delete_message='Êtes-vous sûr de vouloir supprimer ce client ?',
+        show_badge=true,
+        empty_message='Aucun client trouvé.'
     ) }}
     
     {# Formulaire d'ajout rapide #}
@@ -93,24 +117,36 @@
     
     {# Section paramètres additionnels #}
     {% if params_configs is defined and params_configs|length > 0 %}
-    {{ data_table(
-        entity_type='parameters',
-        items=params_configs,
-        title='Paramètres additionnels pour tous les clients',
-        icon='cogs',
-        add_url=url_for('additional_params_config.add', entity_type='client'),
-        add_text='Ajouter un paramètre global',
-        headers=['Nom', 'Type', 'Valeurs possibles', 'Actions'],
-        columns=['name', 'type', 'configuration_values'],
-        custom_actions={
-            'edit_url': url_for('additional_params_config.edit', config_id='%id%'),
-            'delete_url': url_for('additional_params_config.delete', config_id='%id%')
-        },
-        delete_message='Êtes-vous sûr de vouloir supprimer cette configuration de paramètre ?'
-    ) }}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-cogs me-2"></i>Paramètres additionnels pour tous les clients
+                <span class="badge bg-primary ms-2">{{ params_configs|length }}</span>
+            </h5>
+            <a href="{{ url_for('additional_params_config.add', entity_type='client') }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>Ajouter un paramètre global
+            </a>
+        </div>
+        <div class="card-body">
+            {{ data_table(
+                entity_type='param',
+                items=params_configs,
+                show_add_button=false,
+                headers=['Nom', 'Type', 'Valeurs possibles', 'Actions'],
+                columns=['name', 'type', 'configuration_values'],
+                edit_url_pattern=url_for('additional_params_config.edit', config_id='%id%'),
+                delete_url_pattern=url_for('additional_params_config.delete', config_id='%id%'),
+                delete_message='Êtes-vous sûr de vouloir supprimer ce paramètre ?'
+            ) }}
+        </div>
+    </div>
     {% endif %}
     
     {# Bouton de retour #}
-    {{ back_button(url_for('home.home'), "Retour à l'accueil", "btn btn-secondary mt-4") }}
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à l'accueil
+        </a>
+    </div>
 </div>
 {% endblock %}
