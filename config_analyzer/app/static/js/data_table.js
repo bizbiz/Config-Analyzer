@@ -1,65 +1,46 @@
 // config_analyzer/app/static/js/data_table.js
 
-function initTableSearch(tableId, inputId, columnIndexes = [], rowSelector = 'tbody tr') {
-    const table = document.getElementById(tableId);
-    const searchInput = document.getElementById(inputId);
+function initTableSearch(tableId, inputId, filterColumns = 3, rowSelector = 'tbody tr') {
+    console.log(`Initializing search for table: ${tableId}, input: ${inputId}`);
     
-    if (!table || !searchInput) {
-        console.error(`Data Tables: Missing elements for table #${tableId} or input #${inputId}`);
-        return;
-    }
-    
-    // Récupérer le tbody
-    const tbody = table.querySelector('tbody');
-    if (!tbody) {
-        console.error(`Data Tables: Tbody not found for table #${tableId}`);
-        return;
-    }
-    
-    // Stocker les lignes originales
-    const originalRows = Array.from(tbody.querySelectorAll(rowSelector));
-    
-    // Attacher l'écouteur d'événement input
-    searchInput.addEventListener('input', function() {
-        const searchText = this.value.toLowerCase();
-        let visibleCount = 0;
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = document.getElementById(tableId);
+        const searchInput = document.getElementById(inputId);
         
-        // Si aucun index de colonne n'est spécifié, recherche dans toutes les colonnes
-        // sauf la dernière (actions)
-        const searchColumns = columnIndexes.length > 0 
-            ? columnIndexes 
-            : Array.from({ length: Math.max(0, originalRows[0]?.cells.length - 1 || 0) }, (_, i) => i);
+        console.log(`Table element:`, table);
+        console.log(`Search input element:`, searchInput);
         
-        originalRows.forEach(row => {
-            let visible = false;
+        if (!table || !searchInput) {
+            console.error(`Missing elements for table #${tableId} or input #${inputId}`);
+            return;
+        }
+        
+        // Récupérer les lignes du tableau
+        const rows = table.querySelectorAll(rowSelector);
+        console.log(`Found ${rows.length} rows in table`);
+        
+        searchInput.addEventListener("input", function() {
+            const searchText = this.value.toLowerCase();
+            console.log(`Search text: ${searchText}`);
             
-            // Rechercher dans les colonnes spécifiées
-            for (const colIndex of searchColumns) {
-                if (colIndex >= row.cells.length) continue;
+            rows.forEach(row => {
+                let found = false;
                 
-                const cell = row.cells[colIndex];
-                const cellText = cell.textContent.toLowerCase();
+                // Limiter la recherche aux colonnes spécifiées (sauf la dernière = actions)
+                const columns = row.querySelectorAll('td');
+                const columnsToSearch = Math.min(columns.length - 1, filterColumns);
                 
-                if (cellText.includes(searchText)) {
-                    visible = true;
-                    break;
+                for (let i = 0; i < columnsToSearch; i++) {
+                    if (columns[i].textContent.toLowerCase().includes(searchText)) {
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            
-            // Afficher ou masquer la ligne
-            row.style.display = visible ? '' : 'none';
-            if (visible) visibleCount++;
+                
+                row.style.display = found ? "" : "none";
+            });
         });
         
-        // Mettre à jour le compteur (si nécessaire)
-        const counterElement = document.getElementById(`${tableId}-counter`);
-        if (counterElement) {
-            if (visibleCount < originalRows.length) {
-                counterElement.textContent = `Affichage de ${visibleCount} sur ${originalRows.length} éléments`;
-                counterElement.style.display = 'block';
-            } else {
-                counterElement.style.display = 'none';
-            }
-        }
+        console.log(`Search functionality initialized for table #${tableId}`);
     });
 }

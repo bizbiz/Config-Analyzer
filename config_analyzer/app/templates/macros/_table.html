@@ -8,16 +8,11 @@
     {% if items %}
         <div class="d-flex flex-wrap gap-1">
             {% for related in items %}
-                {% if column_name == 'robots' and hasattr(related, 'slug') and hasattr(related, 'serial_number') %}
-                    <a href="{{ url_for('robot_instances.view', slug=related.slug) }}" 
-                       class="badge bg-success text-white">
-                        {{ related.serial_number }}
-                    </a>
-                {% else %}
-                    <span class="badge bg-secondary">
-                        {{ related.name if hasattr(related, 'name') else related }}
-                    </span>
-                {% endif %}
+                <span class="badge bg-secondary">
+                    {{ related.name if hasattr(related, 'name') else 
+                       related.serial_number if hasattr(related, 'serial_number') else 
+                       related }}
+                </span>
                 {% if loop.index > 3 and items|length > 4 %}
                     <span class="badge bg-secondary">+{{ items|length - 3 }}</span>
                     {% break %}
@@ -293,6 +288,15 @@
             {% endif %}
         </div>
     </div>
+    {% if search %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Initializing search for table {{ table_id }}");
+            initTableSearch('{{ table_id }}', '{{ search_input_id }}', {{ filter_columns }}, 'tbody tr');
+        });
+    </script>
+    {% endif %}
+    
 {% endmacro %}
 
 {# Macro action_buttons #}
