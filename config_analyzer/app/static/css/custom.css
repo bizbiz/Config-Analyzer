@@ -164,3 +164,69 @@
     font-size: 0.85rem;
     color: #6c757d;
 }
+
+/* Styles pour les tableaux triables */
+.data-table .sortable-header {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px; /* Espace pour l'indicateur de tri */
+    user-select: none;
+}
+
+.data-table .sortable-header:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.data-table .sort-indicator {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.data-table .sortable-header:hover .sort-indicator {
+    opacity: 1;
+}
+
+/* Styles d'icône pour l'indicateur de tri actif */
+.data-table .sort-indicator.asc::after {
+    content: "↑";
+    display: inline-block;
+}
+
+.data-table .sort-indicator.desc::after {
+    content: "↓";
+    display: inline-block;
+}
+
+/* Style pour la colonne active triée */
+.data-table th.active-sort {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+/* Animation subtile lors du tri */
+.data-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+/* Amélioration du champ de recherche */
+input[id$="SearchInput"] {
+    border-left: 4px solid #0d6efd;
+    transition: all 0.3s ease;
+}
+
+input[id$="SearchInput"]:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badge indiquant le nombre de résultats filtrés */
+.filter-badge {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: all 0.3s ease;
+}

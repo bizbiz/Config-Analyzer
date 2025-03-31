@@ -45,6 +45,7 @@
  * @param hide_add_when_empty Bool   Masquer bouton d'ajout si liste vide
  * @param template_partial  String  Template partiel à utiliser pour corps tableau
  * @param context           Object  Contexte à passer au template partiel
+ * @param enable_sorting    Bool    Activer le tri sur les colonnes (défaut: true)
  *
  */
 #}
@@ -79,7 +80,8 @@
     edit_url_pattern=None,
     delete_url_pattern=None,
     delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?",
-    custom_columns={}
+    custom_columns={},
+    enable_sorting=true
 ) %}
     {# Calcul des IDs du tableau si non fournis #}
     {% set table_id = table_id|default(entity_type + 'Table') %}
@@ -120,21 +122,27 @@
                 
                 {# Tableau de données #}
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered align-middle" 
+                    <table class="table table-striped table-bordered align-middle data-table" 
                            id="{{ table_id }}"
-                           data-list-filter="{{ 'true' if search else 'false' }}"
+                           data-list-filter="true"
                            data-filter-input="{{ search_input_id }}" 
-                           data-filter-columns="{{ filter_columns }}">
+                           data-filter-columns="{{ filter_columns }}"
+                           data-tbody-id="{{ tbody_id }}">
                         <thead class="table-light">
                             <tr>
                                 {% if headers %}
                                     {% for header in headers %}
-                                        <th>{{ header }}</th>
+                                        <th {% if enable_sorting and loop.index < headers|length - 1 %}class="sortable-header" data-column-index="{{ loop.index - 1 }}"{% endif %}>
+                                            {{ header }}
+                                            {% if enable_sorting and loop.index < headers|length - 1 %}
+                                                <span class="sort-indicator"></span>
+                                            {% endif %}
+                                        </th>
                                     {% endfor %}
                                 {% else %}
-                                    <th>ID</th>
-                                    <th>Nom</th>
-                                    <th>Actions</th>
+                                    <th {% if enable_sorting %}class="sortable-header" data-column-index="0"{% endif %}>ID{% if enable_sorting %}<span class="sort-indicator"></span>{% endif %}</th>
+                                    <th {% if enable_sorting %}class="sortable-header" data-column-index="1"{% endif %}>Nom{% if enable_sorting %}<span class="sort-indicator"></span>{% endif %}</th>
+                                    <th class="no-sort">Actions</th>
                                 {% endif %}
                             </tr>
                         </thead>
@@ -227,7 +235,18 @@
                 
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        initTableSearch('{{ table_id }}', '{{ search_input_id }}', [], 'tbody tr');
+                        console.log("Initializing table {{ table_id }}");
+                        
+                        // Initialiser le tri et la recherche directement avec les ID connus
+                        if (typeof initDataTable === 'function') {
+                            initDataTable("{{ table_id }}", "{{ tbody_id }}", "{{ search_input_id }}");
+                        } else {
+                            console.warn("La fonction initDataTable n'est pas disponible");
+                            // Fallback à l'ancienne méthode
+                            if (typeof initTableSearch === 'function') {
+                                initTableSearch("{{ table_id }}", "{{ search_input_id }}");
+                            }
+                        }
                     });
                 </script>
                 
