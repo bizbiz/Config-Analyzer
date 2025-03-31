@@ -1,5 +1,9 @@
 {# templates/list/clients.html #}
 {% extends "base.html" %}
+{% from "macros/_statistics.html" import stats_cards %}
+{% from "macros/_form.html" import text_field, select_field %}
+{% from "macros/_table.html" import data_table %}
+{% from "macros/_ui.html" import back_button %}
 
 {% block title %}Liste des Clients{% endblock %}
 
@@ -7,34 +11,106 @@
 <div class="container my-5">
     <h1 class="mb-4">Liste des Clients</h1>
     
-    {% with items=clients, show_add_button=false, quick_stats=true %}
-        {% include 'list/partials/clients.html' %}
-    {% endwith %}
+    {# Statistiques #}
+    {{ stats_cards([
+        {'title': 'Total Clients', 'value': clients|length, 'color': 'primary', 'icon': 'building'},
+        {'title': 'Nombre de Robots', 'value': total_robots|default(0), 'color': 'success', 'icon': 'robot', 'subtitle': 'associés aux clients'},
+        {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
+    ]) }}
     
+    {# Tableau des clients avec data_table #}
+    {{ data_table(
+        entity_type='clients',
+        items=clients,
+        title='Liste des Clients',
+        icon='building',
+        add_url=url_for('clients.add'),
+        add_text='Ajouter un client',
+        show_add_button=false,
+        search=true,
+        show_badge=true,
+        empty_message='Aucun client trouvé.',
+        headers=['Nom', 'Code Postal', 'Ville', 'Code Pays', 'Actions'],
+        columns=['name', 'postal_code_relation.code', 'postal_code_relation.city', 'postal_code_relation.country_code'],
+        column_links={'name': url_for('clients.view', slug='%slug%')},
+        view_url_pattern=url_for('clients.view', slug='%slug%'),
+        delete_message='Êtes-vous sûr de vouloir supprimer ce client ?'
+    ) }}
+    
+    {# Formulaire d'ajout rapide #}
     <div class="card p-4 shadow-sm mt-4">
         <h2 class="mb-3">Ajouter un Client</h2>
         
-        {% with 
-            form_data=form_data,
-            name_error=name_error,
-            postal_code_error=postal_code_error,
-            city_error=city_error,
-            country_code_error=country_code_error,
-            countries=countries
-        %}
-            {% include 'add/partials/client.html' %}
-        {% endwith %}
+        <form action="{{ url_for('clients.add') }}" method="POST" id="clientForm">
+            {{ text_field(
+                name="name",
+                label="Nom :",
+                value=form_data.name if form_data else "",
+                required=true,
+                error=name_error
+            ) }}
+            
+            {{ text_field(
+                name="postal_code",
+                label="Code Postal :",
+                value=form_data.postal_code if form_data else "",
+                required=true,
+                pattern="\\d{5}",
+                help_text="Le code postal doit contenir exactement 5 chiffres (ex: 75018)",
+                error=postal_code_error
+            ) }}
+            
+            {{ text_field(
+                name="city",
+                label="Ville :",
+                value=form_data.city if form_data else "",
+                required=true,
+                error=city_error
+            ) }}
+            
+            {{ select_field(
+                name="country_code",
+                label="Pays :",
+                options=countries,
+                option_value="code",
+                option_text="name",
+                selected=form_data.country_code if form_data and form_data.country_code else "FRA",
+                required=true,
+                help_text="Veuillez sélectionner un pays",
+                error=country_code_error
+            ) }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Ajouter
+                </button>
+                <button type="reset" class="btn btn-secondary ms-2">
+                    <i class="fas fa-sync-alt me-2"></i>Réinitialiser
+                </button>
+            </div>
+        </form>
     </div>
     
-    <!-- Section pour afficher les paramètres additionnels -->
-    {% with 
-        params_configs=configs_json|default([]),
-        entity_name="tous les clients",
-        entity_type="client",
-        entity_slug=None,
-        show_add_button=false
-    %}
-        {% include 'list/partials/additional_params_config.html' %}
-    {% endwith %}
+    {# Section paramètres additionnels #}
+    {% if params_configs is defined and params_configs|length > 0 %}
+    {{ data_table(
+        entity_type='parameters',
+        items=params_configs,
+        title='Paramètres additionnels pour tous les clients',
+        icon='cogs',
+        add_url=url_for('additional_params_config.add', entity_type='client'),
+        add_text='Ajouter un paramètre global',
+        headers=['Nom', 'Type', 'Valeurs possibles', 'Actions'],
+        columns=['name', 'type', 'configuration_values'],
+        custom_actions={
+            'edit_url': url_for('additional_params_config.edit', config_id='%id%'),
+            'delete_url': url_for('additional_params_config.delete', config_id='%id%')
+        },
+        delete_message='Êtes-vous sûr de vouloir supprimer cette configuration de paramètre ?'
+    ) }}
+    {% endif %}
+    
+    {# Bouton de retour #}
+    {{ back_button(url_for('home.home'), "Retour à l'accueil", "btn btn-secondary mt-4") }}
 </div>
 {% endblock %}
