@@ -18,17 +18,10 @@
         {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
     ]) }}
     
-    {# Message si tous les clients ont le même code pays #}
-    {% if same_country|default(false) and country_code %}
-    <div class="alert alert-info mt-3">
-        <i class="fas fa-info-circle me-2"></i>Tous les clients sont situés dans le même pays : {{ country_code }}
-    </div>
-    {% endif %}
-    
     {# Définition des variables conditionnelles #}
     {% set columns_list = ['name', 'postal_code_relation.code', 'postal_code_relation.city'] %}
-    {% set headers_list = ['Nom', 'Code Postal', 'Ville'] %}
-    {% set filter_count = 3 %}
+    {% set headers_list = ['Nom', 'Code Postal', 'Ville', 'Robots', 'Actions'] %}
+    {% set filter_count = 4 %}
     
     {% if not same_country|default(false) %}
         {% set columns_list = columns_list + ['postal_code_relation.country_code'] %}
@@ -58,7 +51,10 @@
         delete_url_pattern=url_for('clients.delete', slug='%slug%'),
         delete_message='Êtes-vous sûr de vouloir supprimer ce client ?',
         show_badge=true,
-        empty_message='Aucun client trouvé.'
+        empty_message='Aucun client trouvé.',
+        custom_columns={
+            'robots': True
+        }
     ) }}
     
     {# Formulaire d'ajout rapide #}

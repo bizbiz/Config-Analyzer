@@ -33,6 +33,24 @@ def jinja2_attribute(obj, attribute_name):
     except AttributeError:
         return None
 
+def get_nested_attribute(obj, attr_path):
+    """Accède à un attribut imbriqué en suivant un chemin d'attributs séparés par des points."""
+    if obj is None:
+        return None
+    
+    parts = attr_path.split('.')
+    current_obj = obj
+    
+    for part in parts:
+        try:
+            current_obj = getattr(current_obj, part)
+            if current_obj is None:
+                return None
+        except (AttributeError, TypeError):
+            return None
+    
+    return current_obj
+
 def create_app(config_name='default'):
     app = Flask(__name__)
     
@@ -56,6 +74,7 @@ def create_app(config_name='default'):
     
     # Ajouter la fonction attribute (très important pour notre cas)
     app.jinja_env.globals['attribute'] = jinja2_attribute
+    app.jinja_env.globals['get_nested_attribute'] = get_nested_attribute
 
     # Extensions supplémentaires
     app.jinja_env.add_extension('jinja2.ext.do')

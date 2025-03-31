@@ -78,7 +78,8 @@
     view_url_pattern=None,
     edit_url_pattern=None,
     delete_url_pattern=None,
-    delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?"
+    delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?",
+    custom_columns={}
 ) %}
     {# Calcul des IDs du tableau si non fournis #}
     {% set table_id = table_id|default(entity_type + 'Table') %}
@@ -143,47 +144,57 @@
                                 {% if columns %}
                                     {% for column in columns %}
                                         <td>
-                                            {# Fonction pour accéder aux attributs imbriqués de manière sécurisée #}
-                                            {% macro get_nested_attr(obj, attr_path) %}
-                                                {% set parts = attr_path.split('.') %}
-                                                {% set current_obj = obj %}
-                                                
-                                                {% for part in parts %}
-                                                    {% if current_obj is not none and hasattr(current_obj, part) %}
-                                                        {% set current_obj = attribute(current_obj, part) %}
-                                                    {% else %}
-                                                        {% set current_obj = none %}
-                                                        {% break %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                
-                                                {{ current_obj if current_obj is not none else '<span class="text-muted">-</span>' }}
-                                            {% endmacro %}
-                                            
-                                            {% if column_links and column in column_links %}
-                                                <a href="{{ column_links[column]|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}">
-                                                    {% if '.' in column %}
-                                                        {{ get_nested_attr(item, column) }}
-                                                    {% elif hasattr(item, column) %}
-                                                        {{ attribute(item, column) }}
-                                                    {% else %}
-                                                        <span class="text-muted">-</span>
-                                                    {% endif %}
-                                                </a>
-                                            {% else %}
-                                                {% if '.' in column %}
-                                                    {{ get_nested_attr(item, column) }}
-                                                {% elif hasattr(item, column) %}
-                                                    {{ attribute(item, column) }}
+                                            {% if '.' in column %}
+                                                {% if column_links and column in column_links %}
+                                                    <a href="{{ column_links[column]|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}">
+                                                        {{ get_nested_attribute(item, column) }}
+                                                    </a>
                                                 {% else %}
-                                                    <span class="text-muted">-</span>
+                                                    {{ get_nested_attribute(item, column) }}
                                                 {% endif %}
+                                            {% elif hasattr(item, column) %}
+                                                {% if column_links and column in column_links %}
+                                                    <a href="{{ column_links[column]|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}">
+                                                        {{ attribute(item, column) }}
+                                                    </a>
+                                                {% else %}
+                                                    {{ attribute(item, column) }}
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                     {% endfor %}
                                 {% else %}
                                     <td>{{ item.id }}</td>
                                     <td>{{ item.name }}</td>
+                                {% endif %}
+                                
+                                {# Colonnes personnalisées #}
+                                {% if custom_columns and custom_columns.get('robots') %}
+                                    <td>
+                                        {% if hasattr(item, 'robots') %}
+                                            {% set robot_list = item.robots.all() %}
+                                            {% if robot_list %}
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% for robot in robot_list %}
+                                                        <a href="{{ url_for('robot_instances.view', slug=robot.slug) }}" 
+                                                           class="badge bg-success text-white">
+                                                            {{ robot.serial_number }}
+                                                        </a>
+                                                        {% if loop.index > 3 and robot_list|length > 4 %}
+                                                            <span class="badge bg-secondary">+{{ robot_list|length - 3 }}</span>
+                                                            {% break %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">Aucun robot</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                 {% endif %}
                                 
                                 <td class="text-center">
