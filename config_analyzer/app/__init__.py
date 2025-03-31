@@ -32,6 +32,30 @@ def create_app(config_name='default'):
         SESSION_COOKIE_SAMESITE='Lax',
         PERMANENT_SESSION_LIFETIME=3600  # 1 heure
     )
+
+    # Activer les extensions Jinja2
+    app.jinja_env.add_extension('jinja2.ext.loopcontrols')  # Pour break et continue
+    
+    # Ajouter hasattr comme fonction globale
+    app.jinja_env.globals['hasattr'] = hasattr
+
+    # Extensions supplémentaires
+    app.jinja_env.add_extension('jinja2.ext.do')
+    app.jinja_env.add_extension('jinja2.ext.debug')
+    
+    # Autres fonctions utiles
+    app.jinja_env.globals['isinstance'] = isinstance
+    app.jinja_env.globals['str'] = str
+    app.jinja_env.globals['int'] = int
+    app.jinja_env.globals['float'] = float
+    app.jinja_env.globals['len'] = len
+    app.jinja_env.globals['dict'] = dict
+    app.jinja_env.globals['list'] = list
+    
+    # Filtres utiles
+    app.jinja_env.filters['items'] = lambda d: d.items()
+    app.jinja_env.filters['keys'] = lambda d: d.keys()
+    app.jinja_env.filters['values'] = lambda d: d.values()    
     
     # Initialisation des extensions
     db.init_app(app)
