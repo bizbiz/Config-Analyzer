@@ -1,4 +1,4 @@
-# app/routes/clients.py
+# config_analyzer/app/routes/clients.py
 """
 Routes pour la gestion des clients.
 """
@@ -100,9 +100,9 @@ def list():
     same_country = True
     country_code = None
     
-    if clients:
-        country_code = clients[0].postal_code_relation.country_code if clients[0].postal_code_relation else None
-        for client in clients:
+    if clients_query:
+        country_code = clients_query[0].postal_code_relation.country_code if clients_query[0].postal_code_relation else None
+        for client in clients_query:
             if not client.postal_code_relation or client.postal_code_relation.country_code != country_code:
                 same_country = False
                 break
@@ -114,22 +114,11 @@ def list():
     params_configs = ParameterDefinition.query.filter(
         ParameterDefinition.target_entity == EntityType.CLIENT
     ).all()
-
-    # Définir les renderers pour certaines colonnes
-    robots_renderer = lambda robots: ''.join([
-        f'<a href="{robot["url"]}" class="badge {robot["badge_class"]}">{robot["text"]}</a>'
-        for robot in robots[:3]
-    ]) + (f'<span class="badge bg-secondary">+{len(robots) - 3}</span>' if len(robots) > 3 else '')
-    
-    column_renderers = {
-        'robots': robots_renderer,
-    }
     
     return render_template(
         'list/clients.html', 
         params_configs=params_configs,
-        clients=formatted_clients,  # Passer les données formatées
-        column_renderers=column_renderers,  # Passer les renderers
+        clients=formatted_clients,
         countries=countries,
         name_error=None,
         postal_code_error=None,

@@ -1,5 +1,46 @@
 {# /templates/macros/_ui.html #}
 
+{% macro button(url, text, type="primary", icon=None, size=None, outline=false, classes="", attributes="") %}
+<a href="{{ url }}" 
+   class="btn {% if size %}btn-{{ size }} {% endif %}btn-{% if outline %}outline-{% endif %}{{ type }} {{ classes }}" 
+   {{ attributes|safe }}>
+    {% if icon %}<i class="fas fa-{{ icon }} {% if text %}me-2{% endif %}"></i>{% endif %}{{ text }}
+</a>
+{% endmacro %}
+
+{% macro badge_button(url, text, badge_class="bg-secondary", icon=None, attributes="") %}
+<a href="{{ url }}" class="badge {{ badge_class }} text-decoration-none {{ 'me-1' if icon else '' }}" {{ attributes|safe }}>
+    {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}{{ text }}
+</a>
+{% endmacro %}
+
+{% macro render_buttons(items, config={}) %}
+    {# Afficher jusqu'à max_display éléments (par défaut tous) #}
+    {% set max_display = config.max_display|default(items|length) %}
+    {% set style = config.style|default('badge') %}
+    
+    {# Parcourir les éléments à afficher #}
+    {% for item in items[:max_display] %}
+        {# Déterminer les propriétés du bouton #}
+        {% set url = config.url_pattern|replace('%slug%', item.slug|default(''))|replace('%id%', item.id|string)|replace('%text%', item.text|default('')) if config.url_pattern else item.url|default('#') %}
+        {% set text = item.text|default('') %}
+        {% set badge_class = item.badge_class|default(config.default_class|default('bg-secondary')) %}
+        {% set icon = item.icon|default(config.default_icon) %}
+        
+        {# Générer le bon type de bouton selon le style #}
+        {% if style == 'badge' %}
+            {{ badge_button(url, text, badge_class, icon) }}
+        {% elif style == 'button' %}
+            {{ button(url, text, badge_class, icon, config.size|default('sm'), config.outline|default(true)) }}
+        {% endif %}
+    {% endfor %}
+    
+    {# Afficher un indicateur pour les éléments supplémentaires #}
+    {% if items|length > max_display %}
+        <span class="badge bg-secondary">{{ config.more_text|default('+') }}{{ items|length - max_display }}</span>
+    {% endif %}
+{% endmacro %}
+
 {% macro badge(type, text, colors={'text': 'info', 'numeric': 'primary', 'enum': 'success'}) %}
 <span class="badge bg-{{ colors[type]|default('secondary') }}">{{ text }}</span>
 {% endmacro %}

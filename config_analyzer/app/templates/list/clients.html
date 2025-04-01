@@ -1,9 +1,9 @@
-{# templates/list/clients.html #}
+{# config_analyzer/app/templates/list/clients.html #}
 {% extends "base.html" %}
 {% from "macros/_statistics.html" import stats_cards %}
 {% from "macros/_form.html" import text_field, select_field %}
 {% from "macros/_table.html" import data_table %}
-{% from "macros/_ui.html" import back_button %}
+{% from "macros/_ui.html" import back_button, render_buttons, button %}
 
 {% block title %}Liste des Clients{% endblock %}
 
@@ -18,21 +18,26 @@
         {'title': 'Nouveaux Clients', 'value': new_clients|default(0), 'color': 'info', 'icon': 'user-plus', 'subtitle': 'ce mois-ci'}
     ]) }}
     
-    {# Définition des variables conditionnelles #}
-    {% set columns_list = ['name', 'postal_code_relation.code', 'postal_code_relation.city'] %}
-    {% set headers_list = ['Nom', 'Code Postal', 'Ville', 'Robots'] %}
-    {% set filter_count = 4 %}
+    {# Macro pour le rendu des robots #}
+    {% macro render_robots_column(item, column) %}
+        {{ render_buttons(
+            item.robots, 
+            {
+                'style': 'badge',
+                'max_display': 3,
+                'default_class': 'bg-success'
+            }
+        ) }}
+    {% endmacro %}
     
-    {% if not same_country|default(false) %}
-        {% set columns_list = columns_list + ['postal_code_relation.country_code'] %}
-        {% set headers_list = headers_list + ['Code Pays'] %}
-        {% set filter_count = 4 %}
-    {% endif %}
+    {# Macro pour le rendu de la colonne nom avec lien #}
+    {% macro render_name_column(item, column) %}
+        <a href="{{ url_for('clients.view', slug=item.slug) }}">
+            {{ item[column] }}
+        </a>
+    {% endmacro %}
     
-    {# Ajout de la colonne Actions #}
-    {% set headers_list = headers_list + ['Actions'] %}
-    
-    {# Tableau des clients avec data_table #}
+    {# Tableau des clients #}
     {{ data_table(
         entity_type='client',
         items=clients,
@@ -45,8 +50,10 @@
         filter_columns=4,
         headers=headers,
         columns=columns,
-        column_renderers=column_renderers,
-        column_links={'name': url_for('clients.view', slug='%slug%')},
+        column_renderers={
+            'robots': render_robots_column,
+            'name': render_name_column
+        },
         view_url_pattern=url_for('clients.view', slug='%slug%'),
         edit_url_pattern=url_for('clients.edit', slug='%slug%'),
         delete_url_pattern=url_for('clients.delete', slug='%slug%'),
@@ -54,7 +61,7 @@
         show_badge=true,
         empty_message='Aucun client trouvé.'
     ) }}
-        
+    
     {# Formulaire d'ajout rapide #}
     <div class="card p-4 shadow-sm mt-4">
         <h2 class="mb-3">Ajouter un Client</h2>
@@ -122,16 +129,50 @@
             </a>
         </div>
         <div class="card-body">
-            {{ data_table(
-                entity_type='param',
-                items=params_configs,
-                show_add_button=false,
-                headers=['Nom', 'Type', 'Valeurs possibles', 'Actions'],
-                columns=['name', 'type', 'configuration_values'],
-                edit_url_pattern=url_for('additional_params_config.edit', config_id='%id%'),
-                delete_url_pattern=url_for('additional_params_config.delete', config_id='%id%'),
-                delete_message='Êtes-vous sûr de vouloir supprimer ce paramètre ?'
-            ) }}
+            {# Vous pouvez utiliser data_table ou une autre visualisation pour les paramètres #}
+            {% if params_configs|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in params_configs %}
+                        <tr>
+                            <td>{{ config.name }}</td>
+                            <td>
+                                <span class="badge {% if config.type.value == 'enum' %}bg-success{% elif config.type.value == 'numeric' %}bg-primary{% else %}bg-info{% endif %}">
+                                    {{ config.type.value|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ config.description|truncate(50) }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('additional_params_config.edit', config_id=config.id) }}" class="btn btn-sm btn-warning me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ url_for('additional_params_config.delete', config_id=config.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce paramètre ?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>Aucun paramètre global défini pour les clients.
+                <a href="{{ url_for('additional_params_config.add', entity_type='client') }}" class="alert-link">Ajouter un paramètre</a>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}

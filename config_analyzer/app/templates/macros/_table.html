@@ -1,29 +1,5 @@
 {# /templates/macros/_table.html #}
 
-
-{% macro render_relation(relation, column_name) %}
-{# Détermine si c'est un objet requête ou une collection #}
-{% set items = relation.all() if hasattr(relation, 'all') else relation %}
-
-{% if items %}
-<div class="d-flex flex-wrap gap-1">
-    {% for related in items %}
-    <span class="badge bg-secondary">
-        {{ related.name if hasattr(related, 'name') else 
-        related.serial_number if hasattr(related, 'serial_number') else 
-        related }}
-    </span>
-    {% if loop.index > 3 and items|length > 4 %}
-    <span class="badge bg-secondary">+{{ items|length - 3 }}</span>
-    {% break %}
-    {% endif %}
-    {% endfor %}
-</div>
-{% else %}
-<span class="text-muted">Aucun élément</span>
-{% endif %}
-{% endmacro %}
-
 {#
 /**
 * Macro data_table - Affiche un tableau de données avec des fonctionnalités avancées
@@ -74,40 +50,38 @@
 */
 #}
 
-
-
-{# /templates/macros/_table.html #}
+{# config_analyzer/app/templates/macros/_table.html #}
 
 {% macro data_table(
-entity_type,
-items,
-title=None,
-icon=None,
-add_url=None,
-add_text="Ajouter",
-show_add_button=true,
-search=true,
-pagination=false,
-empty_message="Aucun élément trouvé.",
-table_id=None,
-search_input_id=None,
-filter_columns=3,
-tbody_id=None,
-show_badge=false,
-is_embedded=false,
-show_search=true,
-search_placeholder=None,
-force_add_button=true,
-hide_add_when_empty=false,
-headers=None,
-columns=None,
-column_renderers={},  # Nouveau paramètre pour spécifier comment afficher chaque colonne
-column_links=None,
-view_url_pattern=None,
-edit_url_pattern=None,
-delete_url_pattern=None,
-delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?",
-enable_sorting=true
+    entity_type,
+    items,
+    title=None,
+    icon=None,
+    add_url=None,
+    add_text="Ajouter",
+    show_add_button=true,
+    search=true,
+    pagination=false,
+    empty_message="Aucun élément trouvé.",
+    table_id=None,
+    search_input_id=None,
+    filter_columns=3,
+    tbody_id=None,
+    show_badge=false,
+    is_embedded=false,
+    show_search=true,
+    search_placeholder=None,
+    force_add_button=true,
+    hide_add_when_empty=false,
+    headers=None,
+    columns=None,
+    column_renderers={},
+    column_links=None,
+    view_url_pattern=None,
+    edit_url_pattern=None,
+    delete_url_pattern=None,
+    delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?",
+    enable_sorting=true
 ) %}
 {# Générer des IDs uniques et fiables basés sur l'entity_type si non fournis #}
 {% set unique_id = range(1000, 9999) | random %}
@@ -180,16 +154,15 @@ enable_sorting=true
                     {% for column in columns %}
                     <td>
                         {% if column in column_renderers %}
-                        {# Utiliser le renderer personnalisé si défini #}
-                        {{ column_renderers[column](item[column]) }}
-                        {% elif item[column] is none %}
-                        <span class="text-muted">-</span>
+                            {# Utiliser le renderer personnalisé si défini #}
+                            {{ column_renderers[column](item, column) }}
                         {% elif column_links and column in column_links %}
-                        <a href="{{ column_links[column]|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}">
-                            {{ item[column] }}
-                        </a>
+                            <a href="{{ column_links[column]|replace('%slug%', item.slug) }}">
+                                {{ item[column] }}
+                            </a>
                         {% else %}
-                        {{ item[column] }}
+                            {# Accéder directement à la clé du dictionnaire, qu'elle contienne un point ou non #}
+                            {{ item[column]|default('-') }}
                         {% endif %}
                     </td>
                     {% endfor %}
@@ -197,19 +170,19 @@ enable_sorting=true
                     {# Colonne actions #}
                     <td class="text-center">
                         {% if view_url_pattern %}
-                        <a href="{{ view_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" class="btn btn-sm btn-info me-1">
+                        <a href="{{ view_url_pattern|replace('%slug%', item.slug) }}" class="btn btn-sm btn-info me-1">
                             <i class="fas fa-eye"></i>
                         </a>
                         {% endif %}
                         
                         {% if edit_url_pattern %}
-                        <a href="{{ edit_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" class="btn btn-sm btn-warning me-1">
+                        <a href="{{ edit_url_pattern|replace('%slug%', item.slug) }}" class="btn btn-sm btn-warning me-1">
                             <i class="fas fa-edit"></i>
                         </a>
                         {% endif %}
                         
                         {% if delete_url_pattern %}
-                        <form action="{{ delete_url_pattern|replace('%slug%', item.slug)|replace('%id%', item.id|string) }}" method="POST" class="d-inline">
+                        <form action="{{ delete_url_pattern|replace('%slug%', item.slug) }}" method="POST" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-danger" 
                             onclick="return confirm('{{ delete_message }}')">
                             <i class="fas fa-trash"></i>
@@ -219,54 +192,54 @@ enable_sorting=true
                 </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-{# Pagination #}
-{% if pagination and total_pages is defined and total_pages > 1 %}
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <div>
-        Affichage de {{ offset + 1 }} à {{ offset + items|length }} sur {{ total_items }} éléments
+            </tbody>
+        </table>
     </div>
-    <nav aria-label="Navigation des pages">
-        <ul class="pagination">
-            <li class="page-item {{ 'disabled' if page == 1 else '' }}">
-                <a class="page-link" href="{{ url_for(request.endpoint, page=page-1, **request.view_args) }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-            
-            {% set start_page = [1, page - 2]|max %}
-            {% set end_page = [start_page + 4, total_pages]|min %}
-            {% set start_page = [end_page - 4, 1]|max %}
-            
-            {% for p in range(start_page, end_page + 1) %}
-            <li class="page-item {{ 'active' if p == page else '' }}">
-                <a class="page-link" href="{{ url_for(request.endpoint, page=p, **request.view_args) }}">{{ p }}</a>
-            </li>
-            {% endfor %}
-            
-            <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
-                <a class="page-link" href="{{ url_for(request.endpoint, page=page+1, **request.view_args) }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-</div>
-{% endif %}
 
-{% else %}
-{# Message si aucun élément #}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>{{ empty_message }}
-    {% if add_url and show_add_button and not hide_add_when_empty %}
-    <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+    {# Pagination #}
+    {% if pagination and total_pages is defined and total_pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            Affichage de {{ offset + 1 }} à {{ offset + items|length }} sur {{ total_items }} éléments
+        </div>
+        <nav aria-label="Navigation des pages">
+            <ul class="pagination">
+                <li class="page-item {{ 'disabled' if page == 1 else '' }}">
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=page-1, **request.view_args) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% set start_page = [1, page - 2]|max %}
+                {% set end_page = [start_page + 4, total_pages]|min %}
+                {% set start_page = [end_page - 4, 1]|max %}
+                
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {{ 'active' if p == page else '' }}">
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=p, **request.view_args) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=page+1, **request.view_args) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
     {% endif %}
-</div>
-{% endif %}
-</div>
+
+    {% else %}
+    {# Message si aucun élément #}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>{{ empty_message }}
+        {% if add_url and show_add_button and not hide_add_when_empty %}
+        <a href="{{ add_url }}" class="alert-link">{{ add_text }}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    </div>
 </div>
 {% if search %}
 <script>
@@ -276,13 +249,13 @@ enable_sorting=true
     });
 </script>
 {% endif %}
-
 {% endmacro %}
+
 
 {# Macro action_buttons #}
 {% macro action_buttons(view_url=None, edit_url=None, delete_url=None, delete_message="Êtes-vous sûr de vouloir supprimer cet élément ?", additional_buttons=[], is_td=true, return_to=None) %}
 {% if is_td %}<td class="text-center">{% endif %}
-    
+
     {% if view_url %}
     <a href="{{ view_url }}" class="btn btn-sm btn-info me-1">
         <i class="fas fa-eye"></i>
